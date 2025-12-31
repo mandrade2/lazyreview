@@ -1,6 +1,7 @@
-import { createMemo, For, Show } from "solid-js"
+import { createMemo, createSignal, createEffect, For, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
+import { highlightCode, type HighlightedLine } from "../utils/syntax"
 
 interface DiffViewerProps {
   file: FileChange
@@ -29,13 +30,39 @@ function getStatusColor(status: FileChange["status"]): string {
   }
 }
 
+// Default text color
+const DEFAULT_COLOR = "#e6edf3"
+
 export function DiffViewer(props: DiffViewerProps) {
   const dimensions = useTerminalDimensions()
   
-  // Parse file content into lines
-  const lines = createMemo(() => {
+  // Store highlighted lines (syntax highlighted tokens)
+  const [highlightedLines, setHighlightedLines] = createSignal<HighlightedLine[]>([])
+  
+  // Parse file content into plain lines (for line count and fallback)
+  const plainLines = createMemo(() => {
     if (!props.file.content) return []
     return props.file.content.split("\n")
+  })
+  
+  // Highlight file content when file changes
+  createEffect(() => {
+    const file = props.file
+    if (file.content) {
+      // Start with plain text immediately (no delay)
+      setHighlightedLines(
+        file.content.split("\n").map((line) => [{ content: line, color: DEFAULT_COLOR }])
+      )
+      // Then asynchronously apply syntax highlighting
+      highlightCode(file.content, file.path).then((highlighted) => {
+        // Only update if the file hasn't changed
+        if (props.file.path === file.path) {
+          setHighlightedLines(highlighted)
+        }
+      })
+    } else {
+      setHighlightedLines([])
+    }
   })
   
   // Calculate visible lines based on terminal height (minus headers and status bar)
@@ -45,19 +72,34 @@ export function DiffViewer(props: DiffViewerProps) {
   
   // Get the lines to display based on scroll offset
   const visibleLines = createMemo(() => {
-    const allLines = lines()
+    const allHighlighted = highlightedLines()
+    const allPlain = plainLines()
+    const lineCount = allPlain.length
     const start = props.scrollOffset
-    const end = Math.min(start + visibleHeight(), allLines.length)
-    return allLines.slice(start, end).map((content, idx) => ({
-      lineNumber: start + idx,
-      content,
-      isChanged: props.file.changedLines.has(start + idx),
-    }))
+    const end = Math.min(start + visibleHeight(), lineCount)
+    
+    const result: Array<{
+      lineNumber: number
+      tokens: HighlightedLine
+      isChanged: boolean
+    }> = []
+    
+    for (let i = start; i < end; i++) {
+      // Use highlighted tokens if available, otherwise fallback to plain text
+      const tokens = allHighlighted[i] ?? [{ content: allPlain[i] ?? "", color: DEFAULT_COLOR }]
+      result.push({
+        lineNumber: i,
+        tokens,
+        isChanged: props.file.changedLines.has(i),
+      })
+    }
+    
+    return result
   })
   
   // Line number width based on total lines
   const lineNumberWidth = createMemo(() => {
-    return Math.max(4, String(lines().length).length + 1)
+    return Math.max(4, String(plainLines().length).length + 1)
   })
   
   return (
@@ -80,13 +122,13 @@ export function DiffViewer(props: DiffViewerProps) {
         <box style={{ flexDirection: "row" }}>
           <text style={{ fg: "#3fb950" }}>+{props.file.additions}</text>
           <text style={{ fg: "#f85149" }}> -{props.file.deletions}</text>
-          <text style={{ fg: "#8b949e" }}> changes | Line {props.scrollOffset + 1}/{lines().length}</text>
+          <text style={{ fg: "#8b949e" }}> changes | Line {props.scrollOffset + 1}/{plainLines().length}</text>
         </box>
       </box>
       
       {/* File content */}
       <Show
-        when={lines().length > 0}
+        when={plainLines().length > 0}
         fallback={
           <box
             style={{
@@ -132,16 +174,19 @@ export function DiffViewer(props: DiffViewerProps) {
                     {line.isChanged ? "+" : " "}
                   </text>
                 </box>
-                {/* Content */}
+                {/* Content with syntax highlighting */}
                 <box
                   style={{
+                    flexDirection: "row",
                     flexGrow: 1,
                     backgroundColor: line.isChanged ? "#0f1a0f" : "#0d1117",
                   }}
                 >
-                  <text style={{ fg: "#e6edf3" }}>
-                    {line.content}
-                  </text>
+                  <For each={line.tokens}>
+                    {(token) => (
+                      <text style={{ fg: token.color }}>{token.content}</text>
+                    )}
+                  </For>
                 </box>
               </box>
             )}
