@@ -11,8 +11,10 @@ const dir = path.resolve(__dirname, "..")
 process.chdir(dir)
 
 import pkg from "../package.json" with { type: "json" }
+import corePkg from "../node_modules/@opentui/core/package.json" with { type: "json" }
 
 const singleFlag = process.argv.includes("--single")
+const skipInstall = process.argv.includes("--skip-install")
 
 const allTargets: {
   os: string
@@ -31,6 +33,14 @@ const targets = singleFlag
 
 await Bun.$`rm -rf dist`
 await Bun.$`mkdir -p dist`
+
+// Install platform-specific native modules for cross-compilation
+if (!skipInstall && !singleFlag) {
+  const coreVersion = corePkg.version
+  console.log(`Installing @opentui/core platform modules (v${coreVersion})...\n`)
+  await Bun.$`bun install --os="*" --cpu="*" @opentui/core@${coreVersion}`
+  console.log("")
+}
 
 for (const item of targets) {
   const name = [

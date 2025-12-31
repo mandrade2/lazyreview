@@ -4,6 +4,7 @@ import { FileList } from "./components/file-list"
 import { DiffViewer } from "./components/diff-viewer"
 import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
+import { HelpDialog } from "./components/help-dialog"
 import { getGitChanges, getTargetDir, type FileChange } from "./utils/git"
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
+  const [showHelp, setShowHelp] = createSignal(false)
   
   const selectedFile = createMemo(() => files()[selectedIndex()] ?? null)
   
@@ -59,6 +61,23 @@ export function App() {
   }
   
   useKeyboard((key) => {
+    // Toggle help with ?
+    if (key.name === "?" || key.sequence === "?") {
+      setShowHelp(h => !h)
+      return
+    }
+    
+    // Close help dialog with Escape or q
+    if ((key.name === "escape" || key.name === "q") && showHelp()) {
+      setShowHelp(false)
+      return
+    }
+    
+    // Block all other keys while help is open
+    if (showHelp()) {
+      return
+    }
+    
     // Quit with q or Ctrl+c
     if ((key.ctrl && key.name === "c") || key.name === "q") {
       renderer.destroy()
@@ -308,6 +327,10 @@ export function App() {
         selectedIndex={selectedIndex()}
         focusedPanel={focusedPanel()}
       />
+      
+      <Show when={showHelp()}>
+        <HelpDialog onClose={() => setShowHelp(false)} />
+      </Show>
     </box>
   )
 }
