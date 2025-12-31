@@ -101,9 +101,9 @@ export function App() {
         setSelectedIndex(i => Math.min(i + 1, files().length - 1))
       } else if (key.name === "k" || key.name === "up") {
         setSelectedIndex(i => Math.max(i - 1, 0))
-      } else if (key.name === "g") {
+      } else if (key.name === "g" && !key.shift) {
         setSelectedIndex(0)
-      } else if (key.name === "G") {
+      } else if (key.name === "g" && key.shift) {
         setSelectedIndex(files().length - 1)
       }
     }
@@ -152,11 +152,11 @@ export function App() {
         setScrollOffset(o => Math.min(o + 1, maxScroll))
       }
       // g - go to top of diff (only when not in files panel, to avoid conflict)
-      else if (key.name === "g" && focusedPanel() !== "files") {
+      else if (key.name === "g" && !key.shift && focusedPanel() !== "files") {
         setScrollOffset(0)
       }
-      // G - go to bottom of diff (only when not in files panel, to avoid conflict)
-      else if (key.name === "G" && focusedPanel() !== "files") {
+      // G (shift+g) - go to bottom of diff (only when not in files panel, to avoid conflict)
+      else if (key.name === "g" && key.shift && focusedPanel() !== "files") {
         setScrollOffset(maxScroll)
       }
     }
