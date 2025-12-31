@@ -175,19 +175,18 @@ export function DiffViewer(props: DiffViewerProps) {
                   </text>
                 </box>
                 {/* Content with syntax highlighting */}
-                <box
+                <text
                   style={{
-                    flexDirection: "row",
                     flexGrow: 1,
-                    backgroundColor: line.isChanged ? "#0f1a0f" : "#0d1117",
+                    flexShrink: 1,
                   }}
                 >
                   <For each={line.tokens}>
                     {(token) => (
-                      <text style={{ fg: token.color }}>{token.content}</text>
+                      <span style={{ fg: token.color }}>{token.content}</span>
                     )}
                   </For>
-                </box>
+                </text>
               </box>
             )}
           </For>
