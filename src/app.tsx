@@ -174,10 +174,21 @@ export function App() {
             width: 35,
             flexShrink: 0,
             flexDirection: "column",
-            border: ["right"],
-            borderColor: focusedPanel() === "files" ? "#58a6ff" : "#30363d",
           }}
         >
+          {/* Panel header */}
+          <box
+            style={{
+              height: 1,
+              flexShrink: 0,
+              backgroundColor: focusedPanel() === "files" ? "#58a6ff" : "#21262d",
+              paddingLeft: 1,
+            }}
+          >
+            <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e" }}>
+              <b>FILES</b> ({files().length})
+            </text>
+          </box>
           <Show
             when={!loading()}
             fallback={
@@ -208,10 +219,21 @@ export function App() {
           style={{
             flexGrow: 1,
             flexDirection: "column",
-            border: ["left"],
-            borderColor: focusedPanel() === "diff" ? "#58a6ff" : "#30363d",
           }}
         >
+          {/* Panel header */}
+          <box
+            style={{
+              height: 1,
+              flexShrink: 0,
+              backgroundColor: focusedPanel() === "diff" ? "#58a6ff" : "#21262d",
+              paddingLeft: 1,
+            }}
+          >
+            <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e" }}>
+              <b>DIFF</b>
+            </text>
+          </box>
           <Show
             when={selectedFile()}
             fallback={

@@ -28,14 +28,13 @@ export function StatusBar(props: StatusBarProps) {
     <box
       style={{
         height: 1,
+        flexShrink: 0,
         backgroundColor: "#161b22",
         paddingLeft: 1,
         paddingRight: 1,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        border: ["top"],
-        borderColor: "#30363d",
       }}
     >
       <text style={{ fg: "#58a6ff" }}>{panelText()}</text>

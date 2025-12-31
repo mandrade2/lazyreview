@@ -38,9 +38,9 @@ export function DiffViewer(props: DiffViewerProps) {
     return props.file.content.split("\n")
   })
   
-  // Calculate visible lines based on terminal height (minus header and status bar)
+  // Calculate visible lines based on terminal height (minus headers and status bar)
   const visibleHeight = createMemo(() => {
-    return dimensions().height - 4 // 1 for header, 2 for file header, 1 for status bar
+    return dimensions().height - 6 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar, 1 for buffer
   })
   
   // Get the lines to display based on scroll offset
