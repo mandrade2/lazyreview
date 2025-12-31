@@ -4,7 +4,7 @@ import { FileList } from "./components/file-list"
 import { DiffViewer } from "./components/diff-viewer"
 import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
-import { getGitChanges, type FileChange } from "./utils/git"
+import { getGitChanges, getTargetDir, type FileChange } from "./utils/git"
 
 export function App() {
   const renderer = useRenderer()
@@ -168,6 +168,29 @@ export function App() {
         setFiles(changes)
         setSelectedIndex(0)
         setScrollOffset(0)
+        setLoading(false)
+      }).catch(e => {
+        setError(e instanceof Error ? e.message : "Failed to refresh")
+        setLoading(false)
+      })
+    }
+    
+    // Open file in editor with 'e'
+    if (key.name === "e" && selectedFile()) {
+      const editor = process.env.EDITOR ?? process.env.VISUAL ?? "vi"
+      const filePath = `${getTargetDir()}/${selectedFile()!.path}`
+      // Suspend terminal UI, run editor, then resume
+      renderer.suspend()
+      Bun.spawnSync([editor, filePath], {
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      })
+      renderer.resume()
+      // Refresh file list to pick up any changes made in editor
+      setLoading(true)
+      getGitChanges().then(changes => {
+        setFiles(changes)
         setLoading(false)
       }).catch(e => {
         setError(e instanceof Error ? e.message : "Failed to refresh")

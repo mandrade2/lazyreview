@@ -18,9 +18,9 @@ export function StatusBar(props: StatusBarProps) {
   
   const keybinds = () => {
     if (props.focusedPanel === "files") {
-      return "j/k:nav enter:view esc:blur tab:switch q:quit"
+      return "j/k:nav enter:view e:edit tab:switch q:quit"
     } else {
-      return "j/k:scroll ^d/^u:half ^f/^b:page esc:back tab:switch q:quit"
+      return "j/k:scroll ^d/^u:half ^f/^b:page e:edit tab:switch q:quit"
     }
   }
   
