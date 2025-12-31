@@ -46,7 +46,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
     return []
   }
   
-  const lines = statusResult.trim().split("\n")
+  const lines = statusResult.split("\n").filter(l => l.length > 0)
   
   for (const line of lines) {
     if (!line.trim()) continue
@@ -100,12 +100,12 @@ export async function getGitChanges(): Promise<FileChange[]> {
         }
       } else if (status === "deleted") {
         // For deleted files
-        const result = await Bun.$`git diff HEAD -- ${filePath}`.quiet()
+        const result = await Bun.$`git diff --no-ext-diff HEAD -- ${filePath}`.quiet()
         diff = result.stdout.toString()
       } else {
         // For modified/added files - show both staged and unstaged
-        const stagedResult = await Bun.$`git diff --cached -- ${filePath}`.quiet()
-        const unstagedResult = await Bun.$`git diff -- ${filePath}`.quiet()
+        const stagedResult = await Bun.$`git diff --no-ext-diff --cached -- ${filePath}`.quiet()
+        const unstagedResult = await Bun.$`git diff --no-ext-diff -- ${filePath}`.quiet()
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
       }
       
