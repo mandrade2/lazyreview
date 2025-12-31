@@ -7,6 +7,17 @@ export interface FileChange {
   diff: string
 }
 
+// Target directory for git operations
+let targetDir = process.cwd()
+
+export function setTargetDir(dir: string) {
+  targetDir = dir
+}
+
+export function getTargetDir() {
+  return targetDir
+}
+
 export interface DiffLine {
   type: "context" | "addition" | "deletion" | "header"
   content: string
@@ -16,7 +27,8 @@ export interface DiffLine {
 
 async function readFileContent(path: string): Promise<string> {
   try {
-    const file = Bun.file(path)
+    const fullPath = `${targetDir}/${path}`
+    const file = Bun.file(fullPath)
     return await file.text()
   } catch {
     return ""
@@ -40,7 +52,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
   const changes: FileChange[] = []
   
   // Get staged and unstaged changes
-  const statusResult = await Bun.$`git status --porcelain`.text()
+  const statusResult = await Bun.$`git -C ${targetDir} status --porcelain`.text()
   
   if (!statusResult.trim()) {
     return []
@@ -100,12 +112,12 @@ export async function getGitChanges(): Promise<FileChange[]> {
         }
       } else if (status === "deleted") {
         // For deleted files
-        const result = await Bun.$`git diff --no-ext-diff HEAD -- ${filePath}`.quiet()
+        const result = await Bun.$`git -C ${targetDir} diff --no-ext-diff HEAD -- ${filePath}`.quiet()
         diff = result.stdout.toString()
       } else {
         // For modified/added files - show both staged and unstaged
-        const stagedResult = await Bun.$`git diff --no-ext-diff --cached -- ${filePath}`.quiet()
-        const unstagedResult = await Bun.$`git diff --no-ext-diff -- ${filePath}`.quiet()
+        const stagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff --cached -- ${filePath}`.quiet()
+        const unstagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff -- ${filePath}`.quiet()
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
       }
       
