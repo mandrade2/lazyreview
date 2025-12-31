@@ -16,6 +16,14 @@ export function StatusBar(props: StatusBarProps) {
     return `${props.selectedIndex + 1}/${props.fileCount}`
   }
   
+  const keybinds = () => {
+    if (props.focusedPanel === "files") {
+      return "j/k:nav enter:view esc:blur tab:switch q:quit"
+    } else {
+      return "j/k:scroll ^d/^u:half ^f/^b:page esc:back tab:switch q:quit"
+    }
+  }
+  
   return (
     <box
       style={{
@@ -32,7 +40,7 @@ export function StatusBar(props: StatusBarProps) {
     >
       <text style={{ fg: "#58a6ff" }}>{panelText()}</text>
       <text style={{ fg: "#e6edf3" }}>{fileInfo()}</text>
-      <text style={{ fg: "#8b949e" }}>j/k:nav tab:switch r:refresh q:quit</text>
+      <text style={{ fg: "#8b949e" }}>{keybinds()}</text>
     </box>
   )
 }

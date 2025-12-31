@@ -5,6 +5,9 @@ export interface FileChange {
   additions: number
   deletions: number
   diff: string
+  content: string // Full file content
+  firstChangeLine: number // 0-indexed line number of first change
+  changedLines: Set<number> // Set of changed line numbers (0-indexed)
 }
 
 // Target directory for git operations
@@ -46,6 +49,35 @@ function generateUnifiedDiff(filePath: string, content: string): string {
   }
   
   return diffLines.join("\n")
+}
+
+// Parse a diff to extract the line numbers that were changed (0-indexed, in the new file)
+function parseChangedLines(diff: string): number[] {
+  const changedLines: number[] = []
+  let currentLine = 0
+  
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("@@")) {
+      // Parse hunk header: @@ -oldStart,oldCount +newStart,newCount @@
+      const match = line.match(/@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/)
+      if (match) {
+        currentLine = parseInt(match[1] ?? "1", 10) - 1 // Convert to 0-indexed
+      }
+    } else if (line.startsWith("+") && !line.startsWith("+++")) {
+      // Addition - this line exists in new file
+      changedLines.push(currentLine)
+      currentLine++
+    } else if (line.startsWith("-") && !line.startsWith("---")) {
+      // Deletion - don't increment currentLine (line doesn't exist in new file)
+      // But we should mark the position where deletion happened
+      changedLines.push(currentLine)
+    } else if (line.startsWith(" ") || line === "") {
+      // Context line
+      currentLine++
+    }
+  }
+  
+  return changedLines
 }
 
 export async function getGitChanges(): Promise<FileChange[]> {
@@ -97,28 +129,52 @@ export async function getGitChanges(): Promise<FileChange[]> {
       status = "modified"
     }
     
-    // Get diff for this file
+    // Get diff and full content for this file
     let diff = ""
+    let content = ""
     let additions = 0
     let deletions = 0
+    const changedLines = new Set<number>()
+    let firstChangeLine = 0
     
     try {
       if (status === "untracked") {
         // For untracked files, read content and generate diff
-        const content = await readFileContent(filePath)
+        content = await readFileContent(filePath)
         if (content) {
           diff = generateUnifiedDiff(filePath, content)
           additions = content.split("\n").length
+          // All lines are additions for untracked files
+          for (let i = 0; i < additions; i++) {
+            changedLines.add(i)
+          }
         }
       } else if (status === "deleted") {
-        // For deleted files
+        // For deleted files, get content from git
         const result = await Bun.$`git -C ${targetDir} diff --no-ext-diff HEAD -- ${filePath}`.quiet()
         diff = result.stdout.toString()
+        // Get the old content from git
+        const showResult = await Bun.$`git -C ${targetDir} show HEAD:${filePath}`.quiet()
+        content = showResult.stdout.toString()
+        // All lines are deletions
+        const lines = content.split("\n")
+        for (let i = 0; i < lines.length; i++) {
+          changedLines.add(i)
+        }
       } else {
-        // For modified/added files - show both staged and unstaged
+        // For modified/added files - get current content
+        content = await readFileContent(filePath)
+        
+        // Get diff (staged or unstaged)
         const stagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff --cached -- ${filePath}`.quiet()
         const unstagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff -- ${filePath}`.quiet()
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        
+        // Parse diff to find changed lines
+        const parsedChanges = parseChangedLines(diff)
+        for (const line of parsedChanges) {
+          changedLines.add(line)
+        }
       }
       
       // Count additions/deletions from diff
@@ -131,6 +187,11 @@ export async function getGitChanges(): Promise<FileChange[]> {
           }
         }
       }
+      
+      // Find first changed line
+      if (changedLines.size > 0) {
+        firstChangeLine = Math.min(...changedLines)
+      }
     } catch {
       // Ignore diff errors
     }
@@ -142,6 +203,9 @@ export async function getGitChanges(): Promise<FileChange[]> {
       additions,
       deletions,
       diff,
+      content,
+      firstChangeLine,
+      changedLines,
     })
   }
   
