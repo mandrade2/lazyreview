@@ -19,13 +19,18 @@ export function App() {
   
   const selectedFile = createMemo(() => files()[selectedIndex()] ?? null)
   
+  // Track the last selected file path to detect file changes
+  let lastSelectedFilePath: string | null = null
+  
   // Calculate visible height for diff viewer (terminal height - header - file header - status bar)
   const visibleHeight = createMemo(() => dimensions().height - 4)
   
   // When selected file changes, set scroll to first change line
   createEffect(() => {
     const file = selectedFile()
-    if (file) {
+    if (file && file.path !== lastSelectedFilePath) {
+      // Only reset scroll when the file actually changes
+      lastSelectedFilePath = file.path
       // Set scroll to first change line, but leave some context above if possible
       const contextLines = 3
       const targetLine = Math.max(0, file.firstChangeLine - contextLines)
@@ -103,10 +108,8 @@ export function App() {
       }
     }
     
-    // Diff navigation when focused on diff panel
+    // Diff navigation when focused on diff panel (j/k only work in diff panel)
     if (focusedPanel() === "diff") {
-      const halfPage = Math.floor(visibleHeight() / 2)
-      const fullPage = visibleHeight()
       const maxScroll = getMaxScroll()
       
       // j/k for single line
@@ -115,8 +118,17 @@ export function App() {
       } else if (key.name === "k" || key.name === "up") {
         setScrollOffset(o => Math.max(o - 1, 0))
       }
+    }
+    
+    // Global diff scroll controls (work from any panel)
+    // Ctrl+d/u/f/b, Ctrl+up/down, and g/G for scrolling the current file
+    if (selectedFile()) {
+      const halfPage = Math.floor(visibleHeight() / 2)
+      const fullPage = visibleHeight()
+      const maxScroll = getMaxScroll()
+      
       // Ctrl+d - half page down
-      else if (key.ctrl && key.name === "d") {
+      if (key.ctrl && key.name === "d") {
         setScrollOffset(o => Math.min(o + halfPage, maxScroll))
       }
       // Ctrl+u - half page up
@@ -131,12 +143,20 @@ export function App() {
       else if (key.ctrl && key.name === "b") {
         setScrollOffset(o => Math.max(o - fullPage, 0))
       }
-      // g - go to top
-      else if (key.name === "g") {
+      // Ctrl+up - single line up
+      else if (key.ctrl && key.name === "up") {
+        setScrollOffset(o => Math.max(o - 1, 0))
+      }
+      // Ctrl+down - single line down
+      else if (key.ctrl && key.name === "down") {
+        setScrollOffset(o => Math.min(o + 1, maxScroll))
+      }
+      // g - go to top of diff (only when not in files panel, to avoid conflict)
+      else if (key.name === "g" && focusedPanel() !== "files") {
         setScrollOffset(0)
       }
-      // G - go to bottom
-      else if (key.name === "G") {
+      // G - go to bottom of diff (only when not in files panel, to avoid conflict)
+      else if (key.name === "G" && focusedPanel() !== "files") {
         setScrollOffset(maxScroll)
       }
     }
