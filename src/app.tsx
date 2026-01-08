@@ -469,7 +469,9 @@ export function App() {
       if (viewState() === "list") {
         return `BRANCHES (${branches().length})`
       } else {
-        return `FILES (${files().length}) vs ${selectedBranch()?.name ?? ""}`
+        const current = currentBranch() ?? "HEAD"
+        const selected = selectedBranch()?.name ?? ""
+        return `FILES (${files().length}) · ${current} vs ${selected}`
       }
     }
   }
@@ -502,7 +504,8 @@ export function App() {
     if (mode() === "commit" && selectedCommit()) {
       return selectedCommit()!.shortHash
     } else if (mode() === "branch" && selectedBranch()) {
-      return selectedBranch()!.name
+      const current = currentBranch() ?? "HEAD"
+      return `${current} vs ${selectedBranch()!.name}`
     }
     return undefined
   }

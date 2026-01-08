@@ -38,7 +38,7 @@ export function StatusBar(props: StatusBarProps) {
       if (props.mode === "commit") {
         return `Commit: ${props.contextInfo}`
       } else if (props.mode === "branch") {
-        return `vs ${props.contextInfo}`
+        return props.contextInfo // Already formatted as "current vs selected"
       }
     }
     return ""
