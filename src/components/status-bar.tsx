@@ -55,9 +55,9 @@ export function StatusBar(props: StatusBarProps) {
     const backKey = hasBack ? "esc:back " : ""
     
     if (props.focusedPanel === "files") {
-      return `j/k:nav enter:view e:edit ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav n/N:chunk enter:view e:edit ${backKey}m:mode ?:help q:quit`
     } else {
-      return `j/k:scroll ^d/^u:half e:edit ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll n/N:chunk ^d/^u:half e:edit ${backKey}m:mode ?:help q:quit`
     }
   }
   

@@ -8,6 +8,8 @@ interface DiffViewerProps {
   focused: boolean
   scrollOffset: number
   onScroll: (offset: number) => void
+  currentChunk: number // 0-based index of current chunk
+  totalChunks: number  // total number of chunks
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -122,7 +124,10 @@ export function DiffViewer(props: DiffViewerProps) {
         <box style={{ flexDirection: "row" }}>
           <text style={{ fg: "#3fb950" }}>+{props.file.additions}</text>
           <text style={{ fg: "#f85149" }}> -{props.file.deletions}</text>
-          <text style={{ fg: "#8b949e" }}> changes | Line {props.scrollOffset + 1}/{plainLines().length}</text>
+          <text style={{ fg: "#8b949e" }}> | Line {props.scrollOffset + 1}/{plainLines().length}</text>
+          {props.totalChunks > 0 && (
+            <text style={{ fg: "#d29922" }}> | Chunk {props.currentChunk + 1}/{props.totalChunks}</text>
+          )}
         </box>
       </box>
       

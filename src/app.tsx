@@ -93,16 +93,18 @@ export function App() {
           setFiles(prev => prev.map(f => f.path === loadedFile.path ? loadedFile : f))
           setLoadingFile(false)
           
-          // Set scroll to first change line
-          const contextLines = 3
+          // Set scroll to first change line and reset chunk index
+          const contextLines = 5
           const targetLine = Math.max(0, loadedFile.firstChangeLine - contextLines)
           setScrollOffset(targetLine)
+          setCurrentChunkIndex(0)
         })
       } else {
-        // File already has content, just update scroll
-        const contextLines = 3
+        // File already has content, just update scroll and reset chunk index
+        const contextLines = 5
         const targetLine = Math.max(0, file.firstChangeLine - contextLines)
         setScrollOffset(targetLine)
+        setCurrentChunkIndex(0)
       }
     }
   })
@@ -188,6 +190,81 @@ export function App() {
     if (!file) return 0
     const totalLines = file.content.split("\n").length
     return Math.max(0, totalLines - visibleHeight())
+  }
+  
+  // Current chunk index (0-based, -1 means not on any chunk)
+  const [currentChunkIndex, setCurrentChunkIndex] = createSignal(-1)
+  
+  // Get sorted chunk start positions from changedLines
+  // A chunk is a contiguous group of changed lines
+  const getChunkPositions = (): number[] => {
+    const file = selectedFile()
+    if (!file || file.changedLines.size === 0) return []
+    
+    const sortedLines = [...file.changedLines].sort((a, b) => a - b)
+    const chunks: number[] = []
+    
+    let chunkStart = sortedLines[0]!
+    chunks.push(chunkStart)
+    
+    for (let i = 1; i < sortedLines.length; i++) {
+      const current = sortedLines[i]!
+      const prev = sortedLines[i - 1]!
+      // If there's a gap of more than 1 line, it's a new chunk
+      if (current - prev > 1) {
+        chunks.push(current)
+      }
+    }
+    
+    return chunks
+  }
+  
+  // Total chunk count for display
+  const chunkCount = createMemo(() => getChunkPositions().length)
+  
+  // Jump to a specific chunk by index
+  const jumpToChunk = (index: number) => {
+    const chunks = getChunkPositions()
+    if (chunks.length === 0) return
+    
+    const contextLines = 5
+    const chunkStart = chunks[index]!
+    const targetLine = Math.max(0, chunkStart - contextLines)
+    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+    setCurrentChunkIndex(index)
+  }
+  
+  // Jump to next chunk (n key)
+  const jumpToNextChunk = () => {
+    const chunks = getChunkPositions()
+    if (chunks.length === 0) return
+    
+    const currentIdx = currentChunkIndex()
+    if (currentIdx < 0) {
+      // Not on any chunk yet, go to first
+      jumpToChunk(0)
+    } else if (currentIdx >= chunks.length - 1) {
+      // At last chunk, wrap to first
+      jumpToChunk(0)
+    } else {
+      // Go to next chunk
+      jumpToChunk(currentIdx + 1)
+    }
+  }
+  
+  // Jump to previous chunk (N key)
+  const jumpToPrevChunk = () => {
+    const chunks = getChunkPositions()
+    if (chunks.length === 0) return
+    
+    const currentIdx = currentChunkIndex()
+    if (currentIdx <= 0) {
+      // At first chunk or not on any, wrap to last
+      jumpToChunk(chunks.length - 1)
+    } else {
+      // Go to previous chunk
+      jumpToChunk(currentIdx - 1)
+    }
   }
   
   useKeyboard((key) => {
@@ -378,6 +455,17 @@ export function App() {
       const halfPage = Math.floor(visibleHeight() / 2)
       const fullPage = visibleHeight()
       const maxScroll = getMaxScroll()
+      
+      // n - jump to next chunk
+      if (key.name === "n" && !key.shift) {
+        jumpToNextChunk()
+        return
+      }
+      // N - jump to previous chunk
+      if (key.name === "n" && key.shift) {
+        jumpToPrevChunk()
+        return
+      }
       
       // Ctrl+d - half page down
       if (key.ctrl && key.name === "d") {
@@ -662,6 +750,8 @@ export function App() {
                 focused={focusedPanel() === "diff"}
                 scrollOffset={scrollOffset()}
                 onScroll={setScrollOffset}
+                currentChunk={currentChunkIndex()}
+                totalChunks={chunkCount()}
               />
             </Show>
           </Show>

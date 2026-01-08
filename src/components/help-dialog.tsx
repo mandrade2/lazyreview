@@ -26,6 +26,7 @@ const sections = [
   {
     title: "Scrolling (Diff)",
     keybinds: [
+      { key: "n / N", desc: "Jump to next / previous chunk" },
       { key: "Ctrl+d / Ctrl+u", desc: "Half page down / up" },
       { key: "Ctrl+f / Ctrl+b", desc: "Full page down / up" },
     ],
