@@ -6,6 +6,13 @@ interface HelpDialogProps {
 
 const sections = [
   {
+    title: "Modes",
+    keybinds: [
+      { key: "m", desc: "Cycle modes: Dirty → Commit → Branch" },
+      { key: "Esc", desc: "Go back (diff → files → list)" },
+    ],
+  },
+  {
     title: "Navigation",
     keybinds: [
       { key: "j / ↓", desc: "Move down / scroll down" },
@@ -13,8 +20,7 @@ const sections = [
       { key: "g", desc: "Go to first item / top" },
       { key: "G", desc: "Go to last item / bottom" },
       { key: "Tab / h / l", desc: "Switch between panels" },
-      { key: "Enter", desc: "Open diff view" },
-      { key: "Esc", desc: "Go back to files panel" },
+      { key: "Enter", desc: "Select / open diff view" },
     ],
   },
   {
@@ -28,7 +34,7 @@ const sections = [
     title: "Actions",
     keybinds: [
       { key: "e", desc: "Open file in $EDITOR" },
-      { key: "r", desc: "Refresh file list" },
+      { key: "r", desc: "Refresh current view" },
       { key: "?", desc: "Toggle this help" },
       { key: "q / Ctrl+c", desc: "Quit" },
     ],
@@ -37,7 +43,7 @@ const sections = [
 
 export function HelpDialog(props: HelpDialogProps) {
   const dialogWidth = 50
-  const dialogHeight = 24
+  const dialogHeight = 26
 
   return (
     <box

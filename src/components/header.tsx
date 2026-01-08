@@ -1,4 +1,10 @@
-export function Header() {
+import type { AppMode } from "../utils/git"
+
+interface HeaderProps {
+  mode: AppMode
+}
+
+export function Header(props: HeaderProps) {
   return (
     <box
       style={{
@@ -11,9 +17,23 @@ export function Header() {
         alignItems: "center",
       }}
     >
-      <text style={{ fg: "#58a6ff" }}><b>LazyReview</b></text>
-      <text style={{ fg: "#8b949e" }}> - Code Review TUI</text>
-      <text style={{ fg: "#8b949e" }}>Press ? for help</text>
+      <box style={{ flexDirection: "row" }}>
+        <text style={{ fg: "#58a6ff" }}><b>LazyReview</b></text>
+      </box>
+      <box style={{ flexDirection: "row" }}>
+        <text style={{ fg: props.mode === "dirty" ? "#58a6ff" : "#6e7681" }}>
+          {props.mode === "dirty" ? "[Dirty]" : "Dirty"}
+        </text>
+        <text style={{ fg: "#6e7681" }}> </text>
+        <text style={{ fg: props.mode === "commit" ? "#58a6ff" : "#6e7681" }}>
+          {props.mode === "commit" ? "[Commit]" : "Commit"}
+        </text>
+        <text style={{ fg: "#6e7681" }}> </text>
+        <text style={{ fg: props.mode === "branch" ? "#58a6ff" : "#6e7681" }}>
+          {props.mode === "branch" ? "[Branch]" : "Branch"}
+        </text>
+      </box>
+      <text style={{ fg: "#8b949e" }}>m:mode ?:help</text>
     </box>
   )
 }

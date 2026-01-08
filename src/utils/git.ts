@@ -1,3 +1,18 @@
+export type AppMode = "dirty" | "commit" | "branch"
+
+export interface CommitInfo {
+  hash: string
+  shortHash: string
+  author: string
+  date: string
+  message: string
+}
+
+export interface BranchInfo {
+  name: string
+  isCurrent: boolean
+}
+
 export interface FileChange {
   path: string
   status: "added" | "modified" | "deleted" | "renamed" | "untracked"
@@ -262,4 +277,261 @@ export function parseDiff(diff: string): DiffLine[] {
   }
   
   return lines
+}
+
+// Get list of recent commits
+export async function getCommitList(limit = 50): Promise<CommitInfo[]> {
+  try {
+    const format = "%H|%h|%an|%ar|%s"
+    const result = await Bun.$`git -C ${targetDir} log --format=${format} -n ${limit}`.quiet()
+    const output = result.stdout.toString().trim()
+    
+    if (!output) {
+      return []
+    }
+    
+    return output.split("\n").map(line => {
+      const [hash, shortHash, author, date, ...messageParts] = line.split("|")
+      return {
+        hash: hash ?? "",
+        shortHash: shortHash ?? "",
+        author: author ?? "",
+        date: date ?? "",
+        message: messageParts.join("|"), // In case message contains |
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+// Get current branch name (null if detached HEAD)
+export async function getCurrentBranch(): Promise<string | null> {
+  try {
+    const result = await Bun.$`git -C ${targetDir} rev-parse --abbrev-ref HEAD`.quiet()
+    const branch = result.stdout.toString().trim()
+    if (branch === "HEAD") {
+      return null // Detached HEAD
+    }
+    return branch
+  } catch {
+    return null
+  }
+}
+
+// Get list of local branches
+export async function getBranchList(): Promise<BranchInfo[]> {
+  try {
+    const format = "%(refname:short)|%(HEAD)"
+    const result = await Bun.$`git -C ${targetDir} branch --format=${format}`.quiet()
+    const output = result.stdout.toString().trim()
+    
+    if (!output) {
+      return []
+    }
+    
+    return output.split("\n").map(line => {
+      const [name, head] = line.split("|")
+      return {
+        name: name ?? "",
+        isCurrent: head === "*",
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+// Get files changed in a specific commit (shows what that commit introduced)
+// Optimized to only get file list initially
+export async function getCommitChanges(commitHash: string): Promise<FileChange[]> {
+  try {
+    // Get file list only (fast) - stats loaded lazily per file
+    const statusResult = await Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r ${commitHash}`.quiet()
+    const statusOutput = statusResult.stdout.toString().trim()
+    
+    if (!statusOutput) {
+      return []
+    }
+    
+    // Parse name-status
+    const changes: FileChange[] = []
+    for (const line of statusOutput.split("\n")) {
+      if (!line.trim()) continue
+      
+      const parts = line.split("\t")
+      const statusCode = parts[0]
+      let filePath = parts.slice(1).join("\t")
+      let oldPath: string | undefined
+      
+      if (statusCode?.startsWith("R")) {
+        oldPath = parts[1]
+        filePath = parts[2] ?? filePath
+      }
+      
+      let status: FileChange["status"]
+      switch (statusCode?.[0]) {
+        case "A": status = "added"; break
+        case "D": status = "deleted"; break
+        case "R": status = "renamed"; break
+        default: status = "modified"
+      }
+      
+      changes.push({
+        path: filePath,
+        status,
+        oldPath,
+        additions: 0, // Loaded lazily via loadFileDetails
+        deletions: 0, // Loaded lazily via loadFileDetails
+        diff: "", // Loaded lazily via loadFileDetails
+        content: "", // Loaded lazily via loadFileDetails
+        firstChangeLine: 0,
+        changedLines: new Set<number>(),
+      })
+    }
+    
+    return changes
+  } catch {
+    return []
+  }
+}
+
+// Get files changed between current branch and target branch
+// This is optimized to be fast - it only gets file names initially
+// Stats, content, and diff are loaded lazily when a file is selected
+export async function getBranchChanges(targetBranch: string): Promise<FileChange[]> {
+  try {
+    // Get file list only (fast) - stats loaded lazily per file
+    const statusResult = await Bun.$`git -C ${targetDir} diff --name-status ${targetBranch}...HEAD`.quiet()
+    const statusOutput = statusResult.stdout.toString().trim()
+    
+    if (!statusOutput) {
+      return []
+    }
+    
+    // Parse name-status: status\tfilepath
+    const changes: FileChange[] = []
+    for (const line of statusOutput.split("\n")) {
+      if (!line.trim()) continue
+      
+      const parts = line.split("\t")
+      const statusCode = parts[0]
+      let filePath = parts.slice(1).join("\t")
+      let oldPath: string | undefined
+      
+      if (statusCode?.startsWith("R")) {
+        oldPath = parts[1]
+        filePath = parts[2] ?? filePath
+      }
+      
+      let status: FileChange["status"]
+      switch (statusCode?.[0]) {
+        case "A": status = "added"; break
+        case "D": status = "deleted"; break
+        case "R": status = "renamed"; break
+        default: status = "modified"
+      }
+      
+      changes.push({
+        path: filePath,
+        status,
+        oldPath,
+        additions: 0, // Loaded lazily
+        deletions: 0, // Loaded lazily
+        diff: "", // Loaded lazily
+        content: "", // Loaded lazily
+        firstChangeLine: 0,
+        changedLines: new Set<number>(),
+      })
+    }
+    
+    return changes
+  } catch {
+    return []
+  }
+}
+
+// Load full content and diff for a specific file (called when file is selected)
+export async function loadFileDetails(
+  file: FileChange,
+  compareTarget: { type: "commit"; hash: string } | { type: "branch"; name: string } | { type: "dirty" }
+): Promise<FileChange> {
+  try {
+    let diff = ""
+    let content = ""
+    
+    if (compareTarget.type === "dirty") {
+      // Dirty mode - current working tree changes
+      if (file.status === "untracked") {
+        content = await readFileContent(file.path)
+        diff = generateUnifiedDiff(file.path, content)
+      } else if (file.status === "deleted") {
+        const result = await Bun.$`git -C ${targetDir} diff --no-ext-diff HEAD -- ${file.path}`.quiet()
+        diff = result.stdout.toString()
+        const showResult = await Bun.$`git -C ${targetDir} show HEAD:${file.path}`.quiet()
+        content = showResult.stdout.toString()
+      } else {
+        content = await readFileContent(file.path)
+        const stagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff --cached -- ${file.path}`.quiet()
+        const unstagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff -- ${file.path}`.quiet()
+        diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+      }
+    } else if (compareTarget.type === "commit") {
+      // Commit mode - changes in a specific commit
+      const hash = compareTarget.hash
+      const diffResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff ${hash}^..${hash} -- ${file.path}`.quiet()
+      diff = diffResult.stdout.toString()
+      
+      if (file.status !== "deleted") {
+        const showResult = await Bun.$`git -C ${targetDir} show ${hash}:${file.path}`.quiet()
+        content = showResult.stdout.toString()
+      } else {
+        const showResult = await Bun.$`git -C ${targetDir} show ${hash}^:${file.path}`.quiet()
+        content = showResult.stdout.toString()
+      }
+    } else if (compareTarget.type === "branch") {
+      // Branch mode - changes between branches
+      const branch = compareTarget.name
+      const diffResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff ${branch}...HEAD -- ${file.path}`.quiet()
+      diff = diffResult.stdout.toString()
+      
+      if (file.status !== "deleted") {
+        content = await readFileContent(file.path)
+      } else {
+        const showResult = await Bun.$`git -C ${targetDir} show ${branch}:${file.path}`.quiet()
+        content = showResult.stdout.toString()
+      }
+    }
+    
+    // Parse diff to find changed lines and count additions/deletions
+    const changedLines = new Set<number>()
+    const parsedChanges = parseChangedLines(diff)
+    for (const lineNum of parsedChanges) {
+      changedLines.add(lineNum)
+    }
+    
+    let additions = 0
+    let deletions = 0
+    for (const diffLine of diff.split("\n")) {
+      if (diffLine.startsWith("+") && !diffLine.startsWith("+++")) {
+        additions++
+      } else if (diffLine.startsWith("-") && !diffLine.startsWith("---")) {
+        deletions++
+      }
+    }
+    
+    const firstChangeLine = changedLines.size > 0 ? Math.min(...changedLines) : 0
+    
+    return {
+      ...file,
+      diff,
+      content,
+      additions,
+      deletions,
+      firstChangeLine,
+      changedLines,
+    }
+  } catch {
+    return file
+  }
 }

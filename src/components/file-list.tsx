@@ -1,4 +1,5 @@
-import { For, Show } from "solid-js"
+import { For, Show, createMemo } from "solid-js"
+import { useTerminalDimensions } from "@opentui/solid"
 import type { FileChange } from "../utils/git"
 
 interface FileListProps {
@@ -38,6 +39,32 @@ function getDirectory(path: string): string {
 }
 
 export function FileList(props: FileListProps) {
+  const dimensions = useTerminalDimensions()
+  
+  // Calculate visible height (terminal height - app header - panel header - file list header - status bar)
+  const visibleHeight = createMemo(() => dimensions().height - 5)
+  
+  // Calculate scroll offset to keep selected item visible
+  const scrollOffset = createMemo(() => {
+    const height = visibleHeight()
+    const selected = props.selectedIndex
+    
+    if (selected < height) {
+      return 0
+    }
+    return Math.max(0, selected - Math.floor(height / 2))
+  })
+  
+  // Get visible files based on scroll offset
+  const visibleFiles = createMemo(() => {
+    const start = scrollOffset()
+    const end = start + visibleHeight()
+    return props.files.slice(start, end).map((file, i) => ({
+      file,
+      actualIndex: start + i,
+    }))
+  })
+  
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       {/* Header */}
@@ -54,16 +81,15 @@ export function FileList(props: FileListProps) {
       </box>
       
       {/* File list */}
-      <scrollbox
-        focused={props.focused}
+      <box
         style={{
           flexGrow: 1,
           flexDirection: "column",
         }}
       >
-        <For each={props.files}>
-          {(file, index) => {
-            const isSelected = () => index() === props.selectedIndex
+        <For each={visibleFiles()}>
+          {({ file, actualIndex }) => {
+            const isSelected = () => actualIndex === props.selectedIndex
             const statusIcon = getStatusIcon(file.status)
             const statusColor = getStatusColor(file.status)
             const fileName = getFileName(file.path)
@@ -96,7 +122,7 @@ export function FileList(props: FileListProps) {
             )
           }}
         </For>
-      </scrollbox>
+      </box>
     </box>
   )
 }

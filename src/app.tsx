@@ -5,12 +5,32 @@ import { DiffViewer } from "./components/diff-viewer"
 import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
-import { getGitChanges, getTargetDir, type FileChange } from "./utils/git"
+import { CommitList } from "./components/commit-list"
+import { BranchList } from "./components/branch-list"
+import {
+  getGitChanges,
+  getTargetDir,
+  getCommitList,
+  getBranchList,
+  getCurrentBranch,
+  getCommitChanges,
+  getBranchChanges,
+  loadFileDetails,
+  type FileChange,
+  type AppMode,
+  type CommitInfo,
+  type BranchInfo,
+} from "./utils/git"
 
 export function App() {
   const renderer = useRenderer()
   const dimensions = useTerminalDimensions()
   
+  // Mode and view state
+  const [mode, setMode] = createSignal<AppMode>("dirty")
+  const [viewState, setViewState] = createSignal<"list" | "files">("files")
+  
+  // File-related state
   const [files, setFiles] = createSignal<FileChange[]>([])
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [focusedPanel, setFocusedPanel] = createSignal<"files" | "diff">("files")
@@ -19,37 +39,147 @@ export function App() {
   const [scrollOffset, setScrollOffset] = createSignal(0)
   const [showHelp, setShowHelp] = createSignal(false)
   
+  // Commit mode state
+  const [commits, setCommits] = createSignal<CommitInfo[]>([])
+  const [listSelectedIndex, setListSelectedIndex] = createSignal(0)
+  const [selectedCommit, setSelectedCommit] = createSignal<CommitInfo | null>(null)
+  
+  // Branch mode state
+  const [branches, setBranches] = createSignal<BranchInfo[]>([])
+  const [selectedBranch, setSelectedBranch] = createSignal<BranchInfo | null>(null)
+  const [currentBranch, setCurrentBranch] = createSignal<string | null>(null)
+  
   const selectedFile = createMemo(() => files()[selectedIndex()] ?? null)
+  
+  // Get selectable branches (excluding current)
+  const selectableBranches = createMemo(() => 
+    branches().filter(b => !b.isCurrent)
+  )
+  
+  // Get the currently selected branch from the list
+  const getSelectedBranchFromList = (): BranchInfo | null => {
+    const selectable = selectableBranches()
+    return selectable[listSelectedIndex()] ?? null
+  }
   
   // Track the last selected file path to detect file changes
   let lastSelectedFilePath: string | null = null
+  const [loadingFile, setLoadingFile] = createSignal(false)
   
   // Calculate visible height for diff viewer (terminal height - header - file header - status bar)
   const visibleHeight = createMemo(() => dimensions().height - 4)
   
-  // When selected file changes, set scroll to first change line
+  // When selected file changes, load its details if needed (lazy loading for commit/branch modes)
   createEffect(() => {
     const file = selectedFile()
-    if (file && file.path !== lastSelectedFilePath) {
-      // Only reset scroll when the file actually changes
+    const currentMode = mode()
+    const currentViewState = viewState()
+    
+    if (file && file.path !== lastSelectedFilePath && currentViewState === "files") {
       lastSelectedFilePath = file.path
-      // Set scroll to first change line, but leave some context above if possible
-      const contextLines = 3
-      const targetLine = Math.max(0, file.firstChangeLine - contextLines)
-      setScrollOffset(targetLine)
+      
+      // Check if file needs lazy loading (no content yet)
+      if (!file.content && (currentMode === "commit" || currentMode === "branch")) {
+        setLoadingFile(true)
+        
+        const compareTarget = currentMode === "commit" && selectedCommit()
+          ? { type: "commit" as const, hash: selectedCommit()!.hash }
+          : currentMode === "branch" && selectedBranch()
+          ? { type: "branch" as const, name: selectedBranch()!.name }
+          : { type: "dirty" as const }
+        
+        loadFileDetails(file, compareTarget).then(loadedFile => {
+          // Update the file in the files array
+          setFiles(prev => prev.map(f => f.path === loadedFile.path ? loadedFile : f))
+          setLoadingFile(false)
+          
+          // Set scroll to first change line
+          const contextLines = 3
+          const targetLine = Math.max(0, loadedFile.firstChangeLine - contextLines)
+          setScrollOffset(targetLine)
+        })
+      } else {
+        // File already has content, just update scroll
+        const contextLines = 3
+        const targetLine = Math.max(0, file.firstChangeLine - contextLines)
+        setScrollOffset(targetLine)
+      }
     }
   })
   
-  // Load git changes on mount
-  ;(async () => {
+  // Load data helpers
+  const loadDirtyChanges = async () => {
+    setLoading(true)
+    setError(null)
     try {
       const changes = await getGitChanges()
       setFiles(changes)
-      setLoading(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load git changes")
+    } finally {
       setLoading(false)
     }
+  }
+  
+  const loadCommits = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const commitList = await getCommitList()
+      setCommits(commitList)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load commits")
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const loadBranches = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [branchList, current] = await Promise.all([
+        getBranchList(),
+        getCurrentBranch(),
+      ])
+      setBranches(branchList)
+      setCurrentBranch(current)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load branches")
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const loadCommitChanges = async (commit: CommitInfo) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const changes = await getCommitChanges(commit.hash)
+      setFiles(changes)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load commit changes")
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const loadBranchChanges = async (branch: BranchInfo) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const changes = await getBranchChanges(branch.name)
+      setFiles(changes)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load branch changes")
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Load git changes on mount
+  ;(async () => {
+    await loadDirtyChanges()
   })()
   
   // Helper to get max scroll for current file
@@ -61,14 +191,20 @@ export function App() {
   }
   
   useKeyboard((key) => {
+    // Quit with q or Ctrl+c - ALWAYS works, regardless of state
+    if ((key.ctrl && key.name === "c") || key.name === "q") {
+      renderer.destroy()
+      return
+    }
+    
     // Toggle help with ?
     if (key.name === "?" || key.sequence === "?") {
       setShowHelp(h => !h)
       return
     }
     
-    // Close help dialog with Escape or q
-    if ((key.name === "escape" || key.name === "q") && showHelp()) {
+    // Close help dialog with Escape
+    if (key.name === "escape" && showHelp()) {
       setShowHelp(false)
       return
     }
@@ -78,70 +214,167 @@ export function App() {
       return
     }
     
-    // Quit with q or Ctrl+c
-    if ((key.ctrl && key.name === "c") || key.name === "q") {
-      renderer.destroy()
-      return
-    }
-    
-    // Escape - go back to files panel (or quit if already there)
-    if (key.name === "escape") {
-      if (focusedPanel() === "diff") {
-        setFocusedPanel("files")
+    // Mode switching with 'm'
+    if (key.name === "m") {
+      const nextMode: AppMode = mode() === "dirty" ? "commit" 
+                               : mode() === "commit" ? "branch" 
+                               : "dirty"
+      setMode(nextMode)
+      setViewState(nextMode === "dirty" ? "files" : "list")
+      setFocusedPanel("files")
+      setListSelectedIndex(0)
+      setSelectedIndex(0)
+      setScrollOffset(0)
+      setSelectedCommit(null)
+      setSelectedBranch(null)
+      setFiles([])
+      
+      // Load data for new mode
+      if (nextMode === "dirty") {
+        loadDirtyChanges()
+      } else if (nextMode === "commit") {
+        loadCommits()
+      } else if (nextMode === "branch") {
+        loadBranches()
       }
       return
     }
     
-    // Tab to switch panels
-    if (key.name === "tab") {
+    // Escape - hierarchical back navigation
+    if (key.name === "escape") {
+      if (focusedPanel() === "diff") {
+        // Diff -> Files
+        setFocusedPanel("files")
+        return
+      }
+      if (viewState() === "files" && mode() !== "dirty") {
+        // Files -> List (for commit/branch modes)
+        setViewState("list")
+        setSelectedCommit(null)
+        setSelectedBranch(null)
+        setFiles([])
+        setSelectedIndex(0)
+        setScrollOffset(0)
+        // Don't reset listSelectedIndex - keep the previous selection
+        return
+      }
+      // At top level (list view or dirty mode files), do nothing
+      return
+    }
+    
+    // Tab to switch panels (only in files view)
+    if (key.name === "tab" && viewState() === "files") {
       setFocusedPanel(p => p === "files" ? "diff" : "files")
       return
     }
     
-    // Enter to view diff (from files panel)
-    if (key.name === "return" && focusedPanel() === "files" && selectedFile()) {
-      setFocusedPanel("diff")
+    // Enter key handling
+    if (key.name === "return") {
+      if (viewState() === "list") {
+        // In list view: select commit/branch and load changes
+        if (mode() === "commit") {
+          const commit = commits()[listSelectedIndex()]
+          if (commit) {
+            setSelectedCommit(commit)
+            setViewState("files")
+            setFocusedPanel("files")
+            setSelectedIndex(0)
+            setScrollOffset(0)
+            loadCommitChanges(commit)
+          }
+        } else if (mode() === "branch") {
+          const branch = getSelectedBranchFromList()
+          if (branch) {
+            setSelectedBranch(branch)
+            setViewState("files")
+            setFocusedPanel("files")
+            setSelectedIndex(0)
+            setScrollOffset(0)
+            loadBranchChanges(branch)
+          }
+        }
+      } else if (focusedPanel() === "files" && selectedFile()) {
+        // In files view: switch to diff panel
+        setFocusedPanel("diff")
+      }
       return
     }
     
-    // h/l to switch panels (vim style)
-    if (key.name === "h" && focusedPanel() === "diff") {
-      setFocusedPanel("files")
-      return
-    }
-    if (key.name === "l" && focusedPanel() === "files") {
-      setFocusedPanel("diff")
-      return
-    }
-    
-    // File list navigation when focused on files panel
-    if (focusedPanel() === "files") {
-      if (key.name === "j" || key.name === "down") {
-        setSelectedIndex(i => Math.min(i + 1, files().length - 1))
-      } else if (key.name === "k" || key.name === "up") {
-        setSelectedIndex(i => Math.max(i - 1, 0))
-      } else if (key.name === "g" && !key.shift) {
-        setSelectedIndex(0)
-      } else if (key.name === "g" && key.shift) {
-        setSelectedIndex(files().length - 1)
+    // h/l to switch panels (vim style) - only in files view
+    if (viewState() === "files") {
+      if (key.name === "h" && focusedPanel() === "diff") {
+        setFocusedPanel("files")
+        return
+      }
+      if (key.name === "l" && focusedPanel() === "files") {
+        setFocusedPanel("diff")
+        return
       }
     }
     
-    // Diff navigation when focused on diff panel (j/k only work in diff panel)
-    if (focusedPanel() === "diff") {
-      const maxScroll = getMaxScroll()
-      
-      // j/k for single line
-      if (key.name === "j" || key.name === "down") {
+    // Navigation with j/k
+    if (key.name === "j" || key.name === "down") {
+      if (viewState() === "list") {
+        // List navigation
+        if (mode() === "commit") {
+          setListSelectedIndex(i => Math.min(i + 1, commits().length - 1))
+        } else if (mode() === "branch") {
+          setListSelectedIndex(i => Math.min(i + 1, selectableBranches().length - 1))
+        }
+      } else if (focusedPanel() === "files") {
+        // File list navigation
+        setSelectedIndex(i => Math.min(i + 1, files().length - 1))
+      } else if (focusedPanel() === "diff") {
+        // Diff scroll
+        const maxScroll = getMaxScroll()
         setScrollOffset(o => Math.min(o + 1, maxScroll))
-      } else if (key.name === "k" || key.name === "up") {
+      }
+      return
+    }
+    
+    if (key.name === "k" || key.name === "up") {
+      if (viewState() === "list") {
+        // List navigation
+        setListSelectedIndex(i => Math.max(i - 1, 0))
+      } else if (focusedPanel() === "files") {
+        // File list navigation
+        setSelectedIndex(i => Math.max(i - 1, 0))
+      } else if (focusedPanel() === "diff") {
+        // Diff scroll
         setScrollOffset(o => Math.max(o - 1, 0))
       }
+      return
     }
     
-    // Global diff scroll controls (work from any panel)
-    // Ctrl+d/u/f/b, Ctrl+up/down, and g/G for scrolling the current file
-    if (selectedFile()) {
+    // g/G for jump to top/bottom
+    if (key.name === "g" && !key.shift) {
+      if (viewState() === "list") {
+        setListSelectedIndex(0)
+      } else if (focusedPanel() === "files") {
+        setSelectedIndex(0)
+      } else if (focusedPanel() === "diff") {
+        setScrollOffset(0)
+      }
+      return
+    }
+    
+    if (key.name === "g" && key.shift) {
+      if (viewState() === "list") {
+        if (mode() === "commit") {
+          setListSelectedIndex(commits().length - 1)
+        } else if (mode() === "branch") {
+          setListSelectedIndex(selectableBranches().length - 1)
+        }
+      } else if (focusedPanel() === "files") {
+        setSelectedIndex(files().length - 1)
+      } else if (focusedPanel() === "diff") {
+        setScrollOffset(getMaxScroll())
+      }
+      return
+    }
+    
+    // Global diff scroll controls (work from any panel when in files view)
+    if (viewState() === "files" && selectedFile()) {
       const halfPage = Math.floor(visibleHeight() / 2)
       const fullPage = visibleHeight()
       const maxScroll = getMaxScroll()
@@ -149,53 +382,57 @@ export function App() {
       // Ctrl+d - half page down
       if (key.ctrl && key.name === "d") {
         setScrollOffset(o => Math.min(o + halfPage, maxScroll))
+        return
       }
       // Ctrl+u - half page up
-      else if (key.ctrl && key.name === "u") {
+      if (key.ctrl && key.name === "u") {
         setScrollOffset(o => Math.max(o - halfPage, 0))
+        return
       }
       // Ctrl+f - full page down
-      else if (key.ctrl && key.name === "f") {
+      if (key.ctrl && key.name === "f") {
         setScrollOffset(o => Math.min(o + fullPage, maxScroll))
+        return
       }
       // Ctrl+b - full page up
-      else if (key.ctrl && key.name === "b") {
+      if (key.ctrl && key.name === "b") {
         setScrollOffset(o => Math.max(o - fullPage, 0))
+        return
       }
       // Ctrl+up - single line up
-      else if (key.ctrl && key.name === "up") {
+      if (key.ctrl && key.name === "up") {
         setScrollOffset(o => Math.max(o - 1, 0))
+        return
       }
       // Ctrl+down - single line down
-      else if (key.ctrl && key.name === "down") {
+      if (key.ctrl && key.name === "down") {
         setScrollOffset(o => Math.min(o + 1, maxScroll))
-      }
-      // g - go to top of diff (only when not in files panel, to avoid conflict)
-      else if (key.name === "g" && !key.shift && focusedPanel() !== "files") {
-        setScrollOffset(0)
-      }
-      // G (shift+g) - go to bottom of diff (only when not in files panel, to avoid conflict)
-      else if (key.name === "g" && key.shift && focusedPanel() !== "files") {
-        setScrollOffset(maxScroll)
+        return
       }
     }
     
-    // Refresh with 'r'
+    // Refresh with 'r' - refreshes current mode's data
     if (key.name === "r") {
-      setLoading(true)
-      getGitChanges().then(changes => {
-        setFiles(changes)
-        setSelectedIndex(0)
-        setScrollOffset(0)
-        setLoading(false)
-      }).catch(e => {
-        setError(e instanceof Error ? e.message : "Failed to refresh")
-        setLoading(false)
-      })
+      if (mode() === "dirty") {
+        loadDirtyChanges()
+      } else if (mode() === "commit") {
+        if (viewState() === "list") {
+          loadCommits()
+        } else if (selectedCommit()) {
+          loadCommitChanges(selectedCommit()!)
+        }
+      } else if (mode() === "branch") {
+        if (viewState() === "list") {
+          loadBranches()
+        } else if (selectedBranch()) {
+          loadBranchChanges(selectedBranch()!)
+        }
+      }
+      return
     }
     
-    // Open file in editor with 'e'
-    if (key.name === "e" && selectedFile()) {
+    // Open file in editor with 'e' (only in files view with a selected file)
+    if (key.name === "e" && viewState() === "files" && selectedFile()) {
       const editor = process.env.EDITOR ?? process.env.VISUAL ?? "vi"
       const filePath = `${getTargetDir()}/${selectedFile()!.path}`
       // Suspend terminal UI, run editor, then resume
@@ -206,17 +443,69 @@ export function App() {
         stderr: "inherit",
       })
       renderer.resume()
-      // Refresh file list to pick up any changes made in editor
-      setLoading(true)
-      getGitChanges().then(changes => {
-        setFiles(changes)
-        setLoading(false)
-      }).catch(e => {
-        setError(e instanceof Error ? e.message : "Failed to refresh")
-        setLoading(false)
-      })
+      // Refresh current mode's data after editing
+      if (mode() === "dirty") {
+        loadDirtyChanges()
+      } else if (mode() === "commit" && selectedCommit()) {
+        loadCommitChanges(selectedCommit()!)
+      } else if (mode() === "branch" && selectedBranch()) {
+        loadBranchChanges(selectedBranch()!)
+      }
+      return
     }
   })
+  
+  // Left panel header text based on mode and view state
+  const leftPanelHeader = () => {
+    if (mode() === "dirty") {
+      return `FILES (${files().length})`
+    } else if (mode() === "commit") {
+      if (viewState() === "list") {
+        return `COMMITS (${commits().length})`
+      } else {
+        return `FILES (${files().length}) · ${selectedCommit()?.shortHash ?? ""}`
+      }
+    } else {
+      if (viewState() === "list") {
+        return `BRANCHES (${branches().length})`
+      } else {
+        return `FILES (${files().length}) vs ${selectedBranch()?.name ?? ""}`
+      }
+    }
+  }
+  
+  // Diff panel placeholder message
+  const diffPlaceholderMessage = () => {
+    if (mode() === "dirty") {
+      return files().length === 0 ? "No changes detected" : "Select a file to view diff"
+    } else if (mode() === "commit") {
+      if (viewState() === "list") {
+        return "Select a commit to view its changes"
+      }
+      return files().length === 0 ? "No files changed in this commit" : "Select a file to view diff"
+    } else {
+      if (viewState() === "list") {
+        if (currentBranch() === null) {
+          return "Cannot compare branches: HEAD is detached"
+        }
+        if (selectableBranches().length === 0) {
+          return "No other branches to compare against"
+        }
+        return `Select a branch to compare against ${currentBranch()}`
+      }
+      return files().length === 0 ? "No differences between branches" : "Select a file to view diff"
+    }
+  }
+  
+  // Context info for status bar
+  const contextInfo = () => {
+    if (mode() === "commit" && selectedCommit()) {
+      return selectedCommit()!.shortHash
+    } else if (mode() === "branch" && selectedBranch()) {
+      return selectedBranch()!.name
+    }
+    return undefined
+  }
   
   return (
     <box
@@ -227,10 +516,10 @@ export function App() {
         backgroundColor: "#0d1117",
       }}
     >
-      <Header />
+      <Header mode={mode()} />
       
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
-        {/* File list sidebar */}
+        {/* Left sidebar - files, commits, or branches */}
         <box
           style={{
             width: 35,
@@ -248,7 +537,7 @@ export function App() {
             }}
           >
             <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e" }}>
-              <b>FILES</b> ({files().length})
+              <b>{leftPanelHeader()}</b>
             </text>
           </box>
           <Show
@@ -267,11 +556,50 @@ export function App() {
                 </box>
               }
             >
-              <FileList
-                files={files()}
-                selectedIndex={selectedIndex()}
-                focused={focusedPanel() === "files"}
-              />
+              {/* Dirty mode or files view: show file list */}
+              <Show when={mode() === "dirty" || viewState() === "files"}>
+                <FileList
+                  files={files()}
+                  selectedIndex={selectedIndex()}
+                  focused={focusedPanel() === "files"}
+                />
+              </Show>
+              
+              {/* Commit mode list view: show commits */}
+              <Show when={mode() === "commit" && viewState() === "list"}>
+                <Show
+                  when={commits().length > 0}
+                  fallback={
+                    <box style={{ padding: 1 }}>
+                      <text style={{ fg: "#8b949e" }}>No commits found</text>
+                    </box>
+                  }
+                >
+                  <CommitList
+                    commits={commits()}
+                    selectedIndex={listSelectedIndex()}
+                    focused={focusedPanel() === "files"}
+                  />
+                </Show>
+              </Show>
+              
+              {/* Branch mode list view: show branches */}
+              <Show when={mode() === "branch" && viewState() === "list"}>
+                <Show
+                  when={branches().length > 0}
+                  fallback={
+                    <box style={{ padding: 1 }}>
+                      <text style={{ fg: "#8b949e" }}>No branches found</text>
+                    </box>
+                  }
+                >
+                  <BranchList
+                    branches={branches()}
+                    selectedIndex={listSelectedIndex()}
+                    focused={focusedPanel() === "files"}
+                  />
+                </Show>
+              </Show>
             </Show>
           </Show>
         </box>
@@ -297,7 +625,7 @@ export function App() {
             </text>
           </box>
           <Show
-            when={selectedFile()}
+            when={viewState() === "files" && selectedFile()}
             fallback={
               <box
                 style={{
@@ -307,25 +635,45 @@ export function App() {
                 }}
               >
                 <text style={{ fg: "#8b949e" }}>
-                  {files().length === 0 ? "No changes detected" : "Select a file to view diff"}
+                  {diffPlaceholderMessage()}
                 </text>
               </box>
             }
           >
-            <DiffViewer
-              file={selectedFile()!}
-              focused={focusedPanel() === "diff"}
-              scrollOffset={scrollOffset()}
-              onScroll={setScrollOffset}
-            />
+            <Show
+              when={!loadingFile() && selectedFile()?.content}
+              fallback={
+                <box
+                  style={{
+                    flexGrow: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <text style={{ fg: "#8b949e" }}>Loading file...</text>
+                </box>
+              }
+            >
+              <DiffViewer
+                file={selectedFile()!}
+                focused={focusedPanel() === "diff"}
+                scrollOffset={scrollOffset()}
+                onScroll={setScrollOffset}
+              />
+            </Show>
           </Show>
         </box>
       </box>
       
       <StatusBar
+        mode={mode()}
+        viewState={viewState()}
         fileCount={files().length}
         selectedIndex={selectedIndex()}
         focusedPanel={focusedPanel()}
+        listCount={mode() === "commit" ? commits().length : selectableBranches().length}
+        listSelectedIndex={listSelectedIndex()}
+        contextInfo={contextInfo()}
       />
       
       <Show when={showHelp()}>
