@@ -1,0 +1,254 @@
+#!/usr/bin/env bash
+set -euo pipefail
+APP=lazyreview
+REPO="mandrade2/lazyreview"
+
+MUTED='\033[0;2m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[38;5;214m'
+NC='\033[0m'
+
+usage() {
+    cat <<EOF
+LazyReview Installer
+
+Usage: install.sh [options]
+
+Options:
+    -h, --help              Display this help message
+    -v, --version <version> Install a specific version (e.g., 0.1.0)
+        --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
+
+Examples:
+    curl -fsSL https://raw.githubusercontent.com/$REPO/master/install | bash
+    curl -fsSL https://raw.githubusercontent.com/$REPO/master/install | bash -s -- --version 0.1.0
+EOF
+}
+
+requested_version=${VERSION:-}
+no_modify_path=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            if [[ -n "${2:-}" ]]; then
+                requested_version="$2"
+                shift 2
+            else
+                echo -e "${RED}Error: --version requires a version argument${NC}"
+                exit 1
+            fi
+            ;;
+        --no-modify-path)
+            no_modify_path=true
+            shift
+            ;;
+        *)
+            echo -e "${ORANGE}Warning: Unknown option '$1'${NC}" >&2
+            shift
+            ;;
+    esac
+done
+
+# Determine installation directory
+if [ -n "${LAZYREVIEW_INSTALL_DIR:-}" ]; then
+    INSTALL_DIR="$LAZYREVIEW_INSTALL_DIR"
+elif [ -n "${XDG_BIN_DIR:-}" ]; then
+    INSTALL_DIR="$XDG_BIN_DIR"
+elif [ -d "$HOME/bin" ] || mkdir -p "$HOME/bin" 2>/dev/null; then
+    INSTALL_DIR="$HOME/bin"
+else
+    INSTALL_DIR="$HOME/.lazyreview/bin"
+fi
+mkdir -p "$INSTALL_DIR"
+
+# Detect OS and architecture
+raw_os=$(uname -s)
+os=$(echo "$raw_os" | tr '[:upper:]' '[:lower:]')
+case "$raw_os" in
+  Darwin*) os="darwin" ;;
+  Linux*) os="linux" ;;
+  MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+esac
+
+arch=$(uname -m)
+if [[ "$arch" == "aarch64" ]]; then
+  arch="arm64"
+fi
+if [[ "$arch" == "x86_64" ]]; then
+  arch="x64"
+fi
+
+# Check for Rosetta on macOS
+if [ "$os" = "darwin" ] && [ "$arch" = "x64" ]; then
+  rosetta_flag=$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)
+  if [ "$rosetta_flag" = "1" ]; then
+    arch="arm64"
+  fi
+fi
+
+combo="$os-$arch"
+case "$combo" in
+  linux-x64|linux-arm64|darwin-x64|darwin-arm64|windows-x64)
+    ;;
+  *)
+    echo -e "${RED}Unsupported OS/Arch: $os/$arch${NC}"
+    exit 1
+    ;;
+esac
+
+# Determine filename
+filename="$APP-$os-$arch"
+if [ "$os" = "windows" ]; then
+  filename="$APP-windows-$arch"
+fi
+
+# Check for unzip
+if ! command -v unzip >/dev/null 2>&1; then
+    echo -e "${RED}Error: 'unzip' is required but not installed.${NC}"
+    exit 1
+fi
+
+# Determine version and URL
+if [ -z "$requested_version" ]; then
+    url="https://github.com/$REPO/releases/latest/download/$filename.zip"
+    specific_version=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p')
+    
+    if [[ $? -ne 0 || -z "$specific_version" ]]; then
+        echo -e "${RED}Failed to fetch version information${NC}"
+        exit 1
+    fi
+else
+    requested_version="${requested_version#v}"
+    url="https://github.com/$REPO/releases/download/v${requested_version}/$filename.zip"
+    specific_version=$requested_version
+    
+    # Verify release exists
+    http_status=$(curl -sI -o /dev/null -w "%{http_code}" "https://github.com/$REPO/releases/tag/v${requested_version}")
+    if [ "$http_status" = "404" ]; then
+        echo -e "${RED}Error: Release v${requested_version} not found${NC}"
+        echo -e "${MUTED}Available releases: https://github.com/$REPO/releases${NC}"
+        exit 1
+    fi
+fi
+
+print_message() {
+    local level=$1
+    local message=$2
+    local color=""
+
+    case $level in
+        info) color="${NC}" ;;
+        success) color="${GREEN}" ;;
+        warning) color="${ORANGE}" ;;
+        error) color="${RED}" ;;
+    esac
+
+    echo -e "${color}${message}${NC}"
+}
+
+check_version() {
+    if command -v lazyreview >/dev/null 2>&1; then
+        installed_version=$(lazyreview --version 2>/dev/null || echo "")
+        
+        if [[ "$installed_version" == "$specific_version" ]]; then
+            print_message info "${MUTED}Version ${NC}$specific_version${MUTED} already installed${NC}"
+            exit 0
+        elif [[ -n "$installed_version" ]]; then
+            print_message info "${MUTED}Upgrading from ${NC}$installed_version${MUTED} to ${NC}$specific_version"
+        fi
+    fi
+}
+
+download_and_install() {
+    print_message info "\n${MUTED}Installing ${NC}lazyreview ${MUTED}v${NC}$specific_version"
+    
+    local tmp_dir="${TMPDIR:-/tmp}/lazyreview_install_$$"
+    mkdir -p "$tmp_dir"
+    
+    echo -e "${MUTED}Downloading...${NC}"
+    curl -# -L -o "$tmp_dir/$filename.zip" "$url"
+    
+    unzip -q "$tmp_dir/$filename.zip" -d "$tmp_dir"
+    mv "$tmp_dir/$filename" "$INSTALL_DIR/lazyreview"
+    chmod 755 "$INSTALL_DIR/lazyreview"
+    rm -rf "$tmp_dir"
+}
+
+check_version
+download_and_install
+
+add_to_path() {
+    local config_file=$1
+    local command=$2
+
+    if grep -Fxq "$command" "$config_file" 2>/dev/null; then
+        return 0
+    elif [[ -w $config_file ]]; then
+        echo -e "\n# lazyreview" >> "$config_file"
+        echo "$command" >> "$config_file"
+        print_message info "${MUTED}Added ${NC}lazyreview ${MUTED}to \$PATH in ${NC}$config_file"
+    fi
+}
+
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+current_shell=$(basename "$SHELL")
+case $current_shell in
+    fish)
+        config_files="$HOME/.config/fish/config.fish"
+        path_cmd="fish_add_path $INSTALL_DIR"
+    ;;
+    zsh)
+        config_files="$HOME/.zshrc $HOME/.zshenv $XDG_CONFIG_HOME/zsh/.zshrc"
+        path_cmd="export PATH=$INSTALL_DIR:\$PATH"
+    ;;
+    bash)
+        config_files="$HOME/.bashrc $HOME/.bash_profile $HOME/.profile"
+        path_cmd="export PATH=$INSTALL_DIR:\$PATH"
+    ;;
+    *)
+        config_files="$HOME/.bashrc $HOME/.profile"
+        path_cmd="export PATH=$INSTALL_DIR:\$PATH"
+    ;;
+esac
+
+if [[ "$no_modify_path" != "true" ]] && [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    config_file=""
+    for file in $config_files; do
+        if [[ -f $file ]]; then
+            config_file=$file
+            break
+        fi
+    done
+
+    if [[ -n "$config_file" ]]; then
+        add_to_path "$config_file" "$path_cmd"
+    fi
+fi
+
+# GitHub Actions support
+if [ -n "${GITHUB_ACTIONS-}" ] && [ "${GITHUB_ACTIONS}" == "true" ]; then
+    echo "$INSTALL_DIR" >> $GITHUB_PATH
+fi
+
+echo ""
+echo -e "${GREEN}LazyReview installed successfully!${NC}"
+echo ""
+echo -e "${MUTED}To get started:${NC}"
+echo ""
+echo -e "  cd <your-git-repo>"
+echo -e "  lazyreview"
+echo ""
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    echo -e "${MUTED}Note: Restart your shell or run:${NC}"
+    echo -e "  export PATH=$INSTALL_DIR:\$PATH"
+    echo ""
+fi
+echo -e "${MUTED}For more information: ${NC}https://github.com/$REPO"
+echo ""

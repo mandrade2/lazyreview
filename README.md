@@ -15,31 +15,25 @@ LazyReview is a focused tool for one thing: reviewing your uncommitted changes w
 
 ## Installation
 
+### Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mandrade2/lazyreview/master/install | bash
+```
+
+This auto-detects your OS/architecture and installs the appropriate binary.
+
 ### Download Binary
 
 Download the latest release for your platform from [Releases](https://github.com/mandrade2/lazyreview/releases):
 
-```bash
-# macOS (Apple Silicon)
-curl -L https://github.com/mandrade2/lazyreview/releases/latest/download/lazyreview-darwin-arm64.zip -o lazyreview.zip
-unzip lazyreview.zip && chmod +x lazyreview-darwin-arm64
-sudo mv lazyreview-darwin-arm64 /usr/local/bin/lazyreview
-
-# macOS (Intel)
-curl -L https://github.com/mandrade2/lazyreview/releases/latest/download/lazyreview-darwin-x64.zip -o lazyreview.zip
-unzip lazyreview.zip && chmod +x lazyreview-darwin-x64
-sudo mv lazyreview-darwin-x64 /usr/local/bin/lazyreview
-
-# Linux (x64)
-curl -L https://github.com/mandrade2/lazyreview/releases/latest/download/lazyreview-linux-x64.zip -o lazyreview.zip
-unzip lazyreview.zip && chmod +x lazyreview-linux-x64
-sudo mv lazyreview-linux-x64 /usr/local/bin/lazyreview
-
-# Linux (ARM64)
-curl -L https://github.com/mandrade2/lazyreview/releases/latest/download/lazyreview-linux-arm64.zip -o lazyreview.zip
-unzip lazyreview.zip && chmod +x lazyreview-linux-arm64
-sudo mv lazyreview-linux-arm64 /usr/local/bin/lazyreview
-```
+| Platform | Download |
+|----------|----------|
+| macOS (Apple Silicon) | `lazyreview-darwin-arm64.zip` |
+| macOS (Intel) | `lazyreview-darwin-x64.zip` |
+| Linux (x64) | `lazyreview-linux-x64.zip` |
+| Linux (ARM64) | `lazyreview-linux-arm64.zip` |
+| Windows (x64) | `lazyreview-windows-x64.zip` |
 
 ### From Source
 

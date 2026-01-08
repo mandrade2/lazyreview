@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# LazyReview development script - runs from source
+TARGET_DIR="${1:-$(pwd)}"
+
+# Resolve symlinks to get the actual script location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+
+cd "$SCRIPT_DIR"
+exec bun run index.ts "$TARGET_DIR"

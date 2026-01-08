@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-# Run lazyreview from any directory
-# Save the target directory (where we want to review)
-TARGET_DIR="${1:-$(pwd)}"
-
-cd /Users/matias/Projects/lazyreview
-exec bun run index.ts "$TARGET_DIR"

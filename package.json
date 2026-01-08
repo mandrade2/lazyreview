@@ -1,9 +1,31 @@
 {
   "name": "lazyreview",
   "version": "0.1.0",
+  "description": "A terminal UI for reviewing git changes with syntax highlighting",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "bin": {
+    "lazyreview": "./index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mandrade2/lazyreview.git"
+  },
+  "homepage": "https://github.com/mandrade2/lazyreview",
+  "bugs": {
+    "url": "https://github.com/mandrade2/lazyreview/issues"
+  },
+  "keywords": [
+    "git",
+    "diff",
+    "code-review",
+    "terminal",
+    "tui",
+    "cli",
+    "syntax-highlighting"
+  ],
+  "author": "Matías Andrade",
+  "license": "MIT",
   "scripts": {
     "build": "bun run script/build.ts",
     "build:local": "bun run script/build.ts --single",

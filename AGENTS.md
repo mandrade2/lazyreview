@@ -25,8 +25,11 @@ bun install
 ```
 lazyreview/
 ├── index.ts                 # Entry point - renders App, handles CLI args
-├── bin/lazyreview           # Shell wrapper for global CLI usage
+├── install                  # Install script for curl installation
 ├── bunfig.toml              # Bun config with OpenTUI preload
+├── script/
+│   ├── build.ts             # Cross-platform binary builder
+│   └── release.ts           # Release automation script
 ├── src/
 │   ├── app.tsx              # Main app component - layout, state, keyboard
 │   ├── components/
