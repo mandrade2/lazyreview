@@ -153,7 +153,7 @@ export function DiffViewer(props: DiffViewerProps) {
               <box
                 style={{
                   flexDirection: "row",
-                  backgroundColor: line.isChanged ? "#0f1a0f" : "#0d1117",
+                  backgroundColor: "#0d1117",
                   height: 1,
                 }}
               >
@@ -161,10 +161,10 @@ export function DiffViewer(props: DiffViewerProps) {
                 <box
                   style={{
                     width: lineNumberWidth(),
-                    backgroundColor: line.isChanged ? "#0f1a0f" : "#161b22",
+                    backgroundColor: "#161b22",
                   }}
                 >
-                  <text style={{ fg: line.isChanged ? "#3fb950" : "#484f58" }}>
+                  <text style={{ fg: "#484f58" }}>
                     {String(line.lineNumber + 1).padStart(lineNumberWidth() - 1, " ")} 
                   </text>
                 </box>
@@ -172,7 +172,7 @@ export function DiffViewer(props: DiffViewerProps) {
                 <box
                   style={{
                     width: 1,
-                    backgroundColor: line.isChanged ? "#0f1a0f" : "#0d1117",
+                    backgroundColor: "#0d1117",
                   }}
                 >
                   <text style={{ fg: line.isChanged ? "#3fb950" : "#0d1117" }}>
