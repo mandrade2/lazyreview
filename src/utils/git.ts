@@ -99,7 +99,8 @@ export async function getGitChanges(): Promise<FileChange[]> {
   const changes: FileChange[] = []
   
   // Get staged and unstaged changes
-  const statusResult = await Bun.$`git -C ${targetDir} status --porcelain`.text()
+  // Use -uall to show all untracked files (not just directories)
+  const statusResult = await Bun.$`git -C ${targetDir} status --porcelain -uall`.text()
   
   if (!statusResult.trim()) {
     return []
