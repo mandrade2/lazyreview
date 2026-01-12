@@ -1,5 +1,6 @@
 import { createSignal, createMemo, createEffect, Show } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
+import type { MouseEvent } from "@opentui/core"
 import { FileList } from "./components/file-list"
 import { DiffViewer } from "./components/diff-viewer"
 import { Header } from "./components/header"
@@ -267,6 +268,36 @@ export function App() {
     }
   }
   
+  // Mouse scroll handler for left sidebar (file/commit/branch lists)
+  const handleSidebarScroll = (event: MouseEvent) => {
+    if (event.type !== "scroll" || !event.scroll) return
+
+    const delta = event.scroll.direction === "up" ? -4 : 4
+
+    if (viewState() === "list") {
+      // Commit or branch list
+      if (mode() === "commit") {
+        setListSelectedIndex(i => Math.max(0, Math.min(i + delta, commits().length - 1)))
+      } else if (mode() === "branch") {
+        setListSelectedIndex(i => Math.max(0, Math.min(i + delta, selectableBranches().length - 1)))
+      }
+    } else {
+      // File list
+      setSelectedIndex(i => Math.max(0, Math.min(i + delta, files().length - 1)))
+    }
+  }
+
+  // Mouse scroll handler for diff viewer
+  const handleDiffScroll = (event: MouseEvent) => {
+    if (event.type !== "scroll" || !event.scroll) return
+
+    const delta = event.scroll.direction === "up" ? -6 : 6
+    setScrollOffset(o => {
+      const maxScroll = getMaxScroll()
+      return Math.max(0, Math.min(o + delta, maxScroll))
+    })
+  }
+
   useKeyboard((key) => {
     // Quit with q or Ctrl+c - ALWAYS works, regardless of state
     if ((key.ctrl && key.name === "c") || key.name === "q") {
@@ -612,6 +643,7 @@ export function App() {
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
         {/* Left sidebar - files, commits, or branches */}
         <box
+          onMouseScroll={handleSidebarScroll}
           style={{
             width: 35,
             flexShrink: 0,
@@ -697,6 +729,7 @@ export function App() {
         
         {/* Diff viewer */}
         <box
+          onMouseScroll={handleDiffScroll}
           style={{
             flexGrow: 1,
             flexDirection: "column",

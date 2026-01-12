@@ -1,4 +1,4 @@
-import { createMemo, createSignal, createEffect, For, Show } from "solid-js"
+import { createMemo, createSignal, createEffect, Index, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
 import { highlightCode, type HighlightedLine } from "../utils/syntax"
@@ -148,7 +148,7 @@ export function DiffViewer(props: DiffViewerProps) {
         }
       >
         <box style={{ flexDirection: "column", flexGrow: 1, backgroundColor: "#0d1117" }}>
-          <For each={visibleLines()}>
+          <Index each={visibleLines()}>
             {(line) => (
               <box
                 style={{
@@ -165,7 +165,7 @@ export function DiffViewer(props: DiffViewerProps) {
                   }}
                 >
                   <text style={{ fg: "#484f58" }}>
-                    {String(line.lineNumber + 1).padStart(lineNumberWidth() - 1, " ")} 
+                    {String(line().lineNumber + 1).padStart(lineNumberWidth() - 1, " ")}
                   </text>
                 </box>
                 {/* Change indicator */}
@@ -175,8 +175,8 @@ export function DiffViewer(props: DiffViewerProps) {
                     backgroundColor: "#0d1117",
                   }}
                 >
-                  <text style={{ fg: line.isChanged ? "#3fb950" : "#0d1117" }}>
-                    {line.isChanged ? "+" : " "}
+                  <text style={{ fg: line().isChanged ? "#3fb950" : "#0d1117" }}>
+                    {line().isChanged ? "+" : " "}
                   </text>
                 </box>
                 {/* Content with syntax highlighting */}
@@ -186,20 +186,20 @@ export function DiffViewer(props: DiffViewerProps) {
                     flexShrink: 1,
                   }}
                 >
-                  <For each={line.tokens}>
+                  <Index each={line().tokens}>
                     {(token) => (
                       <span style={{
-                        fg: token.color,
-                        bold: token.bold,
-                        italic: token.italic,
-                        dim: token.dim,
-                      }}>{token.content}</span>
+                        fg: token().color,
+                        bold: token().bold,
+                        italic: token().italic,
+                        dim: token().dim,
+                      }}>{token().content}</span>
                     )}
-                  </For>
+                  </Index>
                 </text>
               </box>
             )}
-          </For>
+          </Index>
         </box>
       </Show>
     </box>

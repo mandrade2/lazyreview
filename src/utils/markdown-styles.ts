@@ -84,7 +84,12 @@ function formatMarkdownTables(lines: HighlightedLine[]): HighlightedLine[] {
   let i = 0
 
   while (i < lines.length) {
-    const lineText = lines[i].map(t => t.content).join("")
+    const currentLine = lines[i]
+    if (!currentLine) {
+      i++
+      continue
+    }
+    const lineText = currentLine.map(t => t.content).join("")
 
     // Check if this starts a table
     if (isTableRow(lineText)) {
@@ -93,7 +98,9 @@ function formatMarkdownTables(lines: HighlightedLine[]): HighlightedLine[] {
       let tableEnd = i
 
       while (tableEnd < lines.length) {
-        const checkText = lines[tableEnd].map(t => t.content).join("")
+        const checkLine = lines[tableEnd]
+        if (!checkLine) break
+        const checkText = checkLine.map(t => t.content).join("")
         if (!isTableRow(checkText) && checkText.trim() !== "") {
           break
         }
@@ -113,7 +120,7 @@ function formatMarkdownTables(lines: HighlightedLine[]): HighlightedLine[] {
       }
     }
 
-    result.push(lines[i])
+    result.push(currentLine)
     i++
   }
 

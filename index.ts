@@ -9,4 +9,5 @@ setTargetDir(targetDir)
 render(App, {
   targetFps: 30,
   exitOnCtrlC: true,
+  useMouse: true,
 })
