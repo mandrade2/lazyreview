@@ -1,8 +1,12 @@
 import { createHighlighter, type Highlighter, type BundledLanguage } from "shiki"
+import { applyMarkdownStyles } from "./markdown-styles"
 
 export interface HighlightedToken {
   content: string
   color: string
+  bold?: boolean
+  italic?: boolean
+  dim?: boolean
 }
 
 export type HighlightedLine = HighlightedToken[]
@@ -259,12 +263,19 @@ export async function highlightCode(
     })
 
     // Transform shiki tokens to our format
-    return tokens.map((lineTokens) =>
+    const highlighted = tokens.map((lineTokens) =>
       lineTokens.map((token) => ({
         content: token.content,
         color: token.color ?? DEFAULT_COLOR,
       }))
     )
+
+    // Apply markdown-specific styling for .md/.mdx files
+    if (lang === "markdown" || lang === "mdx") {
+      return applyMarkdownStyles(highlighted)
+    }
+
+    return highlighted
   } catch {
     // Any error, fall back to plain text
     return plainTextLines(content)

@@ -188,7 +188,12 @@ export function DiffViewer(props: DiffViewerProps) {
                 >
                   <For each={line.tokens}>
                     {(token) => (
-                      <span style={{ fg: token.color }}>{token.content}</span>
+                      <span style={{
+                        fg: token.color,
+                        bold: token.bold,
+                        italic: token.italic,
+                        dim: token.dim,
+                      }}>{token.content}</span>
                     )}
                   </For>
                 </text>
