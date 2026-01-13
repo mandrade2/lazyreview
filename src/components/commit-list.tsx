@@ -36,6 +36,11 @@ export function CommitList(props: CommitListProps) {
       actualIndex: start + i,
     }))
   })
+
+  // Calculate max hash length for alignment
+  const maxHashLength = createMemo(() => {
+    return Math.max(...props.commits.map(c => c.shortHash.length), 7)
+  })
   
   return (
     <box
@@ -60,7 +65,9 @@ export function CommitList(props: CommitListProps) {
                 flexDirection: "row",
               }}
             >
-              <text style={{ fg: "#58a6ff" }}>{commit.shortHash} </text>
+              <box style={{ width: maxHashLength() + 1 }}>
+                <text style={{ fg: "#58a6ff" }}>{commit.shortHash}</text>
+              </box>
               <text style={{ fg: isSelected() ? "#e6edf3" : "#8b949e" }}>
                 {truncateMessage(commit.message, 40)}
               </text>
