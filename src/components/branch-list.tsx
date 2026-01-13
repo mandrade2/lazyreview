@@ -76,7 +76,7 @@ export function BranchList(props: BranchListProps) {
                 }}
               >
                 <text style={{ fg: "#6e7681" }}>
-                  {branch.name} (current)
+                  (c) {branch.name}
                 </text>
               </box>
             )

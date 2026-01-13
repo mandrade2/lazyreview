@@ -320,11 +320,11 @@ export async function getCurrentBranch(): Promise<string | null> {
   }
 }
 
-// Get list of local branches
+// Get list of local branches (sorted by most recently committed)
 export async function getBranchList(): Promise<BranchInfo[]> {
   try {
     const format = "%(refname:short)|%(HEAD)"
-    const result = await Bun.$`git -C ${targetDir} branch --format=${format}`.quiet()
+    const result = await Bun.$`git -C ${targetDir} branch --sort=-committerdate --format=${format}`.quiet()
     const output = result.stdout.toString().trim()
     
     if (!output) {
