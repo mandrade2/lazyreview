@@ -281,14 +281,14 @@ export function DiffViewer(props: DiffViewerProps) {
                   height: 1,
                 }}
               >
-                {/* Line number */}
+                {/* Line number - green for changed lines */}
                 <box
                   style={{
                     width: lineNumberWidth(),
                     backgroundColor: "#161b22",
                   }}
                 >
-                  <text style={{ fg: "#484f58" }}>
+                  <text style={{ fg: line().isChanged ? "#3fb950" : "#484f58" }}>
                     {String(line().lineNumber + 1).padStart(lineNumberWidth() - 1, " ")}
                   </text>
                 </box>
