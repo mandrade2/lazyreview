@@ -3,6 +3,12 @@ import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
 import { highlightCode, type HighlightedLine } from "../utils/syntax"
 
+interface SearchMatch {
+  line: number
+  start: number
+  length: number
+}
+
 interface DiffViewerProps {
   file: FileChange
   focused: boolean
@@ -10,6 +16,8 @@ interface DiffViewerProps {
   onScroll: (offset: number) => void
   currentChunk: number // 0-based index of current chunk
   totalChunks: number  // total number of chunks
+  searchMatches?: SearchMatch[] // all search matches
+  currentMatchIndex?: number // index of currently focused match
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -34,6 +42,100 @@ function getStatusColor(status: FileChange["status"]): string {
 
 // Default text color
 const DEFAULT_COLOR = "#e6edf3"
+
+// Search highlight colors
+const SEARCH_MATCH_BG = "#d2992240" // yellow/orange background for matches
+const SEARCH_CURRENT_BG = "#d29922" // brighter for current match
+
+interface HighlightedToken {
+  content: string
+  color?: string
+  bold?: boolean
+  italic?: boolean
+  dim?: boolean
+  searchHighlight?: "match" | "current" // search match type
+}
+
+// Apply search highlighting to tokens by splitting them at match boundaries
+function applySearchHighlighting(
+  tokens: HighlightedLine,
+  matches: Array<{ start: number; length: number; isCurrent: boolean }>
+): HighlightedToken[] {
+  if (matches.length === 0) {
+    return tokens.map((t) => ({ ...t }))
+  }
+
+  // Build the full line content and track token boundaries
+  let fullContent = ""
+  const tokenBoundaries: Array<{ start: number; end: number; tokenIdx: number }> = []
+  for (let i = 0; i < tokens.length; i++) {
+    const start = fullContent.length
+    fullContent += tokens[i]!.content
+    tokenBoundaries.push({ start, end: fullContent.length, tokenIdx: i })
+  }
+
+  // Build a list of all split points (match starts and ends)
+  const splitPoints = new Set<number>()
+  splitPoints.add(0)
+  splitPoints.add(fullContent.length)
+
+  for (const match of matches) {
+    splitPoints.add(match.start)
+    splitPoints.add(match.start + match.length)
+  }
+
+  // Add token boundaries as split points
+  for (const tb of tokenBoundaries) {
+    splitPoints.add(tb.start)
+    splitPoints.add(tb.end)
+  }
+
+  const sortedPoints = [...splitPoints].sort((a, b) => a - b)
+
+  // Create segments between split points
+  const result: HighlightedToken[] = []
+
+  for (let i = 0; i < sortedPoints.length - 1; i++) {
+    const segStart = sortedPoints[i]!
+    const segEnd = sortedPoints[i + 1]!
+
+    if (segStart >= segEnd) continue
+
+    // Find which token this segment belongs to
+    const tokenBoundary = tokenBoundaries.find(
+      (tb) => segStart >= tb.start && segStart < tb.end
+    )
+    if (!tokenBoundary) continue
+
+    const originalToken = tokens[tokenBoundary.tokenIdx]!
+    const relativeStart = segStart - tokenBoundary.start
+    const relativeEnd = segEnd - tokenBoundary.start
+    const content = originalToken.content.slice(relativeStart, relativeEnd)
+
+    if (content.length === 0) continue
+
+    // Check if this segment is within any match
+    let searchHighlight: "match" | "current" | undefined
+    for (const match of matches) {
+      const matchEnd = match.start + match.length
+      if (segStart >= match.start && segEnd <= matchEnd) {
+        searchHighlight = match.isCurrent ? "current" : "match"
+        break
+      }
+    }
+
+    result.push({
+      content,
+      color: originalToken.color,
+      bold: originalToken.bold,
+      italic: originalToken.italic,
+      dim: originalToken.dim,
+      searchHighlight,
+    })
+  }
+
+  return result
+}
 
 export function DiffViewer(props: DiffViewerProps) {
   const dimensions = useTerminalDimensions()
@@ -72,6 +174,26 @@ export function DiffViewer(props: DiffViewerProps) {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
   })
   
+  // Get matches for a specific line
+  const getLineMatches = (lineIndex: number): Array<{ start: number; length: number; isCurrent: boolean }> => {
+    const matches = props.searchMatches ?? []
+    const currentIdx = props.currentMatchIndex ?? 0
+    const lineMatches: Array<{ start: number; length: number; isCurrent: boolean }> = []
+
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i]!
+      if (match.line === lineIndex) {
+        lineMatches.push({
+          start: match.start,
+          length: match.length,
+          isCurrent: i === currentIdx,
+        })
+      }
+    }
+
+    return lineMatches.sort((a, b) => a.start - b.start)
+  }
+
   // Get the lines to display based on scroll offset
   const visibleLines = createMemo(() => {
     const allHighlighted = highlightedLines()
@@ -79,13 +201,14 @@ export function DiffViewer(props: DiffViewerProps) {
     const lineCount = allPlain.length
     const start = props.scrollOffset
     const end = Math.min(start + visibleHeight(), lineCount)
-    
+
     const result: Array<{
       lineNumber: number
       tokens: HighlightedLine
       isChanged: boolean
+      searchMatches: Array<{ start: number; length: number; isCurrent: boolean }>
     }> = []
-    
+
     for (let i = start; i < end; i++) {
       // Use highlighted tokens if available, otherwise fallback to plain text
       const tokens = allHighlighted[i] ?? [{ content: allPlain[i] ?? "", color: DEFAULT_COLOR }]
@@ -93,9 +216,10 @@ export function DiffViewer(props: DiffViewerProps) {
         lineNumber: i,
         tokens,
         isChanged: props.file.changedLines.has(i),
+        searchMatches: getLineMatches(i),
       })
     }
-    
+
     return result
   })
   
@@ -179,21 +303,30 @@ export function DiffViewer(props: DiffViewerProps) {
                     {line().isChanged ? "+" : " "}
                   </text>
                 </box>
-                {/* Content with syntax highlighting */}
+                {/* Content with syntax highlighting and search matches */}
                 <text
                   style={{
                     flexGrow: 1,
                     flexShrink: 1,
                   }}
                 >
-                  <Index each={line().tokens}>
+                  <Index each={applySearchHighlighting(line().tokens, line().searchMatches)}>
                     {(token) => (
-                      <span style={{
-                        fg: token().color,
-                        bold: token().bold,
-                        italic: token().italic,
-                        dim: token().dim,
-                      }}>{token().content}</span>
+                      <span
+                        style={{
+                          fg: token().searchHighlight === "current" ? "#0d1117" : token().color,
+                          bg: token().searchHighlight === "current"
+                            ? SEARCH_CURRENT_BG
+                            : token().searchHighlight === "match"
+                              ? SEARCH_MATCH_BG
+                              : undefined,
+                          bold: token().bold,
+                          italic: token().italic,
+                          dim: token().dim,
+                        }}
+                      >
+                        {token().content}
+                      </span>
                     )}
                   </Index>
                 </text>

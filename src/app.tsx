@@ -39,7 +39,23 @@ export function App() {
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
   const [showHelp, setShowHelp] = createSignal(false)
-  
+
+  // Search state (vim-style search in diff view)
+  const [searchMode, setSearchMode] = createSignal(false) // true when typing search query
+  const [searchQuery, setSearchQuery] = createSignal("") // current search input
+  const [searchActive, setSearchActive] = createSignal(false) // true when search results are shown
+  const [searchMatches, setSearchMatches] = createSignal<Array<{ line: number; start: number; length: number }>>([])
+  const [currentMatchIndex, setCurrentMatchIndex] = createSignal(0)
+
+  // Clear search state (defined early for use in effects)
+  const clearSearch = () => {
+    setSearchMode(false)
+    setSearchQuery("")
+    setSearchActive(false)
+    setSearchMatches([])
+    setCurrentMatchIndex(0)
+  }
+
   // Commit mode state
   const [commits, setCommits] = createSignal<CommitInfo[]>([])
   const [listSelectedIndex, setListSelectedIndex] = createSignal(0)
@@ -75,25 +91,29 @@ export function App() {
     const file = selectedFile()
     const currentMode = mode()
     const currentViewState = viewState()
-    
+
     if (file && file.path !== lastSelectedFilePath && currentViewState === "files") {
       lastSelectedFilePath = file.path
-      
+
+      // Clear search state when switching files
+      clearSearch()
+
       // Check if file needs lazy loading (no content yet)
       if (!file.content && (currentMode === "commit" || currentMode === "branch")) {
         setLoadingFile(true)
-        
-        const compareTarget = currentMode === "commit" && selectedCommit()
-          ? { type: "commit" as const, hash: selectedCommit()!.hash }
-          : currentMode === "branch" && selectedBranch()
-          ? { type: "branch" as const, name: selectedBranch()!.name }
-          : { type: "dirty" as const }
-        
-        loadFileDetails(file, compareTarget).then(loadedFile => {
+
+        const compareTarget =
+          currentMode === "commit" && selectedCommit()
+            ? { type: "commit" as const, hash: selectedCommit()!.hash }
+            : currentMode === "branch" && selectedBranch()
+              ? { type: "branch" as const, name: selectedBranch()!.name }
+              : { type: "dirty" as const }
+
+        loadFileDetails(file, compareTarget).then((loadedFile) => {
           // Update the file in the files array
-          setFiles(prev => prev.map(f => f.path === loadedFile.path ? loadedFile : f))
+          setFiles((prev) => prev.map((f) => (f.path === loadedFile.path ? loadedFile : f)))
           setLoadingFile(false)
-          
+
           // Set scroll to first change line and reset chunk index
           const contextLines = 5
           const targetLine = Math.max(0, loadedFile.firstChangeLine - contextLines)
@@ -257,7 +277,7 @@ export function App() {
   const jumpToPrevChunk = () => {
     const chunks = getChunkPositions()
     if (chunks.length === 0) return
-    
+
     const currentIdx = currentChunkIndex()
     if (currentIdx <= 0) {
       // At first chunk or not on any, wrap to last
@@ -267,7 +287,72 @@ export function App() {
       jumpToChunk(currentIdx - 1)
     }
   }
-  
+
+  // Execute search and find all matches
+  const executeSearch = () => {
+    const query = searchQuery()
+    const file = selectedFile()
+    if (!query || !file) {
+      setSearchMatches([])
+      setSearchActive(false)
+      return
+    }
+
+    const lines = file.content.split("\n")
+    const matches: Array<{ line: number; start: number; length: number }> = []
+
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const line = lines[lineIdx]!
+      let startIdx = 0
+      while (true) {
+        const foundIdx = line.indexOf(query, startIdx)
+        if (foundIdx === -1) break
+        matches.push({ line: lineIdx, start: foundIdx, length: query.length })
+        startIdx = foundIdx + 1
+      }
+    }
+
+    setSearchMatches(matches)
+    setCurrentMatchIndex(0)
+    setSearchActive(true)
+
+    // Jump to first match if found
+    if (matches.length > 0) {
+      const firstMatch = matches[0]!
+      const contextLines = 5
+      const targetLine = Math.max(0, firstMatch.line - contextLines)
+      setScrollOffset(Math.min(targetLine, getMaxScroll()))
+    }
+  }
+
+  // Jump to next search match
+  const jumpToNextMatch = () => {
+    const matches = searchMatches()
+    if (matches.length === 0) return
+
+    const nextIdx = (currentMatchIndex() + 1) % matches.length
+    setCurrentMatchIndex(nextIdx)
+
+    const match = matches[nextIdx]!
+    const contextLines = 5
+    const targetLine = Math.max(0, match.line - contextLines)
+    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+  }
+
+  // Jump to previous search match
+  const jumpToPrevMatch = () => {
+    const matches = searchMatches()
+    if (matches.length === 0) return
+
+    const prevIdx = currentMatchIndex() <= 0 ? matches.length - 1 : currentMatchIndex() - 1
+    setCurrentMatchIndex(prevIdx)
+
+    const match = matches[prevIdx]!
+    const contextLines = 5
+    const targetLine = Math.max(0, match.line - contextLines)
+    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+  }
+
   // Mouse scroll handler for left sidebar (file/commit/branch lists)
   const handleSidebarScroll = (event: MouseEvent) => {
     if (event.type !== "scroll" || !event.scroll) return
@@ -299,24 +384,51 @@ export function App() {
   }
 
   useKeyboard((key) => {
-    // Quit with q or Ctrl+c - ALWAYS works, regardless of state
-    if ((key.ctrl && key.name === "c") || key.name === "q") {
+    // Quit with q or Ctrl+c - ALWAYS works, regardless of state (except when in search mode)
+    if ((key.ctrl && key.name === "c") || (key.name === "q" && !searchMode())) {
       renderer.destroy()
       return
     }
-    
-    // Toggle help with ?
-    if (key.name === "?" || key.sequence === "?") {
-      setShowHelp(h => !h)
+
+    // Search mode input handling
+    if (searchMode()) {
+      // Escape cancels search mode
+      if (key.name === "escape") {
+        clearSearch()
+        return
+      }
+      // Enter executes the search
+      if (key.name === "return") {
+        setSearchMode(false)
+        executeSearch()
+        return
+      }
+      // Backspace removes last character
+      if (key.name === "backspace") {
+        setSearchQuery((q) => q.slice(0, -1))
+        return
+      }
+      // Add printable characters to search query
+      if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+        setSearchQuery((q) => q + key.sequence)
+        return
+      }
+      // Ignore other keys in search mode
       return
     }
-    
+
+    // Toggle help with ?
+    if (key.name === "?" || key.sequence === "?") {
+      setShowHelp((h) => !h)
+      return
+    }
+
     // Close help dialog with Escape
     if (key.name === "escape" && showHelp()) {
       setShowHelp(false)
       return
     }
-    
+
     // Block all other keys while help is open
     if (showHelp()) {
       return
@@ -486,15 +598,36 @@ export function App() {
       const halfPage = Math.floor(visibleHeight() / 2)
       const fullPage = visibleHeight()
       const maxScroll = getMaxScroll()
-      
-      // n - jump to next chunk
-      if (key.name === "n" && !key.shift) {
-        jumpToNextChunk()
+
+      // / - start search mode
+      if (key.sequence === "/") {
+        setSearchMode(true)
+        setSearchQuery("")
+        setSearchActive(false)
         return
       }
-      // N - jump to previous chunk
+
+      // Escape clears active search
+      if (key.name === "escape" && searchActive()) {
+        clearSearch()
+        return
+      }
+
+      // n/N - jump to next/prev search match (if search active) or chunk
+      if (key.name === "n" && !key.shift) {
+        if (searchActive() && searchMatches().length > 0) {
+          jumpToNextMatch()
+        } else {
+          jumpToNextChunk()
+        }
+        return
+      }
       if (key.name === "n" && key.shift) {
-        jumpToPrevChunk()
+        if (searchActive() && searchMatches().length > 0) {
+          jumpToPrevMatch()
+        } else {
+          jumpToPrevChunk()
+        }
         return
       }
       
@@ -785,6 +918,8 @@ export function App() {
                 onScroll={setScrollOffset}
                 currentChunk={currentChunkIndex()}
                 totalChunks={chunkCount()}
+                searchMatches={searchMatches()}
+                currentMatchIndex={currentMatchIndex()}
               />
             </Show>
           </Show>
@@ -800,6 +935,11 @@ export function App() {
         listCount={mode() === "commit" ? commits().length : selectableBranches().length}
         listSelectedIndex={listSelectedIndex()}
         contextInfo={contextInfo()}
+        searchMode={searchMode()}
+        searchQuery={searchQuery()}
+        searchActive={searchActive()}
+        searchMatchCount={searchMatches().length}
+        currentMatchIndex={currentMatchIndex()}
       />
       
       <Show when={showHelp()}>

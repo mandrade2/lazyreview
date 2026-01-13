@@ -32,6 +32,15 @@ const sections = [
     ],
   },
   {
+    title: "Search (Diff)",
+    keybinds: [
+      { key: "/", desc: "Start search" },
+      { key: "Enter", desc: "Execute search" },
+      { key: "n / N", desc: "Next / previous match" },
+      { key: "Esc", desc: "Clear search" },
+    ],
+  },
+  {
     title: "Actions",
     keybinds: [
       { key: "e", desc: "Open file in $EDITOR" },
@@ -44,7 +53,7 @@ const sections = [
 
 export function HelpDialog(props: HelpDialogProps) {
   const dialogWidth = 50
-  const dialogHeight = 26
+  const dialogHeight = 32
 
   return (
     <box

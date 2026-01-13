@@ -9,6 +9,11 @@ interface StatusBarProps {
   listCount?: number
   listSelectedIndex?: number
   contextInfo?: string // commit hash or branch name
+  searchMode?: boolean // true when typing search query
+  searchQuery?: string // current search input
+  searchActive?: boolean // true when search results are shown
+  searchMatchCount?: number // total number of matches
+  currentMatchIndex?: number // current match index (0-based)
 }
 
 export function StatusBar(props: StatusBarProps) {
@@ -61,6 +66,33 @@ export function StatusBar(props: StatusBarProps) {
     }
   }
   
+  // Search status display
+  const searchStatus = () => {
+    if (props.searchMode) {
+      return `/${props.searchQuery ?? ""}_`
+    }
+    if (props.searchActive) {
+      const count = props.searchMatchCount ?? 0
+      if (count === 0) {
+        return "No matches"
+      }
+      const current = (props.currentMatchIndex ?? 0) + 1
+      return `[${current}/${count}]`
+    }
+    return null
+  }
+
+  // Show search-specific keybinds when search is active
+  const effectiveKeybinds = () => {
+    if (props.searchMode) {
+      return "enter:search esc:cancel"
+    }
+    if (props.searchActive) {
+      return "n/N:match esc:clear /:search"
+    }
+    return keybinds()
+  }
+
   return (
     <box
       style={{
@@ -74,14 +106,27 @@ export function StatusBar(props: StatusBarProps) {
         alignItems: "center",
       }}
     >
+      {/* Left section: search input or panel info */}
       <box style={{ flexDirection: "row" }}>
-        <text style={{ fg: "#58a6ff" }}>{panelText()}</text>
-        {contextText() && (
-          <text style={{ fg: "#8b949e" }}> {contextText()}</text>
+        {props.searchMode ? (
+          <text style={{ fg: "#d29922" }}>/{props.searchQuery ?? ""}<span style={{ bg: "#d29922", fg: "#0d1117" }}> </span></text>
+        ) : (
+          <>
+            <text style={{ fg: "#58a6ff" }}>{panelText()}</text>
+            {contextText() && (
+              <text style={{ fg: "#8b949e" }}> {contextText()}</text>
+            )}
+          </>
         )}
       </box>
-      <text style={{ fg: "#e6edf3" }}>{itemInfo()}</text>
-      <text style={{ fg: "#8b949e" }}>{keybinds()}</text>
+
+      {/* Center section: item info or search status */}
+      <text style={{ fg: props.searchActive && (props.searchMatchCount ?? 0) === 0 ? "#f85149" : "#e6edf3" }}>
+        {props.searchActive ? searchStatus() : itemInfo()}
+      </text>
+
+      {/* Right section: keybinds */}
+      <text style={{ fg: "#8b949e" }}>{effectiveKeybinds()}</text>
     </box>
   )
 }
