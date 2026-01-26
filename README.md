@@ -66,30 +66,57 @@ lazyreview
 lazyreview /path/to/repo
 ```
 
+### Three Main Modes
+
+LazyReview operates in three modes, accessible by pressing `m`:
+
+1. **Dirty** (default) - Review uncommitted changes in your working directory
+2. **Commit** - Browse past commits and review their changes
+3. **Branch** - Compare your current branch against another branch to see differences
+
+Each mode shows a list in the left panel and displays diffs in the right panel.
+
 ## Keyboard Shortcuts
 
+### Modes
 | Key | Action |
 |-----|--------|
-| `j` / `k` | Navigate up/down |
-| `g` / `G` | Go to first/last item |
-| `Ctrl+d` / `Ctrl+u` | Scroll half page down/up |
-| `Ctrl+f` / `Ctrl+b` | Scroll full page down/up |
-| `Tab` | Switch between panels |
-| `Enter` | View file diff |
-| `e` | Open file in editor |
-| `r` | Refresh file list |
-| `?` | Show help |
-| `q` / `Esc` | Quit |
+| `m` | Cycle modes: Dirty → Commit → Branch |
+| `Esc` | Go back (diff → files → list) |
 
-## File Status Indicators
+### Navigation
+| Key | Action |
+|-----|--------|
+| `j` / `↓` | Move down / scroll down |
+| `k` / `↑` | Move up / scroll up |
+| `g` | Go to first item / top |
+| `G` | Go to last item / bottom |
+| `Tab` / `h` / `l` | Switch between panels |
+| `Enter` | Select / open diff view |
 
-| Color | Status |
-|-------|--------|
-| Green (A) | Added |
-| Yellow (M) | Modified |
-| Red (D) | Deleted |
-| Purple (R) | Renamed |
-| Gray (?) | Untracked |
+### Scrolling (Diff)
+| Key | Action |
+|-----|--------|
+| `n` / `N` | Jump to next / previous change chunk |
+| `Ctrl+d` / `Ctrl+u` | Scroll half page down / up |
+| `Ctrl+f` / `Ctrl+b` | Scroll full page down / up |
+| `Ctrl+↓` / `Ctrl+↑` | Scroll single line down / up |
+
+### Search (Diff)
+| Key | Action |
+|-----|--------|
+| `/` | Start search |
+| `Enter` | Execute search |
+| `n` / `N` | Jump to next / previous match |
+| `Esc` | Clear search |
+
+### Actions
+| Key | Action |
+|-----|--------|
+| `e` | Open file in `$EDITOR` |
+| `r` | Refresh current view |
+| `?` | Toggle help |
+| `q` / `Ctrl+c` | Quit |
 
 ## Credits
 
