@@ -2,8 +2,6 @@
 
 A terminal UI for reviewing git changes with syntax highlighting.
 
-![LazyReview Screenshot](https://github.com/mandrade2/lazyreview/raw/master/screenshot.png)
-
 ## Why LazyReview?
 
 I love [lazygit](https://github.com/jesseduffield/lazygit) - it's an incredible tool that I use daily. But when reviewing code changes, I wanted two small things it doesn't have:
