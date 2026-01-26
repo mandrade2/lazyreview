@@ -11,7 +11,17 @@ I love [lazygit](https://github.com/jesseduffield/lazygit) - it's an incredible 
 1. **Syntax highlighting** in the diff viewer
 2. **Subtler colors** for change indicators (the bright red/green backgrounds can be overwhelming)
 
-LazyReview is a focused tool for one thing: reviewing your uncommitted changes with a clean, readable diff view.
+### Visual Comparison
+
+**lazygit** - bright green backgrounds for all additions:
+![lazygit diff](https://github.com/mandrade2/lazyreview/raw/master/lazygitdiff.png)
+
+**LazyReview** - subtle highlighting with syntax colors:
+![LazyReview diff](https://github.com/mandrade2/lazyreview/raw/master/lazyreview.png)
+
+LazyReview is a focused tool for one thing: reviewing your changes with a clean, readable diff view.
+
+**Note:** You can also configure lazygit to use a custom pager (like `delta` or `diff-so-fancy`) to achieve similar highlighting. LazyReview exists as a standalone alternative if you prefer a dedicated review tool without the full lazygit feature set.
 
 ## Installation
 
