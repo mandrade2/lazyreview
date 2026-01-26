@@ -37,7 +37,7 @@ jobs:
         run: bun install
 
       - name: Build binary
-        run: bun run script/build.ts --single --skip-install
+        run: bun run script/build.ts --skip-install
 
       - name: Create archive (Unix)
         if: matrix.target != 'windows-x64'
