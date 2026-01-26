@@ -5,6 +5,7 @@
     "": {
       "name": "lazyreview",
       "dependencies": {
+        "@opentui/core": "0.1.67",
         "@opentui/solid": "^0.1.67",
         "shiki": "^3.20.0",
         "solid-js": "^1.9.10",
