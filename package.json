@@ -1,6 +1,6 @@
 {
   "name": "lazyreview",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A terminal UI for reviewing git changes with syntax highlighting",
   "module": "index.ts",
   "type": "module",
