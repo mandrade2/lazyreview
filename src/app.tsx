@@ -122,6 +122,9 @@ export function App() {
         }).catch((err) => {
           console.error("Failed to load file:", file.path, err)
           setLoadingFile(false)
+        }).catch(() => {
+          // If loading fails, still mark as not loading
+          setLoadingFile(false)
         })
       } else {
         // File already has content, just update scroll and reset chunk index
