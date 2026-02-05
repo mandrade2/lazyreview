@@ -32,10 +32,12 @@ function getFileName(path: string): string {
   return path.split("/").pop() ?? path
 }
 
-function getDirectory(path: string): string {
+function getDirectory(path: string, maxLength: number): string {
   const parts = path.split("/")
   if (parts.length <= 1) return ""
-  return parts.slice(0, -1).join("/") + "/"
+  const dir = parts.slice(0, -1).join("/") + "/"
+  if (dir.length <= maxLength) return dir
+  return "..." + dir.slice(-(maxLength - 3))
 }
 
 export function FileList(props: FileListProps) {
@@ -93,7 +95,17 @@ export function FileList(props: FileListProps) {
             const statusIcon = getStatusIcon(file.status)
             const statusColor = getStatusColor(file.status)
             const fileName = getFileName(file.path)
-            const directory = getDirectory(file.path)
+            
+            const additionsText = file.additions > 0 ? ` +${file.additions}` : ""
+            const deletionsText = file.deletions > 0 ? ` -${file.deletions}` : ""
+            const statsLength = additionsText.length + deletionsText.length
+            
+            const sidebarWidth = 35
+            const padding = 2
+            const iconLength = 2
+            const minFileNameLength = 25
+            const availableForDirectory = Math.max(0, sidebarWidth - padding - iconLength - minFileNameLength - statsLength)
+            const directory = getDirectory(file.path, availableForDirectory)
             
             return (
               <box
@@ -112,11 +124,12 @@ export function FileList(props: FileListProps) {
                   <text style={{ fg: "#8b949e" }}>{directory}</text>
                 </Show>
                 <text style={{ fg: isSelected() ? "#58a6ff" : "#e6edf3" }}>{fileName}</text>
+                <box style={{ flexGrow: 1 }} />
                 <Show when={file.additions > 0}>
-                  <text style={{ fg: "#3fb950" }}> +{file.additions}</text>
+                  <text style={{ fg: "#3fb950" }}>{additionsText}</text>
                 </Show>
                 <Show when={file.deletions > 0}>
-                  <text style={{ fg: "#f85149" }}> -{file.deletions}</text>
+                  <text style={{ fg: "#f85149" }}>{deletionsText}</text>
                 </Show>
               </box>
             )

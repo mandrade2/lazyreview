@@ -23,6 +23,8 @@ export interface FileChange {
   content: string // Full file content
   firstChangeLine: number // 0-indexed line number of first change
   changedLines: Set<number> // Set of changed line numbers (0-indexed)
+  addedLines: Set<number> // Set of added line numbers (0-indexed)
+  removedLines: Set<number> // Set of removed line numbers (0-indexed)
 }
 
 // Target directory for git operations
@@ -48,7 +50,8 @@ async function readFileContent(path: string): Promise<string> {
     const fullPath = `${targetDir}/${path}`
     const file = Bun.file(fullPath)
     return await file.text()
-  } catch {
+  } catch (err) {
+    console.error(`Failed to read file: ${path}`, err)
     return ""
   }
 }
@@ -66,9 +69,17 @@ function generateUnifiedDiff(filePath: string, content: string): string {
   return diffLines.join("\n")
 }
 
+interface ParsedChanges {
+  changedLines: number[]
+  addedLines: number[]
+  removedLines: number[]
+}
+
 // Parse a diff to extract the line numbers that were changed (0-indexed, in the new file)
-function parseChangedLines(diff: string): number[] {
+function parseChangedLines(diff: string): ParsedChanges {
   const changedLines: number[] = []
+  const addedLines: number[] = []
+  const removedLines: number[] = []
   let currentLine = 0
   
   for (const line of diff.split("\n")) {
@@ -81,18 +92,20 @@ function parseChangedLines(diff: string): number[] {
     } else if (line.startsWith("+") && !line.startsWith("+++")) {
       // Addition - this line exists in new file
       changedLines.push(currentLine)
+      addedLines.push(currentLine)
       currentLine++
     } else if (line.startsWith("-") && !line.startsWith("---")) {
       // Deletion - don't increment currentLine (line doesn't exist in new file)
       // But we should mark the position where deletion happened
       changedLines.push(currentLine)
+      removedLines.push(currentLine)
     } else if (line.startsWith(" ") || line === "") {
       // Context line
       currentLine++
     }
   }
   
-  return changedLines
+  return { changedLines, addedLines, removedLines }
 }
 
 export async function getGitChanges(): Promise<FileChange[]> {
@@ -151,6 +164,8 @@ export async function getGitChanges(): Promise<FileChange[]> {
     let additions = 0
     let deletions = 0
     const changedLines = new Set<number>()
+    const addedLines = new Set<number>()
+    const removedLines = new Set<number>()
     let firstChangeLine = 0
     
     try {
@@ -163,6 +178,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
           // All lines are additions for untracked files
           for (let i = 0; i < additions; i++) {
             changedLines.add(i)
+            addedLines.add(i)
           }
         }
       } else if (status === "deleted") {
@@ -176,6 +192,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
         const lines = content.split("\n")
         for (let i = 0; i < lines.length; i++) {
           changedLines.add(i)
+          removedLines.add(i)
         }
       } else {
         // For modified/added files - get current content
@@ -187,9 +204,15 @@ export async function getGitChanges(): Promise<FileChange[]> {
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         
         // Parse diff to find changed lines
-        const parsedChanges = parseChangedLines(diff)
-        for (const line of parsedChanges) {
+        const { changedLines: parsedChanged, addedLines: parsedAdded, removedLines: parsedRemoved } = parseChangedLines(diff)
+        for (const line of parsedChanged) {
           changedLines.add(line)
+        }
+        for (const line of parsedAdded) {
+          addedLines.add(line)
+        }
+        for (const line of parsedRemoved) {
+          removedLines.add(line)
         }
       }
       
@@ -222,6 +245,8 @@ export async function getGitChanges(): Promise<FileChange[]> {
       content,
       firstChangeLine,
       changedLines,
+      addedLines,
+      removedLines,
     })
   }
   
@@ -388,6 +413,8 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         content: "", // Loaded lazily via loadFileDetails
         firstChangeLine: 0,
         changedLines: new Set<number>(),
+        addedLines: new Set<number>(),
+        removedLines: new Set<number>(),
       })
     }
     
@@ -443,6 +470,8 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         content: "", // Loaded lazily
         firstChangeLine: 0,
         changedLines: new Set<number>(),
+        addedLines: new Set<number>(),
+        removedLines: new Set<number>(),
       })
     }
     
@@ -506,9 +535,17 @@ export async function loadFileDetails(
     
     // Parse diff to find changed lines and count additions/deletions
     const changedLines = new Set<number>()
-    const parsedChanges = parseChangedLines(diff)
-    for (const lineNum of parsedChanges) {
+    const addedLines = new Set<number>()
+    const removedLines = new Set<number>()
+    const { changedLines: parsedChanged, addedLines: parsedAdded, removedLines: parsedRemoved } = parseChangedLines(diff)
+    for (const lineNum of parsedChanged) {
       changedLines.add(lineNum)
+    }
+    for (const lineNum of parsedAdded) {
+      addedLines.add(lineNum)
+    }
+    for (const lineNum of parsedRemoved) {
+      removedLines.add(lineNum)
     }
     
     let additions = 0
@@ -531,6 +568,8 @@ export async function loadFileDetails(
       deletions,
       firstChangeLine,
       changedLines,
+      addedLines,
+      removedLines,
     }
   } catch {
     return file

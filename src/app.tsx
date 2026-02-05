@@ -119,6 +119,9 @@ export function App() {
           const targetLine = Math.max(0, loadedFile.firstChangeLine - contextLines)
           setScrollOffset(targetLine)
           setCurrentChunkIndex(0)
+        }).catch((err) => {
+          console.error("Failed to load file:", file.path, err)
+          setLoadingFile(false)
         })
       } else {
         // File already has content, just update scroll and reset chunk index

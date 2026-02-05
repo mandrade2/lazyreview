@@ -206,6 +206,8 @@ export function DiffViewer(props: DiffViewerProps) {
       lineNumber: number
       tokens: HighlightedLine
       isChanged: boolean
+      isAdded: boolean
+      isRemoved: boolean
       searchMatches: Array<{ start: number; length: number; isCurrent: boolean }>
     }> = []
 
@@ -216,6 +218,8 @@ export function DiffViewer(props: DiffViewerProps) {
         lineNumber: i,
         tokens,
         isChanged: props.file.changedLines.has(i),
+        isAdded: props.file.addedLines.has(i),
+        isRemoved: props.file.removedLines.has(i),
         searchMatches: getLineMatches(i),
       })
     }
@@ -277,7 +281,11 @@ export function DiffViewer(props: DiffViewerProps) {
               <box
                 style={{
                   flexDirection: "row",
-                  backgroundColor: "#0d1117",
+                  backgroundColor: line().isAdded
+                    ? "#1a2f1a"
+                    : line().isRemoved
+                      ? "#2f1a1a"
+                      : "#0d1117",
                   height: 1,
                 }}
               >
@@ -285,7 +293,11 @@ export function DiffViewer(props: DiffViewerProps) {
                 <box
                   style={{
                     width: lineNumberWidth(),
-                    backgroundColor: "#161b22",
+                    backgroundColor: line().isAdded
+                      ? "#1a2f1a"
+                      : line().isRemoved
+                        ? "#2f1a1a"
+                        : "#161b22",
                   }}
                 >
                   <text style={{ fg: line().isChanged ? "#3fb950" : "#484f58" }}>
@@ -296,7 +308,11 @@ export function DiffViewer(props: DiffViewerProps) {
                 <box
                   style={{
                     width: 1,
-                    backgroundColor: "#0d1117",
+                    backgroundColor: line().isAdded
+                      ? "#1a2f1a"
+                      : line().isRemoved
+                        ? "#2f1a1a"
+                        : "#0d1117",
                   }}
                 >
                   <text style={{ fg: line().isChanged ? "#3fb950" : "#0d1117" }}>
