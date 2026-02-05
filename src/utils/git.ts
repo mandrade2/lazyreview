@@ -21,7 +21,8 @@ export interface FileChange {
   deletions: number
   diff: string
   content: string // Full file content
-  firstChangeLine: number // 0-indexed line number of first change
+  firstChangeLine: number // 0-indexed line number of first change (deprecated, for backward compat)
+  firstChangeDiffLine: number // 0-indexed index of first change in parsed diff
   changedLines: Set<number> // Set of changed line numbers (0-indexed)
   addedLines: Set<number> // Set of added line numbers (0-indexed)
   removedLines: Set<number> // Set of removed line numbers (0-indexed)
@@ -38,6 +39,16 @@ export function getTargetDir() {
   return targetDir
 }
 
+// Get the git repository root directory
+async function getGitRoot(): Promise<string> {
+  try {
+    const result = await Bun.$`git -C ${targetDir} rev-parse --show-toplevel`.quiet()
+    return result.stdout.toString().trim()
+  } catch {
+    return targetDir
+  }
+}
+
 export interface DiffLine {
   type: "context" | "addition" | "deletion" | "header"
   content: string
@@ -47,7 +58,8 @@ export interface DiffLine {
 
 async function readFileContent(path: string): Promise<string> {
   try {
-    const fullPath = `${targetDir}/${path}`
+    const gitRoot = await getGitRoot()
+    const fullPath = `${gitRoot}/${path}`
     const file = Bun.file(fullPath)
     return await file.text()
   } catch (err) {
@@ -111,9 +123,11 @@ function parseChangedLines(diff: string): ParsedChanges {
 export async function getGitChanges(): Promise<FileChange[]> {
   const changes: FileChange[] = []
   
+  const gitRoot = await getGitRoot()
+  
   // Get staged and unstaged changes
   // Use -uall to show all untracked files (not just directories)
-  const statusResult = await Bun.$`git -C ${targetDir} status --porcelain -uall`.text()
+  const statusResult = await Bun.$`git -C ${gitRoot} status --porcelain -uall`.text()
   
   if (!statusResult.trim()) {
     return []
@@ -167,6 +181,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
     const addedLines = new Set<number>()
     const removedLines = new Set<number>()
     let firstChangeLine = 0
+    let firstChangeDiffLine = 0 // Index of first change in the parsed diff
     
     try {
       if (status === "untracked") {
@@ -183,10 +198,10 @@ export async function getGitChanges(): Promise<FileChange[]> {
         }
       } else if (status === "deleted") {
         // For deleted files, get content from git
-        const result = await Bun.$`git -C ${targetDir} diff --no-ext-diff HEAD -- ${filePath}`.quiet()
+        const result = await Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${filePath}`.quiet()
         diff = result.stdout.toString()
         // Get the old content from git
-        const showResult = await Bun.$`git -C ${targetDir} show HEAD:${filePath}`.quiet()
+        const showResult = await Bun.$`git -C ${gitRoot} show HEAD:${filePath}`.quiet()
         content = showResult.stdout.toString()
         // All lines are deletions
         const lines = content.split("\n")
@@ -199,8 +214,8 @@ export async function getGitChanges(): Promise<FileChange[]> {
         content = await readFileContent(filePath)
         
         // Get diff (staged or unstaged)
-        const stagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff --cached -- ${filePath}`.quiet()
-        const unstagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff -- ${filePath}`.quiet()
+        const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${filePath}`.quiet()
+        const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${filePath}`.quiet()
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         
         // Parse diff to find changed lines
@@ -231,6 +246,15 @@ export async function getGitChanges(): Promise<FileChange[]> {
       if (changedLines.size > 0) {
         firstChangeLine = Math.min(...changedLines)
       }
+      
+      // Find first change in the diff (for scrolling)
+      const parsedDiff = parseDiff(diff)
+      for (let i = 0; i < parsedDiff.length; i++) {
+        if (parsedDiff[i]!.type === "addition" || parsedDiff[i]!.type === "deletion") {
+          firstChangeDiffLine = i
+          break
+        }
+      }
     } catch {
       // Ignore diff errors
     }
@@ -244,6 +268,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
       diff,
       content,
       firstChangeLine,
+      firstChangeDiffLine,
       changedLines,
       addedLines,
       removedLines,
@@ -412,6 +437,7 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         diff: "", // Loaded lazily via loadFileDetails
         content: "", // Loaded lazily via loadFileDetails
         firstChangeLine: 0,
+        firstChangeDiffLine: 0,
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
@@ -469,6 +495,7 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         diff: "", // Loaded lazily
         content: "", // Loaded lazily
         firstChangeLine: 0,
+        firstChangeDiffLine: 0,
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
@@ -487,6 +514,7 @@ export async function loadFileDetails(
   compareTarget: { type: "commit"; hash: string } | { type: "branch"; name: string } | { type: "dirty" }
 ): Promise<FileChange> {
   try {
+    const gitRoot = await getGitRoot()
     let diff = ""
     let content = ""
     
@@ -496,39 +524,39 @@ export async function loadFileDetails(
         content = await readFileContent(file.path)
         diff = generateUnifiedDiff(file.path, content)
       } else if (file.status === "deleted") {
-        const result = await Bun.$`git -C ${targetDir} diff --no-ext-diff HEAD -- ${file.path}`.quiet()
+        const result = await Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${file.path}`.quiet()
         diff = result.stdout.toString()
-        const showResult = await Bun.$`git -C ${targetDir} show HEAD:${file.path}`.quiet()
+        const showResult = await Bun.$`git -C ${gitRoot} show HEAD:${file.path}`.quiet()
         content = showResult.stdout.toString()
       } else {
         content = await readFileContent(file.path)
-        const stagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff --cached -- ${file.path}`.quiet()
-        const unstagedResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff -- ${file.path}`.quiet()
+        const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.path}`.quiet()
+        const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.path}`.quiet()
         diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
       }
     } else if (compareTarget.type === "commit") {
       // Commit mode - changes in a specific commit
       const hash = compareTarget.hash
-      const diffResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff ${hash}^..${hash} -- ${file.path}`.quiet()
+      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${file.path}`.quiet()
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {
-        const showResult = await Bun.$`git -C ${targetDir} show ${hash}:${file.path}`.quiet()
+        const showResult = await Bun.$`git -C ${gitRoot} show ${hash}:${file.path}`.quiet()
         content = showResult.stdout.toString()
       } else {
-        const showResult = await Bun.$`git -C ${targetDir} show ${hash}^:${file.path}`.quiet()
+        const showResult = await Bun.$`git -C ${gitRoot} show ${hash}^:${file.path}`.quiet()
         content = showResult.stdout.toString()
       }
     } else if (compareTarget.type === "branch") {
       // Branch mode - changes between branches
       const branch = compareTarget.name
-      const diffResult = await Bun.$`git -C ${targetDir} diff --no-ext-diff ${branch}...HEAD -- ${file.path}`.quiet()
+      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${file.path}`.quiet()
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {
         content = await readFileContent(file.path)
       } else {
-        const showResult = await Bun.$`git -C ${targetDir} show ${branch}:${file.path}`.quiet()
+        const showResult = await Bun.$`git -C ${gitRoot} show ${branch}:${file.path}`.quiet()
         content = showResult.stdout.toString()
       }
     }

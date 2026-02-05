@@ -9,6 +9,7 @@ import { HelpDialog } from "./components/help-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
 import {
+  parseDiff,
   getGitChanges,
   getTargetDir,
   getCommitList,
@@ -21,6 +22,7 @@ import {
   type AppMode,
   type CommitInfo,
   type BranchInfo,
+  type DiffLine as ParsedDiffLine,
 } from "./utils/git"
 
 export function App() {
@@ -116,7 +118,7 @@ export function App() {
 
           // Set scroll to first change line and reset chunk index
           const contextLines = 5
-          const targetLine = Math.max(0, loadedFile.firstChangeLine - contextLines)
+          const targetLine = Math.max(0, loadedFile.firstChangeDiffLine - contextLines)
           setScrollOffset(targetLine)
           setCurrentChunkIndex(0)
         }).catch((err) => {
@@ -129,7 +131,7 @@ export function App() {
       } else {
         // File already has content, just update scroll and reset chunk index
         const contextLines = 5
-        const targetLine = Math.max(0, file.firstChangeLine - contextLines)
+        const targetLine = Math.max(0, file.firstChangeDiffLine - contextLines)
         setScrollOffset(targetLine)
         setCurrentChunkIndex(0)
       }
@@ -222,24 +224,27 @@ export function App() {
   // Current chunk index (0-based, -1 means not on any chunk)
   const [currentChunkIndex, setCurrentChunkIndex] = createSignal(-1)
   
-  // Get sorted chunk start positions from changedLines
-  // A chunk is a contiguous group of changed lines
+  // Get sorted chunk start positions from parsed diff
+  // A chunk is a contiguous group of changed lines (additions/deletions)
   const getChunkPositions = (): number[] => {
     const file = selectedFile()
-    if (!file || file.changedLines.size === 0) return []
+    if (!file || !file.diff) return []
     
-    const sortedLines = [...file.changedLines].sort((a, b) => a - b)
+    const parsedDiff = parseDiff(file.diff)
     const chunks: number[] = []
     
-    let chunkStart = sortedLines[0]!
-    chunks.push(chunkStart)
+    let chunkStart = -1
     
-    for (let i = 1; i < sortedLines.length; i++) {
-      const current = sortedLines[i]!
-      const prev = sortedLines[i - 1]!
-      // If there's a gap of more than 1 line, it's a new chunk
-      if (current - prev > 1) {
-        chunks.push(current)
+    for (let i = 0; i < parsedDiff.length; i++) {
+      const line = parsedDiff[i]!
+      if (line.type === "addition" || line.type === "deletion") {
+        if (chunkStart === -1) {
+          chunkStart = i
+          chunks.push(chunkStart)
+        }
+      } else {
+        // Context or header line - end current chunk
+        chunkStart = -1
       }
     }
     
@@ -924,8 +929,6 @@ export function App() {
                 onScroll={setScrollOffset}
                 currentChunk={currentChunkIndex()}
                 totalChunks={chunkCount()}
-                searchMatches={searchMatches()}
-                currentMatchIndex={currentMatchIndex()}
               />
             </Show>
           </Show>
