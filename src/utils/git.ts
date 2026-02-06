@@ -587,7 +587,17 @@ export async function loadFileDetails(
     }
     
     const firstChangeLine = changedLines.size > 0 ? Math.min(...changedLines) : 0
-    
+
+    // Find first change in the parsed diff (for scrolling in diff view)
+    let firstChangeDiffLine = 0
+    const parsedDiff = parseDiff(diff)
+    for (let i = 0; i < parsedDiff.length; i++) {
+      if (parsedDiff[i]!.type === "addition" || parsedDiff[i]!.type === "deletion") {
+        firstChangeDiffLine = i
+        break
+      }
+    }
+     
     return {
       ...file,
       diff,
@@ -595,6 +605,7 @@ export async function loadFileDetails(
       additions,
       deletions,
       firstChangeLine,
+      firstChangeDiffLine,
       changedLines,
       addedLines,
       removedLines,

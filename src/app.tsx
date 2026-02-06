@@ -48,6 +48,9 @@ export function App() {
   const [scrollOffset, setScrollOffset] = createSignal(0)
   const [showHelp, setShowHelp] = createSignal(false)
 
+  // Diff display mode: show diff-only (unified diff) or full file with inline highlights
+  const [diffViewMode, setDiffViewMode] = createSignal<"diff" | "full">("diff")
+
   // Search state (vim-style search in diff view)
   const [searchMode, setSearchMode] = createSignal(false) // true when typing search query
   const [searchQuery, setSearchQuery] = createSignal("") // current search input
@@ -124,9 +127,10 @@ export function App() {
 
           // Set scroll to first change line and reset chunk index
           const contextLines = 5
-          const targetLine = Math.max(0, loadedFile.firstChangeDiffLine - contextLines)
+          const targetLine = diffViewMode() === "full"
+            ? Math.max(0, loadedFile.firstChangeLine - contextLines)
+            : Math.max(0, loadedFile.firstChangeDiffLine - contextLines)
           setScrollOffset(targetLine)
-          setCurrentChunkIndex(0)
         }).catch((err) => {
           console.error("Failed to load file:", file.path, err)
           setLoadingFile(false)
@@ -137,9 +141,10 @@ export function App() {
       } else {
         // File already has content, just update scroll and reset chunk index
         const contextLines = 5
-        const targetLine = Math.max(0, file.firstChangeDiffLine - contextLines)
+        const targetLine = diffViewMode() === "full"
+          ? Math.max(0, file.firstChangeLine - contextLines)
+          : Math.max(0, file.firstChangeDiffLine - contextLines)
         setScrollOffset(targetLine)
-        setCurrentChunkIndex(0)
       }
     }
   })
@@ -223,24 +228,25 @@ export function App() {
   const getMaxScroll = () => {
     const file = selectedFile()
     if (!file) return 0
-    const totalLines = file.content.split("\n").length
+
+    if (diffViewMode() === "full") {
+      const totalLines = file.content.split("\n").length
+      return Math.max(0, totalLines - visibleHeight())
+    }
+
+    const totalLines = parseDiff(file.diff ?? "").length
     return Math.max(0, totalLines - visibleHeight())
   }
   
-  // Current chunk index (0-based, -1 means not on any chunk)
-  const [currentChunkIndex, setCurrentChunkIndex] = createSignal(-1)
-  
-  // Get sorted chunk start positions from parsed diff
-  // A chunk is a contiguous group of changed lines (additions/deletions)
-  const getChunkPositions = (): number[] => {
+  const getDiffChunkPositions = (): number[] => {
     const file = selectedFile()
     if (!file || !file.diff) return []
-    
+
     const parsedDiff = parseDiff(file.diff)
     const chunks: number[] = []
-    
+
     let chunkStart = -1
-    
+
     for (let i = 0; i < parsedDiff.length; i++) {
       const line = parsedDiff[i]!
       if (line.type === "addition" || line.type === "deletion") {
@@ -253,12 +259,60 @@ export function App() {
         chunkStart = -1
       }
     }
-    
+
     return chunks
+  }
+
+  const getFullChunkPositions = (): number[] => {
+    const file = selectedFile()
+    if (!file) return []
+
+    // Use changed line positions in the new file; group consecutive lines into chunks
+    const indices = [...file.changedLines].sort((a, b) => a - b)
+    if (indices.length === 0) return []
+
+    const chunks: number[] = [indices[0]!]
+    for (let i = 1; i < indices.length; i++) {
+      const prev = indices[i - 1]!
+      const cur = indices[i]!
+      if (cur !== prev + 1) {
+        chunks.push(cur)
+      }
+    }
+    return chunks
+  }
+  
+  // Get sorted chunk start positions from parsed diff
+  // A chunk is a contiguous group of changed lines (additions/deletions)
+  const getChunkPositions = (): number[] => {
+    return diffViewMode() === "full" ? getFullChunkPositions() : getDiffChunkPositions()
   }
   
   // Total chunk count for display
   const chunkCount = createMemo(() => getChunkPositions().length)
+
+  // Current chunk index derived from scroll position (0-based, -1 means none)
+  const currentChunkIndex = createMemo(() => {
+    const chunks = getChunkPositions()
+    if (chunks.length === 0) return -1
+
+    const top = scrollOffset()
+    const bottom = top + Math.max(0, visibleHeight() - 1)
+
+    // Prefer a chunk whose start is visible in the viewport
+    for (let i = 0; i < chunks.length; i++) {
+      const start = chunks[i]!
+      if (start >= top && start <= bottom) return i
+    }
+
+    // Otherwise, use the last chunk above the viewport
+    let lastAbove = -1
+    for (let i = 0; i < chunks.length; i++) {
+      if (chunks[i]! < top) lastAbove = i
+      else break
+    }
+    return lastAbove
+  })
   
   // Jump to a specific chunk by index
   const jumpToChunk = (index: number) => {
@@ -269,7 +323,6 @@ export function App() {
     const chunkStart = chunks[index]!
     const targetLine = Math.max(0, chunkStart - contextLines)
     setScrollOffset(Math.min(targetLine, getMaxScroll()))
-    setCurrentChunkIndex(index)
   }
   
   // Jump to next chunk (n key)
@@ -278,16 +331,8 @@ export function App() {
     if (chunks.length === 0) return
     
     const currentIdx = currentChunkIndex()
-    if (currentIdx < 0) {
-      // Not on any chunk yet, go to first
-      jumpToChunk(0)
-    } else if (currentIdx >= chunks.length - 1) {
-      // At last chunk, wrap to first
-      jumpToChunk(0)
-    } else {
-      // Go to next chunk
-      jumpToChunk(currentIdx + 1)
-    }
+    const nextIdx = currentIdx < 0 ? 0 : (currentIdx + 1) % chunks.length
+    jumpToChunk(nextIdx)
   }
   
   // Jump to previous chunk (N key)
@@ -296,13 +341,8 @@ export function App() {
     if (chunks.length === 0) return
 
     const currentIdx = currentChunkIndex()
-    if (currentIdx <= 0) {
-      // At first chunk or not on any, wrap to last
-      jumpToChunk(chunks.length - 1)
-    } else {
-      // Go to previous chunk
-      jumpToChunk(currentIdx - 1)
-    }
+    const prevIdx = currentIdx <= 0 ? chunks.length - 1 : currentIdx - 1
+    jumpToChunk(prevIdx)
   }
 
   // Execute search and find all matches
@@ -618,6 +658,16 @@ export function App() {
 
       // / - start search mode
       if (key.sequence === "/") {
+        if (diffViewMode() === "diff") {
+          // Search is defined over full file lines; flip into full mode.
+          setDiffViewMode("full")
+
+          const file = selectedFile()!
+          const parsed = parseDiff(file.diff ?? "")
+          const current = parsed[Math.min(scrollOffset(), Math.max(0, parsed.length - 1))]
+          const candidateLine = (current?.newLineNumber ?? current?.oldLineNumber ?? 1) - 1
+          setScrollOffset(Math.max(0, Math.min(candidateLine, getMaxScroll())))
+        }
         setSearchMode(true)
         setSearchQuery("")
         setSearchActive(false)
@@ -645,6 +695,44 @@ export function App() {
         } else {
           jumpToPrevChunk()
         }
+        return
+      }
+
+      // f - toggle between diff-only and full file view
+      if (key.name === "f") {
+        const nextMode = diffViewMode() === "diff" ? "full" : "diff"
+        setDiffViewMode(nextMode)
+
+        // Clear search: search currently only applies to full-file lines
+        clearSearch()
+
+        // Keep the user's approximate position: map diff index to file line when switching to full,
+        // and map file line to nearest diff line when switching back to diff.
+        const file = selectedFile()!
+
+        if (nextMode === "full") {
+          const parsed = parseDiff(file.diff ?? "")
+          const current = parsed[Math.min(scrollOffset(), Math.max(0, parsed.length - 1))]
+          const candidateLine = (current?.newLineNumber ?? current?.oldLineNumber ?? 1) - 1
+          setScrollOffset(Math.max(0, Math.min(candidateLine, getMaxScroll())))
+        } else {
+          const parsed = parseDiff(file.diff ?? "")
+          const currentFileLine = scrollOffset()
+
+          let target = 0
+          for (let i = 0; i < parsed.length; i++) {
+            const l = parsed[i]!
+            if (l.type === "header") continue
+            const candidate = (l.newLineNumber ?? l.oldLineNumber ?? 1) - 1
+            if (candidate >= currentFileLine) {
+              target = i
+              break
+            }
+          }
+
+          setScrollOffset(Math.max(0, Math.min(target, getMaxScroll())))
+        }
+
         return
       }
       
@@ -944,6 +1032,7 @@ export function App() {
                   onScroll={setScrollOffset}
                   currentChunk={currentChunkIndex()}
                   totalChunks={chunkCount()}
+                  viewMode={diffViewMode()}
                 />
               </Show>
             </Show>
@@ -965,6 +1054,7 @@ export function App() {
         searchActive={searchActive()}
         searchMatchCount={searchMatches().length}
         currentMatchIndex={currentMatchIndex()}
+        diffViewMode={diffViewMode()}
       />
       
       <Show when={showHelp()}>

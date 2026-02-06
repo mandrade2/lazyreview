@@ -1,4 +1,4 @@
-import { createMemo, createSignal, createEffect, Index, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
 import { highlightCode, type HighlightedLine } from "../utils/syntax"
@@ -11,6 +11,7 @@ interface DiffViewerProps {
   onScroll: (offset: number) => void
   currentChunk: number // 0-based index of current chunk
   totalChunks: number  // total number of chunks
+  viewMode?: "diff" | "full"
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -38,12 +39,17 @@ const DEFAULT_COLOR = "#e6edf3"
 
 export function DiffViewer(props: DiffViewerProps) {
   const dimensions = useTerminalDimensions()
+
+  const viewMode = () => props.viewMode ?? "diff"
   
   // Store highlighted lines (syntax highlighted tokens) from diff
   const [highlightedDiffLines, setHighlightedDiffLines] = createSignal<Array<{
     line: ParsedDiffLine
     tokens: HighlightedLine
   }>>([])
+
+  // Store highlighted lines for full file view
+  const [highlightedFileLines, setHighlightedFileLines] = createSignal<HighlightedLine[]>([])
   
   // Parse the diff into displayable lines
   const diffLines = createMemo(() => {
@@ -53,7 +59,9 @@ export function DiffViewer(props: DiffViewerProps) {
   
   // Highlight diff lines when file changes
   createEffect(() => {
+    let cancelled = false
     const diff = diffLines()
+    const mode = viewMode()
     if (diff.length === 0) {
       setHighlightedDiffLines([])
       return
@@ -73,8 +81,9 @@ export function DiffViewer(props: DiffViewerProps) {
       .map(l => l.content)
       .join("\n")
     
-    if (contentToHighlight) {
+    if (mode === "diff" && contentToHighlight) {
       highlightCode(contentToHighlight, props.file.path).then((highlighted) => {
+        if (cancelled) return
         // Map back to diff lines
         let highlightIdx = 0
         const result = diff.map((line) => {
@@ -88,22 +97,69 @@ export function DiffViewer(props: DiffViewerProps) {
         setHighlightedDiffLines(result)
       })
     }
+
+    onCleanup(() => {
+      cancelled = true
+    })
+  })
+
+  // Highlight full file content when file changes
+  createEffect(() => {
+    let cancelled = false
+    const content = props.file.content
+    const mode = viewMode()
+    if (!content) {
+      setHighlightedFileLines([])
+      return
+    }
+
+    // Start with plain text immediately (no delay)
+    setHighlightedFileLines(
+      content.split("\n").map((line) => [{ content: line, color: DEFAULT_COLOR }])
+    )
+
+    if (mode === "full") {
+      highlightCode(content, props.file.path).then((highlighted) => {
+        if (cancelled) return
+        setHighlightedFileLines(highlighted)
+      })
+    }
+
+    onCleanup(() => {
+      cancelled = true
+    })
   })
   
   // Calculate visible lines based on terminal height (minus headers and status bar)
   const visibleHeight = createMemo(() => {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
   })
-  
+
   // Get the lines to display based on scroll offset
   const visibleLines = createMemo(() => {
+    if (viewMode() === "full") {
+      const allLines = highlightedFileLines()
+      const lineCount = allLines.length
+      const start = props.scrollOffset
+      const end = Math.min(start + visibleHeight(), lineCount)
+
+      return allLines.slice(start, end).map((tokens, idx) => ({
+        viewIndex: start + idx,
+        kind: "full" as const,
+        tokens,
+        oldLineNumber: start + idx + 1,
+        newLineNumber: start + idx + 1,
+      }))
+    }
+
     const allLines = highlightedDiffLines()
     const lineCount = allLines.length
     const start = props.scrollOffset
     const end = Math.min(start + visibleHeight(), lineCount)
 
     return allLines.slice(start, end).map((item, idx) => ({
-      diffIndex: start + idx,
+      viewIndex: start + idx,
+      kind: "diff" as const,
       line: item.line,
       tokens: item.tokens,
     }))
@@ -111,7 +167,19 @@ export function DiffViewer(props: DiffViewerProps) {
   
   // Line number width based on total lines
   const lineNumberWidth = createMemo(() => {
-    return Math.max(4, String(highlightedDiffLines().length).length + 1)
+    const total = viewMode() === "full" ? highlightedFileLines().length : highlightedDiffLines().length
+    return Math.max(4, String(total).length + 1)
+  })
+
+  const changeInfo = createMemo(() => {
+    if (viewMode() === "full") {
+      return {
+        added: props.file.addedLines,
+        removed: props.file.removedLines,
+        changed: props.file.changedLines,
+      }
+    }
+    return null
   })
   
   return (
@@ -134,8 +202,12 @@ export function DiffViewer(props: DiffViewerProps) {
         <box style={{ flexDirection: "row" }}>
           <text style={{ fg: "#3fb950" }}>+{props.file.additions}</text>
           <text style={{ fg: "#f85149" }}> -{props.file.deletions}</text>
-          <text style={{ fg: "#8b949e" }}> | Line {props.scrollOffset + 1}/{highlightedDiffLines().length}</text>
-          {props.totalChunks > 0 && (
+          <text style={{ fg: "#8b949e" }}>
+            {viewMode() === "full"
+              ? ` | Full ${props.scrollOffset + 1}/${highlightedFileLines().length}`
+              : ` | Line ${props.scrollOffset + 1}/${highlightedDiffLines().length}`}
+          </text>
+          {props.totalChunks > 0 && props.currentChunk >= 0 && (
             <text style={{ fg: "#d29922" }}> | Chunk {props.currentChunk + 1}/{props.totalChunks}</text>
           )}
         </box>
@@ -143,7 +215,7 @@ export function DiffViewer(props: DiffViewerProps) {
       
       {/* File content */}
       <Show
-        when={highlightedDiffLines().length > 0}
+        when={viewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0}
         fallback={
           <box
             style={{
@@ -164,11 +236,37 @@ export function DiffViewer(props: DiffViewerProps) {
               // `item()` updates as the underlying array slice changes (scrolling).
               // Derive styling from `item()` inside reactive getters so background
               // colors and line numbers update correctly.
-              const line = () => item().line
-              const isAdded = () => line().type === "addition"
-              const isRemoved = () => line().type === "deletion"
-              const isHeader = () => line().type === "header"
+
+              const isDiff = () => item().kind === "diff"
+              const diffLine = (): ParsedDiffLine | null => {
+                const it = item()
+                return it.kind === "diff" ? it.line : null
+              }
+
+              const fileLineIndex = () => (isDiff()
+                ? (diffLine()?.newLineNumber ?? diffLine()?.oldLineNumber ?? 1) - 1
+                : item().viewIndex
+              )
+
+              const change = () => changeInfo()
+              const isAdded = () => (isDiff()
+                ? diffLine()?.type === "addition"
+                : !!change()?.added.has(fileLineIndex())
+              )
+              const isRemoved = () => (isDiff()
+                ? diffLine()?.type === "deletion"
+                : !!change()?.removed.has(fileLineIndex())
+              )
+              const isHeader = () => (isDiff() ? diffLine()?.type === "header" : false)
               const isChanged = () => isAdded() || isRemoved()
+
+              const displayLineNumber = () => {
+                const it = item()
+                if (it.kind === "diff") {
+                  return it.line.newLineNumber ?? it.line.oldLineNumber ?? "-"
+                }
+                return it.newLineNumber
+              }
 
               return (
                 <box
@@ -197,10 +295,20 @@ export function DiffViewer(props: DiffViewerProps) {
                             : "#161b22",
                     }}
                   >
-                    <text style={{ fg: isHeader() ? "#8b949e" : isChanged() ? "#3fb950" : "#484f58" }}>
+                    <text
+                      style={{
+                        fg: isHeader()
+                          ? "#8b949e"
+                          : isAdded()
+                            ? "#3fb950"
+                            : isRemoved()
+                              ? "#f85149"
+                              : "#484f58"
+                      }}
+                    >
                       {isHeader()
                         ? "@@"
-                        : (line().newLineNumber ?? line().oldLineNumber ?? "-")
+                        : (displayLineNumber() ?? "-")
                             .toString()
                             .padStart(lineNumberWidth() - 1, " ")}
                     </text>
