@@ -786,7 +786,13 @@ export function App() {
     >
       <Header mode={mode()} />
       
-      <box style={{ flexDirection: "row", flexGrow: 1 }}>
+      <box
+        style={{
+          flexDirection: "row",
+          flexGrow: 1,
+          height: "100%",
+        }}
+      >
         {/* Left sidebar - files, commits, or branches */}
         <Show when={!isNarrowMode() || focusedPanel() === "files"}>
           <box

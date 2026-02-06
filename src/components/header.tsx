@@ -9,6 +9,7 @@ export function Header(props: HeaderProps) {
     <box
       style={{
         height: 1,
+        flexShrink: 0,
         backgroundColor: "#161b22",
         paddingLeft: 1,
         paddingRight: 1,
