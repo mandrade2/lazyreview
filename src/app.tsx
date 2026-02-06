@@ -37,6 +37,8 @@ export function App() {
   const [files, setFiles] = createSignal<FileChange[]>([])
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [focusedPanel, setFocusedPanel] = createSignal<"files" | "diff">("files")
+  
+  const isNarrowMode = createMemo(() => dimensions().width < 500)
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
@@ -786,130 +788,117 @@ export function App() {
       
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
         {/* Left sidebar - files, commits, or branches */}
-        <box
-          onMouseScroll={handleSidebarScroll}
-          style={{
-            width: 35,
-            flexShrink: 0,
-            flexDirection: "column",
-          }}
-        >
-          {/* Panel header */}
+        <Show when={!isNarrowMode() || focusedPanel() === "files"}>
           <box
+            onMouseScroll={handleSidebarScroll}
             style={{
-              height: 1,
+              width: isNarrowMode() ? "100%" : 35,
               flexShrink: 0,
-              backgroundColor: focusedPanel() === "files" ? "#58a6ff" : "#21262d",
-              paddingLeft: 1,
+              flexDirection: "column",
             }}
           >
-            <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e" }}>
-              <b>{leftPanelHeader()}</b>
-            </text>
-          </box>
-          <Show
-            when={!loading()}
-            fallback={
-              <box style={{ padding: 1 }}>
-                <text style={{ fg: "#8b949e" }}>Loading...</text>
-              </box>
-            }
-          >
+            {/* Panel header */}
+            <box
+              style={{
+                height: 1,
+                flexShrink: 0,
+                backgroundColor: focusedPanel() === "files" ? "#58a6ff" : "#21262d",
+                paddingLeft: 1,
+              }}
+            >
+              <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e" }}>
+                <b>{leftPanelHeader()}</b>
+              </text>
+            </box>
             <Show
-              when={!error()}
+              when={!loading()}
               fallback={
                 <box style={{ padding: 1 }}>
-                  <text style={{ fg: "#f85149" }}>Error: {error()}</text>
+                  <text style={{ fg: "#8b949e" }}>Loading...</text>
                 </box>
               }
             >
-              {/* Dirty mode or files view: show file list */}
-              <Show when={mode() === "dirty" || viewState() === "files"}>
-                <FileList
-                  files={files()}
-                  selectedIndex={selectedIndex()}
-                  focused={focusedPanel() === "files"}
-                />
-              </Show>
-              
-              {/* Commit mode list view: show commits */}
-              <Show when={mode() === "commit" && viewState() === "list"}>
-                <Show
-                  when={commits().length > 0}
-                  fallback={
-                    <box style={{ padding: 1 }}>
-                      <text style={{ fg: "#8b949e" }}>No commits found</text>
-                    </box>
-                  }
-                >
-                  <CommitList
-                    commits={commits()}
-                    selectedIndex={listSelectedIndex()}
+              <Show
+                when={!error()}
+                fallback={
+                  <box style={{ padding: 1 }}>
+                    <text style={{ fg: "#f85149" }}>Error: {error()}</text>
+                  </box>
+                }
+              >
+                {/* Dirty mode or files view: show file list */}
+                <Show when={mode() === "dirty" || viewState() === "files"}>
+                  <FileList
+                    files={files()}
+                    selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
                   />
                 </Show>
-              </Show>
-              
-              {/* Branch mode list view: show branches */}
-              <Show when={mode() === "branch" && viewState() === "list"}>
-                <Show
-                  when={branches().length > 0}
-                  fallback={
-                    <box style={{ padding: 1 }}>
-                      <text style={{ fg: "#8b949e" }}>No branches found</text>
-                    </box>
-                  }
-                >
-                  <BranchList
-                    branches={branches()}
-                    selectedIndex={listSelectedIndex()}
-                    focused={focusedPanel() === "files"}
-                  />
+                
+                {/* Commit mode list view: show commits */}
+                <Show when={mode() === "commit" && viewState() === "list"}>
+                  <Show
+                    when={commits().length > 0}
+                    fallback={
+                      <box style={{ padding: 1 }}>
+                        <text style={{ fg: "#8b949e" }}>No commits found</text>
+                      </box>
+                    }
+                  >
+                    <CommitList
+                      commits={commits()}
+                      selectedIndex={listSelectedIndex()}
+                      focused={focusedPanel() === "files"}
+                    />
+                  </Show>
+                </Show>
+                
+                {/* Branch mode list view: show branches */}
+                <Show when={mode() === "branch" && viewState() === "list"}>
+                  <Show
+                    when={branches().length > 0}
+                    fallback={
+                      <box style={{ padding: 1 }}>
+                        <text style={{ fg: "#8b949e" }}>No branches found</text>
+                      </box>
+                    }
+                  >
+                    <BranchList
+                      branches={branches()}
+                      selectedIndex={listSelectedIndex()}
+                      focused={focusedPanel() === "files"}
+                    />
+                  </Show>
                 </Show>
               </Show>
             </Show>
-          </Show>
-        </box>
+          </box>
+        </Show>
         
         {/* Diff viewer */}
-        <box
-          onMouseScroll={handleDiffScroll}
-          style={{
-            flexGrow: 1,
-            flexDirection: "column",
-          }}
-        >
-          {/* Panel header */}
+        <Show when={!isNarrowMode() || focusedPanel() === "diff"}>
           <box
+            onMouseScroll={handleDiffScroll}
             style={{
-              height: 1,
-              flexShrink: 0,
-              backgroundColor: focusedPanel() === "diff" ? "#58a6ff" : "#21262d",
-              paddingLeft: 1,
+              flexGrow: isNarrowMode() ? 1 : 1,
+              flexDirection: "column",
             }}
           >
-            <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e" }}>
-              <b>DIFF</b>
-            </text>
-          </box>
-          <Show
-            when={viewState() === "files" && selectedFile()}
-            fallback={
-              <box
-                style={{
-                  flexGrow: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <text style={{ fg: "#8b949e" }}>
-                  {diffPlaceholderMessage()}
-                </text>
-              </box>
-            }
-          >
+            {/* Panel header */}
+            <box
+              style={{
+                height: 1,
+                flexShrink: 0,
+                backgroundColor: focusedPanel() === "diff" ? "#58a6ff" : "#21262d",
+                paddingLeft: 1,
+              }}
+            >
+              <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e" }}>
+                <b>DIFF</b>
+              </text>
+            </box>
             <Show
-              when={!loadingFile() && selectedFile()?.content}
+              when={viewState() === "files" && selectedFile()}
               fallback={
                 <box
                   style={{
@@ -918,21 +907,38 @@ export function App() {
                     alignItems: "center",
                   }}
                 >
-                  <text style={{ fg: "#8b949e" }}>Loading file...</text>
+                  <text style={{ fg: "#8b949e" }}>
+                    {diffPlaceholderMessage()}
+                  </text>
                 </box>
               }
             >
-              <DiffViewer
-                file={selectedFile()!}
-                focused={focusedPanel() === "diff"}
-                scrollOffset={scrollOffset()}
-                onScroll={setScrollOffset}
-                currentChunk={currentChunkIndex()}
-                totalChunks={chunkCount()}
-              />
+              <Show
+                when={!loadingFile() && selectedFile()?.content}
+                fallback={
+                  <box
+                    style={{
+                      flexGrow: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <text style={{ fg: "#8b949e" }}>Loading file...</text>
+                  </box>
+                }
+              >
+                <DiffViewer
+                  file={selectedFile()!}
+                  focused={focusedPanel() === "diff"}
+                  scrollOffset={scrollOffset()}
+                  onScroll={setScrollOffset}
+                  currentChunk={currentChunkIndex()}
+                  totalChunks={chunkCount()}
+                />
+              </Show>
             </Show>
-          </Show>
-        </box>
+          </box>
+        </Show>
       </box>
       
       <StatusBar
