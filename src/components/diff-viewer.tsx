@@ -160,21 +160,25 @@ export function DiffViewer(props: DiffViewerProps) {
         <box style={{ flexDirection: "column", flexGrow: 1, backgroundColor: "#0d1117" }}>
           <Index each={visibleLines()}>
             {(item) => {
-              const line = item().line
-              const isAdded = line.type === "addition"
-              const isRemoved = line.type === "deletion"
-              const isHeader = line.type === "header"
-              const isChanged = isAdded || isRemoved
+              // NOTE: when using <Index>, the callback runs once per position and
+              // `item()` updates as the underlying array slice changes (scrolling).
+              // Derive styling from `item()` inside reactive getters so background
+              // colors and line numbers update correctly.
+              const line = () => item().line
+              const isAdded = () => line().type === "addition"
+              const isRemoved = () => line().type === "deletion"
+              const isHeader = () => line().type === "header"
+              const isChanged = () => isAdded() || isRemoved()
 
               return (
                 <box
                   style={{
                     flexDirection: "row",
-                    backgroundColor: isAdded
+                    backgroundColor: isAdded()
                       ? "#1a2f1a"
-                      : isRemoved
+                      : isRemoved()
                         ? "#2f1a1a"
-                        : isHeader
+                        : isHeader()
                           ? "#21262d"
                           : "#0d1117",
                     height: 1,
@@ -184,34 +188,48 @@ export function DiffViewer(props: DiffViewerProps) {
                   <box
                     style={{
                       width: lineNumberWidth(),
-                      backgroundColor: isAdded
+                      backgroundColor: isAdded()
                         ? "#1a2f1a"
-                        : isRemoved
+                        : isRemoved()
                           ? "#2f1a1a"
-                          : isHeader
+                          : isHeader()
                             ? "#21262d"
                             : "#161b22",
                     }}
                   >
-                    <text style={{ fg: isHeader ? "#8b949e" : isChanged ? "#3fb950" : "#484f58" }}>
-                      {isHeader ? "@@" : (line.newLineNumber ?? line.oldLineNumber ?? "-").toString().padStart(lineNumberWidth() - 1, " ")}
+                    <text style={{ fg: isHeader() ? "#8b949e" : isChanged() ? "#3fb950" : "#484f58" }}>
+                      {isHeader()
+                        ? "@@"
+                        : (line().newLineNumber ?? line().oldLineNumber ?? "-")
+                            .toString()
+                            .padStart(lineNumberWidth() - 1, " ")}
                     </text>
                   </box>
                   {/* Change indicator */}
                   <box
                     style={{
                       width: 1,
-                      backgroundColor: isAdded
+                      backgroundColor: isAdded()
                         ? "#1a2f1a"
-                        : isRemoved
+                        : isRemoved()
                           ? "#2f1a1a"
-                          : isHeader
+                          : isHeader()
                             ? "#21262d"
                             : "#0d1117",
                     }}
                   >
-                    <text style={{ fg: isHeader ? "#d29922" : isAdded ? "#3fb950" : isRemoved ? "#f85149" : "#0d1117" }}>
-                      {isHeader ? "~" : isAdded ? "+" : isRemoved ? "-" : " "}
+                    <text
+                      style={{
+                        fg: isHeader()
+                          ? "#d29922"
+                          : isAdded()
+                            ? "#3fb950"
+                            : isRemoved()
+                              ? "#f85149"
+                              : "#0d1117",
+                      }}
+                    >
+                      {isHeader() ? "~" : isAdded() ? "+" : isRemoved() ? "-" : " "}
                     </text>
                   </box>
                   {/* Content with syntax highlighting */}
@@ -225,7 +243,7 @@ export function DiffViewer(props: DiffViewerProps) {
                       {(token) => (
                         <span
                           style={{
-                            fg: isHeader ? "#8b949e" : token().color,
+                            fg: isHeader() ? "#8b949e" : token().color,
                             bold: token().bold,
                             italic: token().italic,
                             dim: token().dim,
