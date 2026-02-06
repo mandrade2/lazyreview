@@ -38,7 +38,11 @@ export function App() {
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [focusedPanel, setFocusedPanel] = createSignal<"files" | "diff">("files")
   
-  const isNarrowMode = createMemo(() => dimensions().width < 500)
+  // Terminal width is measured in columns, not pixels.
+  // Keep split-pane layout unless the terminal is truly narrow.
+  // 80 columns is the common default; keep split panes at 80+.
+  const narrowModeThreshold = 80
+  const isNarrowMode = createMemo(() => dimensions().width < narrowModeThreshold)
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
