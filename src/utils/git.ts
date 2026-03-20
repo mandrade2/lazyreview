@@ -68,7 +68,7 @@ async function readFileContent(path: string): Promise<string> {
   }
 }
 
-function generateUnifiedDiff(filePath: string, content: string): string {
+export function generateUnifiedDiff(filePath: string, content: string): string {
   const lines = content.split("\n")
   const diffLines: string[] = [
     `@@ -0,0 +1,${lines.length} @@`,
@@ -81,14 +81,14 @@ function generateUnifiedDiff(filePath: string, content: string): string {
   return diffLines.join("\n")
 }
 
-interface ParsedChanges {
+export interface ParsedChanges {
   changedLines: number[]
   addedLines: number[]
   removedLines: number[]
 }
 
 // Parse a diff to extract the line numbers that were changed (0-indexed, in the new file)
-function parseChangedLines(diff: string): ParsedChanges {
+export function parseChangedLines(diff: string): ParsedChanges {
   const changedLines: number[] = []
   const addedLines: number[] = []
   const removedLines: number[] = []
