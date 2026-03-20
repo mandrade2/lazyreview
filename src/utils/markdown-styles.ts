@@ -173,7 +173,7 @@ function formatTable(tableLines: HighlightedLine[]): HighlightedLine[] {
         // For separator, fill with dashes, preserving alignment markers
         const hasLeftColon = cell.startsWith(":")
         const hasRightColon = cell.endsWith(":")
-        const dashCount = width - (hasLeftColon ? 1 : 0) - (hasRightColon ? 1 : 0)
+        const dashCount = Math.max(1, width - (hasLeftColon ? 1 : 0) - (hasRightColon ? 1 : 0))
         formattedLine += " " + (hasLeftColon ? ":" : "") + "-".repeat(dashCount) + (hasRightColon ? ":" : "") + " |"
       } else {
         // Regular cell - pad with spaces

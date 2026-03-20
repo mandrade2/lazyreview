@@ -638,12 +638,12 @@ export function App() {
     if (key.name === "g" && key.shift) {
       if (viewState() === "list") {
         if (mode() === "commit") {
-          setListSelectedIndex(commits().length - 1)
+          setListSelectedIndex(Math.max(0, commits().length - 1))
         } else if (mode() === "branch") {
-          setListSelectedIndex(selectableBranches().length - 1)
+          setListSelectedIndex(Math.max(0, selectableBranches().length - 1))
         }
       } else if (focusedPanel() === "files") {
-        setSelectedIndex(files().length - 1)
+        setSelectedIndex(Math.max(0, files().length - 1))
       } else if (focusedPanel() === "diff") {
         setScrollOffset(getMaxScroll())
       }
