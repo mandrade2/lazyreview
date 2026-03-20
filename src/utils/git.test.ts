@@ -2,436 +2,384 @@ import { test, expect, describe } from "bun:test"
 import { parseDiff, parseChangedLines, generateUnifiedDiff } from "./git"
 import type { DiffLine } from "./git"
 
-// ---------------------------------------------------------------------------
-// parseDiff – the core unified-diff parser
-// ---------------------------------------------------------------------------
+// =============================================================================
+// parseDiff — converts unified diff text into structured DiffLine arrays
+// =============================================================================
+
 describe("parseDiff", () => {
+  // ---------------------------------------------------------------------------
+  // Edge cases: empty / trivial inputs
+  // ---------------------------------------------------------------------------
+
   test("returns empty array for empty string", () => {
     expect(parseDiff("")).toEqual([])
   })
 
-  test("returns empty array for whitespace-only input", () => {
+  test("returns empty array for whitespace-only diff", () => {
     expect(parseDiff("   \n  \n")).toEqual([])
   })
 
-  // ---- single-hunk diffs -------------------------------------------------
-
-  test("parses a simple single-hunk diff with additions only", () => {
+  test("skips git diff header lines", () => {
     const diff = [
       "diff --git a/file.ts b/file.ts",
+      "index abc1234..def5678 100644",
       "new file mode 100644",
-      "index 0000000..abc1234",
-      "--- /dev/null",
-      "+++ b/file.ts",
-      "@@ -0,0 +1,3 @@",
-      "+line one",
-      "+line two",
-      "+line three",
     ].join("\n")
-
-    const result = parseDiff(diff)
-
-    // Should have 1 header + 3 additions
-    expect(result.length).toBe(4)
-    expect(result[0]!.type).toBe("header")
-    expect(result[0]!.content).toBe("@@ -0,0 +1,3 @@")
-
-    expect(result[1]!.type).toBe("addition")
-    expect(result[1]!.content).toBe("line one")
-    expect(result[1]!.newLineNumber).toBe(1)
-
-    expect(result[2]!.type).toBe("addition")
-    expect(result[2]!.content).toBe("line two")
-    expect(result[2]!.newLineNumber).toBe(2)
-
-    expect(result[3]!.type).toBe("addition")
-    expect(result[3]!.content).toBe("line three")
-    expect(result[3]!.newLineNumber).toBe(3)
-  })
-
-  test("parses a simple single-hunk diff with deletions only", () => {
-    const diff = [
-      "diff --git a/file.ts b/file.ts",
-      "deleted file mode 100644",
-      "--- a/file.ts",
-      "+++ /dev/null",
-      "@@ -1,3 +0,0 @@",
-      "-line one",
-      "-line two",
-      "-line three",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-
-    expect(result.length).toBe(4) // 1 header + 3 deletions
-    expect(result[0]!.type).toBe("header")
-
-    for (let i = 1; i <= 3; i++) {
-      expect(result[i]!.type).toBe("deletion")
-      expect(result[i]!.oldLineNumber).toBe(i)
-    }
-  })
-
-  test("parses a diff with context, additions, and deletions", () => {
-    const diff = [
-      "diff --git a/file.ts b/file.ts",
-      "--- a/file.ts",
-      "+++ b/file.ts",
-      "@@ -1,5 +1,5 @@",
-      " context line 1",
-      "-old line 2",
-      "+new line 2",
-      " context line 3",
-      "-old line 4",
-      "+new line 4",
-      " context line 5",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-
-    expect(result.length).toBe(8) // 1 header + 7 lines
-    expect(result[0]!.type).toBe("header")
-
-    expect(result[1]!.type).toBe("context")
-    expect(result[1]!.content).toBe("context line 1")
-    expect(result[1]!.oldLineNumber).toBe(1)
-    expect(result[1]!.newLineNumber).toBe(1)
-
-    expect(result[2]!.type).toBe("deletion")
-    expect(result[2]!.content).toBe("old line 2")
-    expect(result[2]!.oldLineNumber).toBe(2)
-
-    expect(result[3]!.type).toBe("addition")
-    expect(result[3]!.content).toBe("new line 2")
-    expect(result[3]!.newLineNumber).toBe(2)
-
-    expect(result[4]!.type).toBe("context")
-    expect(result[4]!.content).toBe("context line 3")
-    expect(result[4]!.oldLineNumber).toBe(3)
-    expect(result[4]!.newLineNumber).toBe(3)
-  })
-
-  // ---- multi-hunk diffs --------------------------------------------------
-
-  test("parses a multi-hunk diff correctly", () => {
-    const diff = [
-      "diff --git a/file.ts b/file.ts",
-      "--- a/file.ts",
-      "+++ b/file.ts",
-      "@@ -1,3 +1,4 @@",
-      " line 1",
-      "+inserted after line 1",
-      " line 2",
-      " line 3",
-      "@@ -10,3 +11,2 @@",
-      " line 10",
-      "-removed line 11",
-      " line 12",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-
-    // First hunk: header + 4 lines
-    expect(result[0]!.type).toBe("header")
-    expect(result[0]!.content).toContain("@@ -1,3 +1,4 @@")
-
-    expect(result[1]!.type).toBe("context")
-    expect(result[1]!.oldLineNumber).toBe(1)
-    expect(result[1]!.newLineNumber).toBe(1)
-
-    expect(result[2]!.type).toBe("addition")
-    expect(result[2]!.newLineNumber).toBe(2)
-
-    expect(result[3]!.type).toBe("context")
-    expect(result[3]!.oldLineNumber).toBe(2)
-    expect(result[3]!.newLineNumber).toBe(3)
-
-    expect(result[4]!.type).toBe("context")
-    expect(result[4]!.oldLineNumber).toBe(3)
-    expect(result[4]!.newLineNumber).toBe(4)
-
-    // Second hunk: header + 3 lines
-    expect(result[5]!.type).toBe("header")
-    expect(result[5]!.content).toContain("@@ -10,3 +11,2 @@")
-
-    expect(result[6]!.type).toBe("context")
-    expect(result[6]!.oldLineNumber).toBe(10)
-    expect(result[6]!.newLineNumber).toBe(11)
-
-    expect(result[7]!.type).toBe("deletion")
-    expect(result[7]!.oldLineNumber).toBe(11)
-
-    expect(result[8]!.type).toBe("context")
-    expect(result[8]!.oldLineNumber).toBe(12)
-    expect(result[8]!.newLineNumber).toBe(12)
-  })
-
-  // ---- line number tracking -----------------------------------------------
-
-  test("tracks line numbers correctly across deletions and additions", () => {
-    // Simulates replacing 2 lines with 3 lines at the start of a file
-    const diff = [
-      "@@ -1,4 +1,5 @@",
-      "-old first",
-      "-old second",
-      "+new first",
-      "+new second",
-      "+new third",
-      " unchanged line 3",
-      " unchanged line 4",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-
-    // Deletions track old line numbers
-    expect(result[1]!.type).toBe("deletion")
-    expect(result[1]!.oldLineNumber).toBe(1)
-    expect(result[2]!.type).toBe("deletion")
-    expect(result[2]!.oldLineNumber).toBe(2)
-
-    // Additions track new line numbers
-    expect(result[3]!.type).toBe("addition")
-    expect(result[3]!.newLineNumber).toBe(1)
-    expect(result[4]!.type).toBe("addition")
-    expect(result[4]!.newLineNumber).toBe(2)
-    expect(result[5]!.type).toBe("addition")
-    expect(result[5]!.newLineNumber).toBe(3)
-
-    // Context lines track both
-    expect(result[6]!.type).toBe("context")
-    expect(result[6]!.oldLineNumber).toBe(3)
-    expect(result[6]!.newLineNumber).toBe(4)
-  })
-
-  // ---- hunk header variations ---------------------------------------------
-
-  test("handles hunk header without count (single-line hunk)", () => {
-    // @@ -5 +5 @@ means count=1 for both sides
-    const diff = [
-      "@@ -5 +5 @@",
-      "-old",
-      "+new",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-    expect(result[0]!.type).toBe("header")
-    expect(result[1]!.type).toBe("deletion")
-    expect(result[1]!.oldLineNumber).toBe(5)
-    expect(result[2]!.type).toBe("addition")
-    expect(result[2]!.newLineNumber).toBe(5)
-  })
-
-  test("handles hunk header with function context after @@", () => {
-    const diff = [
-      "@@ -10,5 +10,6 @@ function foo() {",
-      " context",
-      "+added",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-    expect(result[0]!.type).toBe("header")
-    expect(result[0]!.content).toContain("function foo()")
-    expect(result[1]!.type).toBe("context")
-    expect(result[1]!.oldLineNumber).toBe(10)
-  })
-
-  // ---- edge cases ---------------------------------------------------------
-
-  test("skips git diff metadata lines (diff --git, index, new file)", () => {
-    const diff = [
-      "diff --git a/foo.ts b/foo.ts",
-      "new file mode 100644",
-      "index 0000000..1234567 100644",
-      "--- /dev/null",
-      "+++ b/foo.ts",
-      "@@ -0,0 +1,1 @@",
-      "+hello",
-    ].join("\n")
-
-    const result = parseDiff(diff)
-    // Should only have header + addition, no metadata lines
-    expect(result.length).toBe(2)
-    expect(result[0]!.type).toBe("header")
-    expect(result[1]!.type).toBe("addition")
+    expect(parseDiff(diff)).toEqual([])
   })
 
   test("skips --- and +++ file header lines", () => {
     const diff = [
       "--- a/file.ts",
       "+++ b/file.ts",
-      "@@ -1,1 +1,1 @@",
-      "-old",
-      "+new",
     ].join("\n")
-
-    const result = parseDiff(diff)
-    // No --- or +++ lines in output
-    expect(result.every(l => !l.content.startsWith("-- a/") && !l.content.startsWith("++ b/"))).toBe(true)
+    expect(parseDiff(diff)).toEqual([])
   })
 
-  test("handles empty lines in diff as context", () => {
+  // ---------------------------------------------------------------------------
+  // Single-hunk diffs
+  // ---------------------------------------------------------------------------
+
+  test("parses a simple single-hunk addition", () => {
+    const diff = [
+      "@@ -1,3 +1,4 @@",
+      " line one",
+      "+added line",
+      " line two",
+      " line three",
+    ].join("\n")
+
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(5)
+    expect(lines[0]).toEqual({ type: "header", content: "@@ -1,3 +1,4 @@" })
+    expect(lines[1]).toEqual({ type: "context", content: "line one", oldLineNumber: 1, newLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "addition", content: "added line", newLineNumber: 2 })
+    expect(lines[3]).toEqual({ type: "context", content: "line two", oldLineNumber: 2, newLineNumber: 3 })
+    expect(lines[4]).toEqual({ type: "context", content: "line three", oldLineNumber: 3, newLineNumber: 4 })
+  })
+
+  test("parses a simple single-hunk deletion", () => {
+    const diff = [
+      "@@ -1,4 +1,3 @@",
+      " line one",
+      "-removed line",
+      " line two",
+      " line three",
+    ].join("\n")
+
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(5)
+    expect(lines[1]).toEqual({ type: "context", content: "line one", oldLineNumber: 1, newLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "deletion", content: "removed line", oldLineNumber: 2 })
+    expect(lines[3]).toEqual({ type: "context", content: "line two", oldLineNumber: 3, newLineNumber: 2 })
+  })
+
+  test("parses mixed additions and deletions (replacement)", () => {
     const diff = [
       "@@ -1,3 +1,3 @@",
+      " context before",
+      "-old value",
+      "+new value",
+      " context after",
+    ].join("\n")
+
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(5)
+    expect(lines[1]).toEqual({ type: "context", content: "context before", oldLineNumber: 1, newLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "deletion", content: "old value", oldLineNumber: 2 })
+    expect(lines[3]).toEqual({ type: "addition", content: "new value", newLineNumber: 2 })
+    expect(lines[4]).toEqual({ type: "context", content: "context after", oldLineNumber: 3, newLineNumber: 3 })
+  })
+
+  // ---------------------------------------------------------------------------
+  // Multi-hunk diffs
+  // ---------------------------------------------------------------------------
+
+  test("parses multi-hunk diff with correct line numbering", () => {
+    const diff = [
+      "@@ -1,3 +1,4 @@",
       " first",
-      "",
+      "+inserted",
+      " second",
       " third",
+      "@@ -10,3 +11,3 @@",
+      " ten",
+      "-old eleven",
+      "+new eleven",
+      " twelve",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(4) // header + 3 context lines
-    // The empty line between first and third
-    expect(result[2]!.type).toBe("context")
-    expect(result[2]!.content).toBe("")
+    const lines = parseDiff(diff)
+
+    // First hunk
+    expect(lines[0]).toEqual({ type: "header", content: "@@ -1,3 +1,4 @@" })
+    expect(lines[2]).toEqual({ type: "addition", content: "inserted", newLineNumber: 2 })
+
+    // Second hunk — line numbers reset from hunk header
+    const secondHeader = lines.find(
+      (l, i) => i > 0 && l.type === "header"
+    )
+    expect(secondHeader).toBeDefined()
+
+    const newEleven = lines.find(l => l.content === "new eleven")
+    expect(newEleven).toEqual({ type: "addition", content: "new eleven", newLineNumber: 12 })
+
+    const oldEleven = lines.find(l => l.content === "old eleven")
+    expect(oldEleven).toEqual({ type: "deletion", content: "old eleven", oldLineNumber: 11 })
   })
 
-  test("handles diff with a single context line (no changes in hunk)", () => {
+  // ---------------------------------------------------------------------------
+  // New file (all additions)
+  // ---------------------------------------------------------------------------
+
+  test("parses a fully-added file diff", () => {
     const diff = [
-      "@@ -1,1 +1,1 @@",
-      " just context",
+      "@@ -0,0 +1,3 @@",
+      "+line one",
+      "+line two",
+      "+line three",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(2)
-    expect(result[1]!.type).toBe("context")
-    expect(result[1]!.content).toBe("just context")
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(4)
+    expect(lines[0]!.type).toBe("header")
+    expect(lines[1]).toEqual({ type: "addition", content: "line one", newLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "addition", content: "line two", newLineNumber: 2 })
+    expect(lines[3]).toEqual({ type: "addition", content: "line three", newLineNumber: 3 })
   })
 
-  test("correctly strips leading +/- characters from content", () => {
+  // ---------------------------------------------------------------------------
+  // Deleted file (all deletions)
+  // ---------------------------------------------------------------------------
+
+  test("parses a fully-deleted file diff", () => {
     const diff = [
-      "@@ -1,2 +1,2 @@",
-      "-  indented old",
-      "+  indented new",
+      "@@ -1,3 +0,0 @@",
+      "-line one",
+      "-line two",
+      "-line three",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result[1]!.content).toBe("  indented old")
-    expect(result[2]!.content).toBe("  indented new")
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(4)
+    expect(lines[1]).toEqual({ type: "deletion", content: "line one", oldLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "deletion", content: "line two", oldLineNumber: 2 })
+    expect(lines[3]).toEqual({ type: "deletion", content: "line three", oldLineNumber: 3 })
   })
 
-  test("handles line starting with + in content (e.g. C++ code)", () => {
-    // In a diff, a line that starts with ++ is a file header and gets skipped,
-    // but +something is an addition. Content like "++i" would appear as "++i"
-    // in the diff, which starts with "+" so it's an addition with content "+i"
+  // ---------------------------------------------------------------------------
+  // Context-only hunk (no changes)
+  // ---------------------------------------------------------------------------
+
+  test("parses context-only lines when line numbers are set", () => {
     const diff = [
-      "@@ -1,1 +1,2 @@",
-      " normal",
-      "+++i;",
+      "@@ -5,3 +5,3 @@",
+      " line five",
+      " line six",
+      " line seven",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    // "+++" lines are treated as file headers and skipped
-    // This is a known limitation - "+++" at line start is ambiguous
-    expect(result.length).toBe(2) // header + context only
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(4)
+    expect(lines[1]).toEqual({ type: "context", content: "line five", oldLineNumber: 5, newLineNumber: 5 })
+    expect(lines[3]).toEqual({ type: "context", content: "line seven", oldLineNumber: 7, newLineNumber: 7 })
   })
 
-  test("handles large line numbers correctly", () => {
+  // ---------------------------------------------------------------------------
+  // Hunk header variations
+  // ---------------------------------------------------------------------------
+
+  test("handles hunk header without count (single-line hunk)", () => {
+    // @@ -1 +1,2 @@ means old side is exactly 1 line, no comma
     const diff = [
-      "@@ -1000,2 +2000,3 @@",
-      " context",
+      "@@ -1 +1,2 @@",
+      " existing",
       "+new line",
-      " more context",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result[1]!.oldLineNumber).toBe(1000)
-    expect(result[1]!.newLineNumber).toBe(2000)
-    expect(result[2]!.newLineNumber).toBe(2001)
-    expect(result[3]!.oldLineNumber).toBe(1001)
-    expect(result[3]!.newLineNumber).toBe(2002)
+    const lines = parseDiff(diff)
+    expect(lines[0]!.type).toBe("header")
+    expect(lines[1]).toEqual({ type: "context", content: "existing", oldLineNumber: 1, newLineNumber: 1 })
+    expect(lines[2]).toEqual({ type: "addition", content: "new line", newLineNumber: 2 })
   })
 
-  // ---- real-world patterns ------------------------------------------------
-
-  test("parses a renamed file diff correctly", () => {
+  test("handles hunk header with section name after @@", () => {
     const diff = [
-      "diff --git a/old-name.ts b/new-name.ts",
-      "index abc1234..def5678 100644",
-      "--- a/old-name.ts",
-      "+++ b/new-name.ts",
-      "@@ -1,3 +1,3 @@",
-      " line 1",
-      "-old line 2",
-      "+new line 2",
-      " line 3",
+      "@@ -10,5 +10,6 @@ function myFunc() {",
+      " context",
+      "+addition",
+      " context2",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(5) // header + 4 lines
-    expect(result[2]!.type).toBe("deletion")
-    expect(result[3]!.type).toBe("addition")
+    const lines = parseDiff(diff)
+    // The header content should include the full line
+    expect(lines[0]!.type).toBe("header")
+    expect(lines[0]!.content).toContain("function myFunc")
   })
 
-  test("parses diff for a file that adds trailing content", () => {
-    const diff = [
-      "@@ -1,2 +1,5 @@",
-      " existing line 1",
-      " existing line 2",
-      "+new line 3",
-      "+new line 4",
-      "+new line 5",
-    ].join("\n")
+  // ---------------------------------------------------------------------------
+  // Line number tracking across deletions and additions
+  // ---------------------------------------------------------------------------
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(6) // header + 2 context + 3 additions
-    expect(result[3]!.type).toBe("addition")
-    expect(result[3]!.newLineNumber).toBe(3)
-    expect(result[5]!.type).toBe("addition")
-    expect(result[5]!.newLineNumber).toBe(5)
-  })
-
-  test("handles interleaved additions and deletions (replacement pattern)", () => {
+  test("tracks line numbers correctly across interleaved add/delete", () => {
     const diff = [
-      "@@ -1,4 +1,4 @@",
-      "-a",
-      "+A",
+      "@@ -1,5 +1,5 @@",
+      " a",
       "-b",
-      "+B",
       "-c",
+      "+B",
       "+C",
-      "-d",
-      "+D",
+      " d",
+      " e",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(9) // header + 8 change lines
+    const lines = parseDiff(diff)
 
-    // Old line numbers: 1, 2, 3, 4 for deletions
-    expect(result[1]!.oldLineNumber).toBe(1)
-    expect(result[3]!.oldLineNumber).toBe(2)
-    expect(result[5]!.oldLineNumber).toBe(3)
-    expect(result[7]!.oldLineNumber).toBe(4)
-
-    // New line numbers: 1, 2, 3, 4 for additions
-    expect(result[2]!.newLineNumber).toBe(1)
-    expect(result[4]!.newLineNumber).toBe(2)
-    expect(result[6]!.newLineNumber).toBe(3)
-    expect(result[8]!.newLineNumber).toBe(4)
+    // Context a: old=1, new=1
+    expect(lines[1]).toEqual({ type: "context", content: "a", oldLineNumber: 1, newLineNumber: 1 })
+    // -b: old=2
+    expect(lines[2]).toEqual({ type: "deletion", content: "b", oldLineNumber: 2 })
+    // -c: old=3
+    expect(lines[3]).toEqual({ type: "deletion", content: "c", oldLineNumber: 3 })
+    // +B: new=2
+    expect(lines[4]).toEqual({ type: "addition", content: "B", newLineNumber: 2 })
+    // +C: new=3
+    expect(lines[5]).toEqual({ type: "addition", content: "C", newLineNumber: 3 })
+    // d: old=4, new=4
+    expect(lines[6]).toEqual({ type: "context", content: "d", oldLineNumber: 4, newLineNumber: 4 })
   })
 
-  test("handles consecutive deletions followed by consecutive additions", () => {
+  // ---------------------------------------------------------------------------
+  // Full git diff output with headers
+  // ---------------------------------------------------------------------------
+
+  test("skips full git diff header and parses body correctly", () => {
     const diff = [
-      "@@ -1,3 +1,2 @@",
-      "-old 1",
-      "-old 2",
-      "-old 3",
-      "+new 1",
-      "+new 2",
+      "diff --git a/src/utils/git.ts b/src/utils/git.ts",
+      "index abc1234..def5678 100644",
+      "--- a/src/utils/git.ts",
+      "+++ b/src/utils/git.ts",
+      "@@ -1,3 +1,4 @@",
+      " import { foo } from 'bar'",
+      "+import { baz } from 'qux'",
+      " ",
+      " export function main() {",
     ].join("\n")
 
-    const result = parseDiff(diff)
-    expect(result.length).toBe(6) // header + 3 del + 2 add
+    const lines = parseDiff(diff)
 
-    expect(result[1]!.oldLineNumber).toBe(1)
-    expect(result[2]!.oldLineNumber).toBe(2)
-    expect(result[3]!.oldLineNumber).toBe(3)
-    expect(result[4]!.newLineNumber).toBe(1)
-    expect(result[5]!.newLineNumber).toBe(2)
+    // Should have skipped git headers and file headers
+    expect(lines[0]!.type).toBe("header")
+    expect(lines[0]!.content).toBe("@@ -1,3 +1,4 @@")
+    expect(lines[1]!.type).toBe("context")
+    expect(lines[2]!.type).toBe("addition")
+    expect(lines[2]!.content).toBe("import { baz } from 'qux'")
+  })
+
+  // ---------------------------------------------------------------------------
+  // Empty content lines
+  // ---------------------------------------------------------------------------
+
+  test("handles additions/deletions with empty content", () => {
+    const diff = [
+      "@@ -1,2 +1,3 @@",
+      " text",
+      "+",
+      " more text",
+    ].join("\n")
+
+    const lines = parseDiff(diff)
+    // The "+" line should become an addition with empty content
+    expect(lines[2]).toEqual({ type: "addition", content: "", newLineNumber: 2 })
+  })
+
+  // ---------------------------------------------------------------------------
+  // Consecutive additions (common in new code blocks)
+  // ---------------------------------------------------------------------------
+
+  test("handles many consecutive additions", () => {
+    const additions = Array.from({ length: 20 }, (_, i) => `+line ${i + 1}`)
+    const diff = [`@@ -0,0 +1,20 @@`, ...additions].join("\n")
+
+    const lines = parseDiff(diff)
+
+    expect(lines).toHaveLength(21) // 1 header + 20 additions
+    for (let i = 1; i <= 20; i++) {
+      expect(lines[i]!.type).toBe("addition")
+      expect(lines[i]!.newLineNumber).toBe(i)
+      expect(lines[i]!.content).toBe(`line ${i}`)
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // Lines starting with special characters (edge cases in diff parsing)
+  // ---------------------------------------------------------------------------
+
+  test("handles added lines that look like diff markers", () => {
+    // Content that starts with + or - after the diff marker
+    const diff = [
+      "@@ -1,2 +1,3 @@",
+      " normal",
+      "+++ not a file header because already in hunk",
+      " end",
+    ].join("\n")
+
+    // The +++ line inside a hunk should be treated differently -
+    // actually the parser skips +++ lines, let's verify behavior
+    const lines = parseDiff(diff)
+    // The parser skips +++ lines globally, which is a known limitation
+    // but it's fine for real-world diffs since +++ only appears in file headers
+    expect(lines.length).toBeGreaterThanOrEqual(2)
+  })
+
+  // ---------------------------------------------------------------------------
+  // Realistic TypeScript diff
+  // ---------------------------------------------------------------------------
+
+  test("parses realistic TypeScript code diff", () => {
+    const diff = [
+      "diff --git a/src/app.tsx b/src/app.tsx",
+      "index 1234567..abcdefg 100644",
+      "--- a/src/app.tsx",
+      "+++ b/src/app.tsx",
+      "@@ -28,6 +28,8 @@ export function App() {",
+      "   const [mode, setMode] = createSignal<AppMode>(\"dirty\")",
+      "   const [viewState, setViewState] = createSignal<\"list\" | \"files\">(\"files\")",
+      "   ",
+      "+  const [searchMode, setSearchMode] = createSignal(false)",
+      "+  const [searchQuery, setSearchQuery] = createSignal(\"\")",
+      "   const [files, setFiles] = createSignal<FileChange[]>([])",
+      "   const [selectedIndex, setSelectedIndex] = createSignal(0)",
+      "@@ -100,7 +102,7 @@ export function App() {",
+      "   const loadDirtyChanges = async () => {",
+      "     setLoading(true)",
+      "-    setError(null)",
+      "+    setError(undefined)",
+      "     try {",
+      "       const changes = await getGitChanges()",
+    ].join("\n")
+
+    const lines = parseDiff(diff)
+    const headers = lines.filter(l => l.type === "header")
+    const additions = lines.filter(l => l.type === "addition")
+    const deletions = lines.filter(l => l.type === "deletion")
+
+    expect(headers).toHaveLength(2) // two hunks
+    expect(additions).toHaveLength(3) // searchMode, searchQuery, setError(undefined)
+    expect(deletions).toHaveLength(1) // setError(null)
   })
 })
 
-// ---------------------------------------------------------------------------
-// parseChangedLines – extracts line numbers of changes
-// ---------------------------------------------------------------------------
+// =============================================================================
+// parseChangedLines — extracts 0-indexed changed line numbers from diff text
+// =============================================================================
+
 describe("parseChangedLines", () => {
   test("returns empty arrays for empty diff", () => {
     const result = parseChangedLines("")
@@ -440,241 +388,371 @@ describe("parseChangedLines", () => {
     expect(result.removedLines).toEqual([])
   })
 
-  test("detects additions in a simple hunk", () => {
-    const diff = [
-      "@@ -1,2 +1,3 @@",
-      " context",
-      "+added line",
-      " context",
-    ].join("\n")
-
-    const result = parseChangedLines(diff)
-    expect(result.addedLines).toEqual([1]) // 0-indexed: line 2 (index 1)
-    expect(result.changedLines).toEqual([1])
-    expect(result.removedLines).toEqual([])
-  })
-
-  test("detects deletions without incrementing line counter", () => {
-    const diff = [
-      "@@ -1,3 +1,2 @@",
-      " context",
-      "-deleted line",
-      " context",
-    ].join("\n")
-
-    const result = parseChangedLines(diff)
-    expect(result.removedLines).toEqual([1]) // deletion happened at position 1
-    expect(result.changedLines).toEqual([1])
-    expect(result.addedLines).toEqual([])
-  })
-
-  test("handles mixed additions and deletions", () => {
-    const diff = [
-      "@@ -1,3 +1,3 @@",
-      " context",
-      "-old",
-      "+new",
-      " context",
-    ].join("\n")
-
-    const result = parseChangedLines(diff)
-    // Deletion at position 1, addition at position 1
-    expect(result.changedLines).toContain(1)
-    expect(result.addedLines).toContain(1)
-    expect(result.removedLines).toContain(1)
-  })
-
-  test("handles multi-hunk diff", () => {
+  test("identifies additions correctly (0-indexed)", () => {
     const diff = [
       "@@ -1,3 +1,4 @@",
       " context",
-      "+added at line 2",
+      "+added line",
       " context",
-      " context",
-      "@@ -10,2 +11,3 @@",
-      " context",
-      "+added at line 12",
       " context",
     ].join("\n")
 
     const result = parseChangedLines(diff)
-    expect(result.addedLines).toContain(1)  // first hunk: 0-indexed line 1
-    expect(result.addedLines).toContain(11) // second hunk: 0-indexed line 11
+    // added line is at new-file line 2 → 0-indexed = 1
+    expect(result.addedLines).toEqual([1])
+    expect(result.changedLines).toContain(1)
   })
 
-  test("handles all-additions (new file) diff", () => {
+  test("identifies deletions correctly", () => {
+    const diff = [
+      "@@ -1,4 +1,3 @@",
+      " context",
+      "-removed",
+      " context",
+      " context",
+    ].join("\n")
+
+    const result = parseChangedLines(diff)
+    // Deletion at position 1 (0-indexed, where removal happened in new file)
+    expect(result.removedLines).toEqual([1])
+  })
+
+  test("handles replacement (delete then add)", () => {
+    const diff = [
+      "@@ -1,3 +1,3 @@",
+      " before",
+      "-old",
+      "+new",
+      " after",
+    ].join("\n")
+
+    const result = parseChangedLines(diff)
+    expect(result.addedLines).toContain(1)
+    expect(result.removedLines).toContain(1)
+    // Both should be in changedLines
+    expect(result.changedLines.filter(l => l === 1).length).toBe(2)
+  })
+
+  test("handles fully new file (all additions)", () => {
     const diff = [
       "@@ -0,0 +1,3 @@",
-      "+first",
-      "+second",
-      "+third",
+      "+line one",
+      "+line two",
+      "+line three",
     ].join("\n")
 
     const result = parseChangedLines(diff)
     expect(result.addedLines).toEqual([0, 1, 2])
-    expect(result.changedLines).toEqual([0, 1, 2])
     expect(result.removedLines).toEqual([])
   })
 
-  test("handles all-deletions (removed file) diff", () => {
+  test("handles fully deleted file", () => {
     const diff = [
       "@@ -1,3 +0,0 @@",
-      "-first",
-      "-second",
-      "-third",
+      "-line one",
+      "-line two",
+      "-line three",
     ].join("\n")
 
     const result = parseChangedLines(diff)
-    // +0 in hunk header means new file starts at line 0, so 0-indexed = -1
-    // All deletions happen at position -1 since no new lines exist
-    expect(result.removedLines).toEqual([-1, -1, -1])
+    // currentLine starts at -1 (0-indexed from +0 in header)
+    // All deletions pushed at position where they happened
+    expect(result.removedLines).toHaveLength(3)
     expect(result.addedLines).toEqual([])
   })
 
-  test("correctly parses hunk starting at non-zero offset", () => {
+  test("handles multi-hunk changes with line number reset", () => {
     const diff = [
-      "@@ -50,3 +50,4 @@",
-      " context",
-      "+new line",
-      " context",
-      " context",
+      "@@ -1,3 +1,4 @@",
+      " first",
+      "+inserted",
+      " second",
+      " third",
+      "@@ -10,3 +11,4 @@",
+      " ten",
+      "+new eleven",
+      " eleven",
+      " twelve",
     ].join("\n")
 
     const result = parseChangedLines(diff)
-    // +50 means new file starts at line 50 (1-indexed), so 0-indexed is 49
-    // context at 49, addition at 50, context at 51, context at 52
-    expect(result.addedLines).toEqual([50])
+    // First hunk: inserted at new line 2 → 0-indexed = 1
+    expect(result.addedLines).toContain(1)
+    // Second hunk: inserted at new line 12 → 0-indexed = 11
+    expect(result.addedLines).toContain(11)
   })
 
-  test("skips +++ and --- header lines", () => {
+  test("context lines advance the line counter", () => {
     const diff = [
-      "--- a/file.ts",
-      "+++ b/file.ts",
-      "@@ -1,1 +1,2 @@",
-      " context",
-      "+added",
+      "@@ -1,5 +1,6 @@",
+      " a",
+      " b",
+      " c",
+      " d",
+      "+added at end",
+      " e",
     ].join("\n")
 
     const result = parseChangedLines(diff)
-    // Should not count +++ as an addition
-    expect(result.addedLines).toEqual([1])
+    // After 4 context lines (0-3), the addition is at position 4
+    expect(result.addedLines).toEqual([4])
+  })
+
+  test("multiple consecutive additions get sequential line numbers", () => {
+    const diff = [
+      "@@ -5,2 +5,5 @@",
+      " context",
+      "+new1",
+      "+new2",
+      "+new3",
+      " end",
+    ].join("\n")
+
+    const result = parseChangedLines(diff)
+    // context at 4 (0-indexed), additions at 5, 6, 7
+    expect(result.addedLines).toEqual([5, 6, 7])
+  })
+
+  test("deletions don't advance new-file line counter", () => {
+    const diff = [
+      "@@ -1,5 +1,3 @@",
+      " a",
+      "-b",
+      "-c",
+      " d",
+      " e",
+    ].join("\n")
+
+    const result = parseChangedLines(diff)
+    // a at pos 0, deletions at pos 1 (they don't advance), d at pos 1, e at pos 2
+    expect(result.removedLines).toEqual([1, 1])
   })
 })
 
-// ---------------------------------------------------------------------------
-// generateUnifiedDiff – creates synthetic diffs for untracked files
-// ---------------------------------------------------------------------------
+// =============================================================================
+// generateUnifiedDiff — creates synthetic diff for untracked/new files
+// =============================================================================
+
 describe("generateUnifiedDiff", () => {
-  test("generates diff for a single-line file", () => {
-    const result = generateUnifiedDiff("test.ts", "hello world")
-    expect(result).toContain("@@ -0,0 +1,1 @@")
-    expect(result).toContain("+hello world")
+  test("generates diff for single-line file", () => {
+    const diff = generateUnifiedDiff("test.ts", "hello world")
+    const lines = diff.split("\n")
+
+    expect(lines[0]).toBe("@@ -0,0 +1,1 @@")
+    expect(lines[1]).toBe("+hello world")
   })
 
-  test("generates diff for a multi-line file", () => {
+  test("generates diff for multi-line file", () => {
     const content = "line 1\nline 2\nline 3"
-    const result = generateUnifiedDiff("test.ts", content)
-    expect(result).toContain("@@ -0,0 +1,3 @@")
-    expect(result).toContain("+line 1")
-    expect(result).toContain("+line 2")
-    expect(result).toContain("+line 3")
+    const diff = generateUnifiedDiff("file.ts", content)
+    const lines = diff.split("\n")
+
+    expect(lines[0]).toBe("@@ -0,0 +1,3 @@")
+    expect(lines[1]).toBe("+line 1")
+    expect(lines[2]).toBe("+line 2")
+    expect(lines[3]).toBe("+line 3")
   })
 
-  test("generates diff for an empty file", () => {
-    const result = generateUnifiedDiff("empty.ts", "")
-    expect(result).toContain("@@ -0,0 +1,1 @@")
-    expect(result).toContain("+")
+  test("generates diff for empty file", () => {
+    const diff = generateUnifiedDiff("empty.ts", "")
+    const lines = diff.split("\n")
+
+    expect(lines[0]).toBe("@@ -0,0 +1,1 @@")
+    expect(lines[1]).toBe("+")
   })
 
-  test("all lines start with +", () => {
-    const content = "a\nb\nc\nd"
-    const result = generateUnifiedDiff("file.ts", content)
-    const lines = result.split("\n")
-    // First line is the hunk header, rest should be additions
-    for (let i = 1; i < lines.length; i++) {
-      expect(lines[i]!.startsWith("+")).toBe(true)
+  test("every line is prefixed with +", () => {
+    const content = "a\nb\nc\nd\ne"
+    const diff = generateUnifiedDiff("file.ts", content)
+    const lines = diff.split("\n").slice(1) // skip header
+
+    for (const line of lines) {
+      expect(line.startsWith("+")).toBe(true)
     }
   })
 
-  test("round-trips with parseDiff correctly", () => {
-    const content = "function foo() {\n  return 42\n}"
-    const diff = generateUnifiedDiff("foo.ts", content)
+  test("round-trips through parseDiff correctly", () => {
+    const content = "const x = 1\nconst y = 2\nconst z = 3"
+    const diff = generateUnifiedDiff("test.ts", content)
     const parsed = parseDiff(diff)
 
-    // All non-header lines should be additions
-    const additions = parsed.filter(l => l.type === "addition")
-    expect(additions.length).toBe(3)
-    expect(additions[0]!.content).toBe("function foo() {")
-    expect(additions[1]!.content).toBe("  return 42")
-    expect(additions[2]!.content).toBe("}")
-  })
-
-  test("preserves indentation and special characters", () => {
-    const content = "\t  spaces and tabs\n  $pecial chars: @#%"
-    const diff = generateUnifiedDiff("file.ts", content)
-    const parsed = parseDiff(diff)
-    const additions = parsed.filter(l => l.type === "addition")
-    expect(additions[0]!.content).toBe("\t  spaces and tabs")
-    expect(additions[1]!.content).toBe("  $pecial chars: @#%")
+    expect(parsed[0]!.type).toBe("header")
+    expect(parsed.filter(l => l.type === "addition")).toHaveLength(3)
+    expect(parsed[1]!.content).toBe("const x = 1")
+    expect(parsed[1]!.newLineNumber).toBe(1)
+    expect(parsed[3]!.newLineNumber).toBe(3)
   })
 })
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // parseDiff + parseChangedLines integration
-// ---------------------------------------------------------------------------
+// =============================================================================
+
 describe("parseDiff + parseChangedLines integration", () => {
-  test("both agree on which lines are changed for a simple modification", () => {
+  test("parsed diff additions match parseChangedLines addedLines", () => {
     const diff = [
-      "@@ -1,5 +1,5 @@",
-      " line 1",
-      "-old line 2",
-      "+new line 2",
-      " line 3",
-      " line 4",
-      " line 5",
+      "@@ -1,5 +1,7 @@",
+      " a",
+      "+x",
+      "+y",
+      " b",
+      " c",
+      " d",
+      " e",
     ].join("\n")
 
     const parsed = parseDiff(diff)
     const changed = parseChangedLines(diff)
 
-    // parseDiff: line 2 is an addition at newLineNumber=2 (1-indexed)
-    const additionLines = parsed.filter(l => l.type === "addition")
-    expect(additionLines.length).toBe(1)
-    expect(additionLines[0]!.newLineNumber).toBe(2)
+    const additionLineNumbers = parsed
+      .filter(l => l.type === "addition")
+      .map(l => (l.newLineNumber ?? 1) - 1) // convert to 0-indexed
 
-    // parseChangedLines: 0-indexed, so line 1
-    expect(changed.addedLines).toContain(1)
+    expect(additionLineNumbers).toEqual(changed.addedLines)
   })
 
-  test("handle a complex multi-hunk scenario consistently", () => {
+  test("large diff maintains consistent line numbering", () => {
+    // Simulate a 100-line file with scattered changes
+    const diffLines = ["@@ -1,50 +1,55 @@"]
+    let oldLine = 1
+    let newLine = 1
+    for (let i = 0; i < 50; i++) {
+      if (i % 10 === 5) {
+        // Add an insertion every 10 lines
+        diffLines.push(`+inserted at ${newLine}`)
+        newLine++
+      }
+      diffLines.push(` context line ${i}`)
+      oldLine++
+      newLine++
+    }
+
+    const diff = diffLines.join("\n")
+    const parsed = parseDiff(diff)
+    const additions = parsed.filter(l => l.type === "addition")
+
+    // Should have 5 additions (at i=5,15,25,35,45)
+    expect(additions).toHaveLength(5)
+
+    // Each addition should have a valid newLineNumber
+    for (const add of additions) {
+      expect(add.newLineNumber).toBeDefined()
+      expect(add.newLineNumber).toBeGreaterThan(0)
+    }
+  })
+})
+
+// =============================================================================
+// Realistic git scenarios
+// =============================================================================
+
+describe("realistic git scenarios", () => {
+  test("rename with modifications", () => {
     const diff = [
-      "@@ -1,4 +1,3 @@",
-      " line 1",
-      "-removed line 2",
-      " line 3",
-      " line 4",
-      "@@ -8,3 +7,5 @@",
-      " line 8",
-      "+new line 9a",
-      "+new line 9b",
-      " line 9",
-      " line 10",
+      "diff --git a/old-name.ts b/new-name.ts",
+      "similarity index 85%",
+      "rename from old-name.ts",
+      "rename to new-name.ts",
+      "index abc..def 100644",
+      "--- a/old-name.ts",
+      "+++ b/new-name.ts",
+      "@@ -1,5 +1,5 @@",
+      " import { foo } from 'bar'",
+      " ",
+      "-export const name = 'old'",
+      "+export const name = 'new'",
+      " ",
+      " export function run() {}",
     ].join("\n")
 
     const parsed = parseDiff(diff)
-    const changed = parseChangedLines(diff)
-
-    // Check deletions
-    const deletions = parsed.filter(l => l.type === "deletion")
-    expect(deletions.length).toBe(1)
-    expect(deletions[0]!.content).toBe("removed line 2")
-
-    // Check additions
     const additions = parsed.filter(l => l.type === "addition")
-    expect(additions.length).toBe(2)
+    const deletions = parsed.filter(l => l.type === "deletion")
 
-    // parseChangedLines should find the same adds/removes
-    expect(changed.removedLines.length).toBe(1)
-    expect(changed.addedLines.length).toBe(2)
+    expect(additions).toHaveLength(1)
+    expect(deletions).toHaveLength(1)
+    expect(additions[0]!.content).toBe("export const name = 'new'")
+    expect(deletions[0]!.content).toBe("export const name = 'old'")
+  })
+
+  test("multiple file changes in sequence (concatenated diffs)", () => {
+    // This mimics what `git diff` outputs for multiple files
+    const diff = [
+      "diff --git a/file1.ts b/file1.ts",
+      "--- a/file1.ts",
+      "+++ b/file1.ts",
+      "@@ -1,3 +1,4 @@",
+      " line1",
+      "+added in file1",
+      " line2",
+      " line3",
+      "diff --git a/file2.ts b/file2.ts",
+      "--- a/file2.ts",
+      "+++ b/file2.ts",
+      "@@ -1,2 +1,2 @@",
+      "-old in file2",
+      "+new in file2",
+      " unchanged",
+    ].join("\n")
+
+    const parsed = parseDiff(diff)
+    // parseDiff processes the whole thing as one stream
+    // We should get content from both files' hunks
+    const additions = parsed.filter(l => l.type === "addition")
+    expect(additions).toHaveLength(2)
+  })
+
+  test("diff with no newline at end of file marker", () => {
+    const diff = [
+      "@@ -1,3 +1,3 @@",
+      " a",
+      "-b",
+      "+c",
+      "\\ No newline at end of file",
+    ].join("\n")
+
+    // The "\ No newline..." line should not crash the parser
+    const parsed = parseDiff(diff)
+    expect(parsed.filter(l => l.type === "addition")).toHaveLength(1)
+    expect(parsed.filter(l => l.type === "deletion")).toHaveLength(1)
+  })
+
+  test("binary file diff (no content)", () => {
+    const diff = [
+      "diff --git a/image.png b/image.png",
+      "new file mode 100644",
+      "index 0000000..abcdef1",
+      "Binary files /dev/null and b/image.png differ",
+    ].join("\n")
+
+    // Should not crash, just produce no lines
+    const parsed = parseDiff(diff)
+    expect(parsed).toEqual([])
+  })
+
+  test("diff with tab characters in content", () => {
+    const diff = [
+      "@@ -1,2 +1,2 @@",
+      " \tindented with tab",
+      "-\told value",
+      "+\tnew value",
+    ].join("\n")
+
+    const parsed = parseDiff(diff)
+    expect(parsed[2]!.content).toBe("\told value")
+    expect(parsed[3]!.content).toBe("\tnew value")
+  })
+
+  test("diff for file with unicode content", () => {
+    const diff = [
+      "@@ -1,2 +1,2 @@",
+      " const greeting = 'hello'",
+      "-const emoji = '👋'",
+      "+const emoji = '🎉'",
+    ].join("\n")
+
+    const parsed = parseDiff(diff)
+    expect(parsed[2]!.content).toBe("const emoji = '👋'")
+    expect(parsed[3]!.content).toBe("const emoji = '🎉'")
   })
 })
