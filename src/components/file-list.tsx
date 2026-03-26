@@ -6,6 +6,7 @@ interface FileListProps {
   files: FileChange[]
   selectedIndex: number
   focused: boolean
+  width: number
 }
 
 function getStatusIcon(status: FileChange["status"]): string {
@@ -28,16 +29,63 @@ function getStatusColor(status: FileChange["status"]): string {
   }
 }
 
-function getFileName(path: string): string {
-  return path.split("/").pop() ?? path
+function truncateMiddle(value: string, maxLength: number): string {
+  if (maxLength <= 0) return ""
+  if (value.length <= maxLength) return value
+  if (maxLength <= 3) return ".".repeat(maxLength)
+
+  const visible = maxLength - 3
+  const startLength = Math.ceil(visible / 2)
+  const endLength = Math.floor(visible / 2)
+  return `${value.slice(0, startLength)}...${value.slice(-endLength)}`
 }
 
-function getDirectory(path: string, maxLength: number): string {
+function formatPath(path: string, maxLength: number): { directory: string; fileName: string } {
   const parts = path.split("/")
-  if (parts.length <= 1) return ""
-  const dir = parts.slice(0, -1).join("/") + "/"
-  if (dir.length <= maxLength) return dir
-  return "..." + dir.slice(-(maxLength - 3))
+  const fileName = parts.pop() ?? path
+
+  if (parts.length === 0) {
+    return { directory: "", fileName: truncateMiddle(fileName, maxLength) }
+  }
+
+  if (path.length <= maxLength) {
+    return {
+      directory: parts.join("/") + "/",
+      fileName,
+    }
+  }
+
+  if (fileName.length >= maxLength) {
+    return { directory: "", fileName: truncateMiddle(fileName, maxLength) }
+  }
+
+  let visiblePath = fileName
+  let startIndex = parts.length
+
+  for (let i = parts.length - 1; i >= 0; i -= 1) {
+    const candidate = `${parts[i]}/${visiblePath}`
+    const displayed = i > 0 ? `.../${candidate}` : candidate
+
+    if (displayed.length > maxLength) {
+      break
+    }
+
+    visiblePath = candidate
+    startIndex = i
+  }
+
+  if (startIndex > 0) {
+    const visibleParts = visiblePath.split("/")
+    return {
+      directory: ".../" + visibleParts.slice(0, -1).join("/") + "/",
+      fileName: visibleParts[visibleParts.length - 1] ?? fileName,
+    }
+  }
+
+  return {
+    directory: parts.join("/") + "/",
+    fileName,
+  }
 }
 
 export function FileList(props: FileListProps) {
@@ -94,18 +142,14 @@ export function FileList(props: FileListProps) {
             const isSelected = () => actualIndex === props.selectedIndex
             const statusIcon = getStatusIcon(file.status)
             const statusColor = getStatusColor(file.status)
-            const fileName = getFileName(file.path)
-            
             const additionsText = file.additions > 0 ? ` +${file.additions}` : ""
             const deletionsText = file.deletions > 0 ? ` -${file.deletions}` : ""
             const statsLength = additionsText.length + deletionsText.length
-            
-            const sidebarWidth = 35
+
             const padding = 2
             const iconLength = 2
-            const minFileNameLength = 25
-            const availableForDirectory = Math.max(0, sidebarWidth - padding - iconLength - minFileNameLength - statsLength)
-            const directory = getDirectory(file.path, availableForDirectory)
+            const pathWidth = Math.max(0, props.width - padding - iconLength - statsLength)
+            const { directory, fileName } = formatPath(file.path, pathWidth)
             
             return (
               <box

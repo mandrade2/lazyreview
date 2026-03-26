@@ -43,6 +43,13 @@ export function App() {
   // 80 columns is the common default; keep split panes at 80+.
   const narrowModeThreshold = 80
   const isNarrowMode = createMemo(() => dimensions().width < narrowModeThreshold)
+  const sidebarWidth = createMemo(() => {
+    if (isNarrowMode()) {
+      return dimensions().width
+    }
+
+    return Math.max(35, Math.min(48, Math.floor(dimensions().width * 0.32)))
+  })
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
@@ -890,7 +897,7 @@ export function App() {
           <box
             onMouseScroll={handleSidebarScroll}
             style={{
-              width: isNarrowMode() ? "100%" : 35,
+              width: isNarrowMode() ? "100%" : sidebarWidth(),
               flexShrink: 0,
               flexDirection: "column",
             }}
@@ -930,6 +937,7 @@ export function App() {
                     files={files()}
                     selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
+                    width={sidebarWidth()}
                   />
                 </Show>
                 
