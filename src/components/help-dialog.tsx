@@ -28,6 +28,7 @@ const sections = [
     keybinds: [
       { key: "n / N", desc: "Jump to next / previous chunk" },
       { key: "f", desc: "Toggle diff-only / full file" },
+      { key: "b", desc: "Toggle line background colors" },
       { key: "Ctrl+d / Ctrl+u", desc: "Half page down / up" },
       { key: "Ctrl+f / Ctrl+b", desc: "Full page down / up" },
     ],

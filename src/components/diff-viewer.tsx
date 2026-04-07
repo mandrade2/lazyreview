@@ -12,6 +12,7 @@ interface DiffViewerProps {
   currentChunk: number // 0-based index of current chunk
   totalChunks: number  // total number of chunks
   viewMode?: "diff" | "full"
+  showLineBg?: boolean
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -268,13 +269,15 @@ export function DiffViewer(props: DiffViewerProps) {
                 return it.newLineNumber
               }
 
+              const lineBg = () => props.showLineBg !== false
+
               return (
                 <box
                   style={{
                     flexDirection: "row",
-                    backgroundColor: isAdded()
+                    backgroundColor: isAdded() && lineBg()
                       ? "#1a2f1a"
-                      : isRemoved()
+                      : isRemoved() && lineBg()
                         ? "#2f1a1a"
                         : isHeader()
                           ? "#21262d"

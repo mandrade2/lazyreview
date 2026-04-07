@@ -7,6 +7,7 @@ interface StatusBarProps {
   selectedIndex: number
   focusedPanel: "files" | "diff"
   diffViewMode?: "diff" | "full"
+  showLineBg?: boolean
   listCount?: number
   listSelectedIndex?: number
   contextInfo?: string // commit hash or branch name
@@ -60,12 +61,14 @@ export function StatusBar(props: StatusBarProps) {
     const hasBack = props.mode !== "dirty"
     const backKey = hasBack ? "esc:back " : ""
     
+    const bgToggle = `b:bg${(props.showLineBg ?? true) ? "-" : "+"}`
+
     if (props.focusedPanel === "files") {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:nav n/N:chunk ${viewToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav n/N:chunk ${viewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     } else {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:scroll n/N:chunk ${viewToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll n/N:chunk ${viewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     }
   }
   

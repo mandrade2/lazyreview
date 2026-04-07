@@ -58,6 +58,9 @@ export function App() {
   // Diff display mode: show diff-only (unified diff) or full file with inline highlights
   const [diffViewMode, setDiffViewMode] = createSignal<"diff" | "full">("diff")
 
+  // Toggle background highlighting on diff lines (line numbers keep their color)
+  const [showLineBg, setShowLineBg] = createSignal(true)
+
   // Search state (vim-style search in diff view)
   const [searchMode, setSearchMode] = createSignal(false) // true when typing search query
   const [searchQuery, setSearchQuery] = createSignal("") // current search input
@@ -743,6 +746,12 @@ export function App() {
         return
       }
       
+      // b - toggle background highlighting on diff lines
+      if (key.name === "b") {
+        setShowLineBg(v => !v)
+        return
+      }
+
       // Ctrl+d - half page down
       if (key.ctrl && key.name === "d") {
         setScrollOffset(o => Math.min(o + halfPage, maxScroll))
@@ -1041,6 +1050,7 @@ export function App() {
                   currentChunk={currentChunkIndex()}
                   totalChunks={chunkCount()}
                   viewMode={diffViewMode()}
+                  showLineBg={showLineBg()}
                 />
               </Show>
             </Show>
@@ -1063,6 +1073,7 @@ export function App() {
         searchMatchCount={searchMatches().length}
         currentMatchIndex={currentMatchIndex()}
         diffViewMode={diffViewMode()}
+        showLineBg={showLineBg()}
       />
       
       <Show when={showHelp()}>
