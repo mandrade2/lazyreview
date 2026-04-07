@@ -53,7 +53,7 @@ export function StatusBar(props: StatusBarProps) {
   const keybinds = () => {
     // List view (commits or branches)
     if (props.viewState === "list") {
-      return "j/k:nav enter:select m:mode ?:help q:quit"
+      return "j/k:nav enter:select r:refresh m:mode ?:help q:quit"
     }
     
     // File view - different keybinds based on mode and panel
@@ -62,10 +62,10 @@ export function StatusBar(props: StatusBarProps) {
     
     if (props.focusedPanel === "files") {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:nav n/N:chunk ${viewToggle} enter:view e:edit ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav n/N:chunk ${viewToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     } else {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:scroll n/N:chunk ${viewToggle} ^d/^u:half e:edit ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll n/N:chunk ${viewToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     }
   }
   
