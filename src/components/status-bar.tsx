@@ -1,3 +1,5 @@
+import { useTerminalDimensions } from "@opentui/solid"
+import { Show, createMemo } from "solid-js"
 import type { AppMode } from "../utils/git"
 
 interface StatusBarProps {
@@ -19,6 +21,22 @@ interface StatusBarProps {
 }
 
 export function StatusBar(props: StatusBarProps) {
+  const dimensions = useTerminalDimensions()
+
+  const ellipsizeStart = (value: string, maxLength: number): string => {
+    if (maxLength <= 0) return ""
+    if (value.length <= maxLength) return value
+    if (maxLength <= 3) return ".".repeat(maxLength)
+    return `...${value.slice(-(maxLength - 3))}`
+  }
+
+  const ellipsizeEnd = (value: string, maxLength: number): string => {
+    if (maxLength <= 0) return ""
+    if (value.length <= maxLength) return value
+    if (maxLength <= 3) return ".".repeat(maxLength)
+    return `${value.slice(0, maxLength - 3)}...`
+  }
+
   const panelText = () => {
     // In list view, no panel switching
     if (props.viewState === "list") {
@@ -99,6 +117,38 @@ export function StatusBar(props: StatusBarProps) {
     return keybinds()
   }
 
+  const layout = createMemo(() => {
+    const width = Math.max(0, dimensions().width - 2)
+    const leftPrimary = props.searchMode ? `/${props.searchQuery ?? ""}_` : panelText()
+    const leftSecondary = props.searchMode ? "" : contextText() ? ` ${contextText()}` : ""
+    const center = ellipsizeEnd(props.searchActive ? searchStatus() ?? "" : itemInfo(), width)
+
+    const leftGap = leftPrimary.length > 0 && center.length > 0 && width > leftPrimary.length + center.length ? 1 : 0
+    let remaining = width - leftPrimary.length - center.length - leftGap
+
+    const secondaryBudget = Math.max(0, remaining - (remaining > 0 ? 1 : 0))
+    const secondary = ellipsizeEnd(leftSecondary, secondaryBudget)
+
+    remaining -= secondary.length
+
+    const rightGap = secondary.length + leftPrimary.length + center.length > 0 && remaining > 0 ? 1 : 0
+    remaining -= rightGap
+
+    const right = ellipsizeStart(effectiveKeybinds(), Math.max(0, remaining))
+    remaining -= right.length
+
+    return {
+      primary: leftPrimary,
+      secondary,
+      center,
+      right,
+      leftGap,
+      rightGap,
+      spacer: " ".repeat(Math.max(0, remaining)),
+      isSearchMode: props.searchMode ?? false,
+    }
+  })
+
   return (
     <box
       style={{
@@ -112,27 +162,29 @@ export function StatusBar(props: StatusBarProps) {
         alignItems: "center",
       }}
     >
-      {/* Left section: search input or panel info */}
-      <box style={{ flexDirection: "row" }}>
-        {props.searchMode ? (
-          <text style={{ fg: "#d29922" }}>/{props.searchQuery ?? ""}<span style={{ bg: "#d29922", fg: "#0d1117" }}> </span></text>
-        ) : (
-          <>
-            <text style={{ fg: "#58a6ff" }}>{panelText()}</text>
-            {contextText() && (
-              <text style={{ fg: "#8b949e" }}> {contextText()}</text>
-            )}
-          </>
-        )}
+      <box style={{ flexDirection: "row", width: Math.max(0, dimensions().width - 2) }}>
+        <Show when={layout().primary.length > 0}>
+          <text style={{ fg: layout().isSearchMode ? "#d29922" : "#58a6ff" }}>{layout().primary}</text>
+        </Show>
+        <Show when={layout().secondary.length > 0}>
+          <text style={{ fg: "#8b949e" }}>{layout().secondary}</text>
+        </Show>
+        <Show when={layout().leftGap > 0}>
+          <text> </text>
+        </Show>
+        <text style={{ fg: props.searchActive && (props.searchMatchCount ?? 0) === 0 ? "#f85149" : "#e6edf3" }}>
+          {layout().center}
+        </text>
+        <Show when={layout().spacer.length > 0}>
+          <text>{layout().spacer}</text>
+        </Show>
+        <Show when={layout().rightGap > 0}>
+          <text> </text>
+        </Show>
+        <Show when={layout().right.length > 0}>
+          <text style={{ fg: "#8b949e" }}>{layout().right}</text>
+        </Show>
       </box>
-
-      {/* Center section: item info or search status */}
-      <text style={{ fg: props.searchActive && (props.searchMatchCount ?? 0) === 0 ? "#f85149" : "#e6edf3" }}>
-        {props.searchActive ? searchStatus() : itemInfo()}
-      </text>
-
-      {/* Right section: keybinds */}
-      <text style={{ fg: "#8b949e" }}>{effectiveKeybinds()}</text>
     </box>
   )
 }
