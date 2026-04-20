@@ -29,7 +29,9 @@
   "scripts": {
     "build": "bun run script/build.ts",
     "build:local": "bun run script/build.ts --single",
-    "release": "bun run script/release.ts"
+    "release": "bun run script/release.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "devDependencies": {
     "@types/bun": "latest"
