@@ -58,57 +58,35 @@ export function DiffViewer(props: DiffViewerProps) {
     return parseDiff(props.file.diff)
   })
   
-  // Highlight diff lines when file changes
+  // Build highlighted diff lines from the full file highlighting
+  // This avoids broken syntax highlighting caused by incomplete statements
+  // when joining diff hunks (e.g., an unclosed `import {` from one hunk
+  // breaking parser state for subsequent hunks).
   createEffect(() => {
-    let cancelled = false
     const diff = diffLines()
-    const mode = viewMode()
+    const fileLines = highlightedFileLines()
     if (diff.length === 0) {
       setHighlightedDiffLines([])
       return
     }
-    
-    // Start with plain text immediately (no delay)
-    setHighlightedDiffLines(
-      diff.map((line) => ({
-        line,
-        tokens: [{ content: line.content, color: DEFAULT_COLOR }]
-      }))
-    )
-    
-    // Build content for syntax highlighting (only non-header, non-deleted lines)
-    const contentToHighlight = diff
-      .filter(l => l.type !== "header" && l.type !== "deletion")
-      .map(l => l.content)
-      .join("\n")
-    
-    if (mode === "diff" && contentToHighlight) {
-      highlightCode(contentToHighlight, props.file.path).then((highlighted) => {
-        if (cancelled) return
-        // Map back to diff lines
-        let highlightIdx = 0
-        const result = diff.map((line) => {
-          if (line.type === "header" || line.type === "deletion") {
-            return { line, tokens: [{ content: line.content, color: DEFAULT_COLOR }] }
-          }
-          const tokens = highlighted[highlightIdx] ?? [{ content: line.content, color: DEFAULT_COLOR }]
-          highlightIdx++
-          return { line, tokens }
-        })
-        setHighlightedDiffLines(result)
-      })
-    }
 
-    onCleanup(() => {
-      cancelled = true
+    const result = diff.map((line) => {
+      if (line.type === "header" || line.type === "deletion") {
+        return { line, tokens: [{ content: line.content, color: DEFAULT_COLOR }] }
+      }
+      const lineIndex = (line.newLineNumber ?? 1) - 1
+      const tokens = fileLines[lineIndex] ?? [{ content: line.content, color: DEFAULT_COLOR }]
+      return { line, tokens }
     })
+
+    setHighlightedDiffLines(result)
   })
 
   // Highlight full file content when file changes
+  // Always highlight so diff mode can pull correct tokens per line
   createEffect(() => {
     let cancelled = false
     const content = props.file.content
-    const mode = viewMode()
     if (!content) {
       setHighlightedFileLines([])
       return
@@ -119,12 +97,10 @@ export function DiffViewer(props: DiffViewerProps) {
       content.split("\n").map((line) => [{ content: line, color: DEFAULT_COLOR }])
     )
 
-    if (mode === "full") {
-      highlightCode(content, props.file.path).then((highlighted) => {
-        if (cancelled) return
-        setHighlightedFileLines(highlighted)
-      })
-    }
+    highlightCode(content, props.file.path).then((highlighted) => {
+      if (cancelled) return
+      setHighlightedFileLines(highlighted)
+    })
 
     onCleanup(() => {
       cancelled = true
