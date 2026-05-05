@@ -24,6 +24,7 @@ import {
   type BranchInfo,
   type DiffLine as ParsedDiffLine,
 } from "./utils/git"
+import { openFileInEditor } from "./utils/editor"
 
 export function App() {
   const renderer = useRenderer()
@@ -450,7 +451,7 @@ export function App() {
     })
   }
 
-  useKeyboard((key) => {
+  useKeyboard(async (key) => {
     // Quit with q or Ctrl+c - ALWAYS works, regardless of state (except when in search mode)
     if ((key.ctrl && key.name === "c") || (key.name === "q" && !searchMode())) {
       renderer.destroy()
@@ -806,16 +807,10 @@ export function App() {
     
     // Open file in editor with 'e' (only in files view with a selected file)
     if (key.name === "e" && viewState() === "files" && selectedFile()) {
-      const editor = process.env.EDITOR ?? process.env.VISUAL ?? "vi"
-      const filePath = `${getTargetDir()}/${selectedFile()!.path}`
-      // Suspend terminal UI, run editor, then resume
-      renderer.suspend()
-      Bun.spawnSync([editor, filePath], {
-        stdin: "inherit",
-        stdout: "inherit",
-        stderr: "inherit",
+      await openFileInEditor(selectedFile()!, {
+        suspend: () => renderer.suspend(),
+        resume: () => renderer.resume(),
       })
-      renderer.resume()
       // Refresh current mode's data after editing
       if (mode() === "dirty") {
         loadDirtyChanges()
