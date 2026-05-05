@@ -40,7 +40,7 @@ export function getTargetDir() {
 }
 
 // Get the git repository root directory
-async function getGitRoot(): Promise<string> {
+export async function getGitRoot(): Promise<string> {
   try {
     const result = await Bun.$`git -C ${targetDir} rev-parse --show-toplevel`.quiet()
     return result.stdout.toString().trim()
