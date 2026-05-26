@@ -192,7 +192,7 @@ export function DiffViewer(props: DiffViewerProps) {
       
       {/* File content */}
       <Show
-        when={viewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0}
+        when={!props.file.isBinary && (viewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0)}
         fallback={
           <box
             style={{
@@ -202,7 +202,9 @@ export function DiffViewer(props: DiffViewerProps) {
               backgroundColor: "#0d1117",
             }}
           >
-            <text style={{ fg: "#8b949e" }}>No diff available for this file</text>
+            <text style={{ fg: "#8b949e" }}>
+              {props.file.isBinary ? "Binary file - cannot display diff" : "No diff available for this file"}
+            </text>
           </box>
         }
       >

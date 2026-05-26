@@ -26,6 +26,7 @@ export interface FileChange {
   changedLines: Set<number> // Set of changed line numbers (0-indexed)
   addedLines: Set<number> // Set of added line numbers (0-indexed)
   removedLines: Set<number> // Set of removed line numbers (0-indexed)
+  isBinary: boolean // Whether the file is binary and should not be rendered as text
 }
 
 // Target directory for git operations
@@ -66,6 +67,47 @@ async function readFileContent(path: string): Promise<string> {
     console.error(`Failed to read file: ${path}`, err)
     return ""
   }
+}
+
+// Common binary file extensions that should not be rendered as text
+const binaryExtensions = new Set([
+  "gz", "zip", "tar", "rar", "7z", "bz2", "xz",
+  "png", "jpg", "jpeg", "gif", "bmp", "webp", "ico", "svgz",
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+  "exe", "dll", "so", "dylib", "bin", "o", "a",
+  "sqlite", "sqlite3", "db", "wal", "shm",
+  "wasm", "mp3", "mp4", "avi", "mov", "mkv", "webm",
+  "woff", "woff2", "ttf", "otf", "eot",
+  "class", "jar", "war", "ear",
+  "pyc", "pyo", "o", "obj", "lib",
+  "yarn-state", "install-state",
+])
+
+function isBinaryByExtension(filePath: string): boolean {
+  const parts = filePath.split(".")
+  if (parts.length < 2) return false
+  const ext = parts[parts.length - 1]
+  if (!ext) return false
+  return binaryExtensions.has(ext.toLowerCase())
+}
+
+// Check if content contains null bytes (standard binary heuristic)
+function isBinaryContent(content: string): boolean {
+  const sample = content.slice(0, 8192)
+  return sample.includes("\0")
+}
+
+// Check if git diff indicates a binary file
+function isBinaryDiff(diff: string): boolean {
+  return diff.includes("Binary files") || diff.includes("\0")
+}
+
+// Detect if a file is binary based on all available signals
+export function detectBinaryFile(filePath: string, content: string, diff: string): boolean {
+  if (isBinaryByExtension(filePath)) return true
+  if (diff && isBinaryDiff(diff)) return true
+  if (content && isBinaryContent(content)) return true
+  return false
 }
 
 function generateUnifiedDiff(filePath: string, content: string): string {
@@ -259,6 +301,15 @@ export async function getGitChanges(): Promise<FileChange[]> {
       // Ignore diff errors
     }
     
+    const isBinary = detectBinaryFile(filePath, content, diff)
+    
+    // For binary files, don't store raw content/diff to avoid leaking
+    // binary data into the terminal renderer
+    if (isBinary) {
+      diff = ""
+      content = ""
+    }
+    
     changes.push({
       path: filePath,
       status,
@@ -272,6 +323,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
       changedLines,
       addedLines,
       removedLines,
+      isBinary,
     })
   }
   
@@ -441,6 +493,7 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
+        isBinary: false, // Detected lazily via loadFileDetails
       })
     }
     
@@ -499,6 +552,7 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
+        isBinary: false, // Detected lazily via loadFileDetails
       })
     }
     
@@ -597,6 +651,15 @@ export async function loadFileDetails(
         break
       }
     }
+    
+    const isBinary = detectBinaryFile(file.path, content, diff)
+    
+    // For binary files, don't store raw content/diff to avoid leaking
+    // binary data into the terminal renderer
+    if (isBinary) {
+      diff = ""
+      content = ""
+    }
      
     return {
       ...file,
@@ -609,6 +672,7 @@ export async function loadFileDetails(
       changedLines,
       addedLines,
       removedLines,
+      isBinary,
     }
   } catch {
     return file

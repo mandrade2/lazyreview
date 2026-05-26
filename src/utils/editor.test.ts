@@ -17,6 +17,7 @@ function createFileChange(overrides: Partial<FileChange> = {}): FileChange {
     addedLines: new Set(),
     removedLines: new Set(),
     ...overrides,
+    isBinary: overrides.isBinary ?? false,
   }
 }
 
