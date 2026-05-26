@@ -56,6 +56,11 @@ export function App() {
   const [scrollOffset, setScrollOffset] = createSignal(0)
   const [showHelp, setShowHelp] = createSignal(false)
 
+  // Reviewed files state
+  const [reviewedPaths, setReviewedPaths] = createSignal<Set<string>>(new Set())
+  const [reviewedOrder, setReviewedOrder] = createSignal<string[]>([])
+  const [filesGeneration, setFilesGeneration] = createSignal(0)
+
   // Diff display mode: show diff-only (unified diff) or full file with inline highlights
   const [diffViewMode, setDiffViewMode] = createSignal<"diff" | "full">("diff")
 
@@ -88,8 +93,15 @@ export function App() {
   const [selectedBranch, setSelectedBranch] = createSignal<BranchInfo | null>(null)
   const [currentBranch, setCurrentBranch] = createSignal<string | null>(null)
   
-  const selectedFile = createMemo(() => files()[selectedIndex()] ?? null)
-  
+  const toReviewFiles = createMemo(() => files().filter(f => !reviewedPaths().has(f.path)))
+  const reviewedFiles = createMemo(() => {
+    const order = reviewedOrder()
+    const fileMap = new Map(files().map(f => [f.path, f]))
+    return order.map(path => fileMap.get(path)).filter((f): f is FileChange => f !== undefined)
+  })
+  const allVisibleFiles = createMemo(() => [...toReviewFiles(), ...reviewedFiles()])
+  const selectedFile = createMemo(() => allVisibleFiles()[selectedIndex()] ?? null)
+
   // Get selectable branches (excluding current)
   const selectableBranches = createMemo(() => 
     branches().filter(b => !b.isCurrent)
@@ -107,7 +119,28 @@ export function App() {
   
   // Calculate visible height for diff viewer (terminal height - header - file header - status bar)
   const visibleHeight = createMemo(() => dimensions().height - 4)
-  
+
+  // Clear reviewed state when loading a new set of files
+  createEffect(() => {
+    filesGeneration() // track dependency
+    setReviewedPaths(new Set<string>())
+    setReviewedOrder([])
+    setSelectedIndex(0)
+    setScrollOffset(0)
+    lastSelectedFilePath = null
+  })
+
+  // Clamp selected index when file list changes
+  createEffect(() => {
+    const count = allVisibleFiles().length
+    const current = selectedIndex()
+    if (count === 0) {
+      if (current !== 0) setSelectedIndex(0)
+    } else if (current >= count) {
+      setSelectedIndex(count - 1)
+    }
+  })
+
   // When selected file changes, load its details if needed (lazy loading for commit/branch modes)
   createEffect(() => {
     const file = selectedFile()
@@ -164,6 +197,7 @@ export function App() {
   const loadDirtyChanges = async () => {
     setLoading(true)
     setError(null)
+    setFilesGeneration(g => g + 1)
     try {
       const changes = await getGitChanges()
       setFiles(changes)
@@ -207,6 +241,7 @@ export function App() {
   const loadCommitChanges = async (commit: CommitInfo) => {
     setLoading(true)
     setError(null)
+    setFilesGeneration(g => g + 1)
     try {
       const changes = await getCommitChanges(commit.hash)
       setFiles(changes)
@@ -220,6 +255,7 @@ export function App() {
   const loadBranchChanges = async (branch: BranchInfo) => {
     setLoading(true)
     setError(null)
+    setFilesGeneration(g => g + 1)
     try {
       const changes = await getBranchChanges(branch.name)
       setFiles(changes)
@@ -501,7 +537,31 @@ export function App() {
     if (showHelp()) {
       return
     }
-    
+
+    // Space to mark/unmark file as reviewed (only in files view)
+    if (key.name === "space" && viewState() === "files" && selectedFile()) {
+      const file = selectedFile()!
+      const path = file.path
+      const currentlyReviewed = reviewedPaths().has(path)
+
+      if (currentlyReviewed) {
+        setReviewedPaths(prev => {
+          const next = new Set(prev)
+          next.delete(path)
+          return next
+        })
+        setReviewedOrder(prev => prev.filter(p => p !== path))
+      } else {
+        setReviewedPaths(prev => {
+          const next = new Set(prev)
+          next.add(path)
+          return next
+        })
+        setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
+      }
+      return
+    }
+
     // Mode switching with 'm'
     if (key.name === "m") {
       const nextMode: AppMode = mode() === "dirty" ? "commit" 
@@ -938,7 +998,8 @@ export function App() {
                 {/* Dirty mode or files view: show file list */}
                 <Show when={mode() === "dirty" || viewState() === "files"}>
                   <FileList
-                    files={files()}
+                    toReviewFiles={toReviewFiles()}
+                    reviewedFiles={reviewedFiles()}
                     selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
                     width={sidebarWidth()}
@@ -1046,6 +1107,7 @@ export function App() {
                   totalChunks={chunkCount()}
                   viewMode={diffViewMode()}
                   showLineBg={showLineBg()}
+                  isReviewed={selectedFile() ? reviewedPaths().has(selectedFile()!.path) : false}
                 />
               </Show>
             </Show>

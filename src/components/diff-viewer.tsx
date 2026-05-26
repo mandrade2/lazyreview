@@ -13,6 +13,7 @@ interface DiffViewerProps {
   totalChunks: number  // total number of chunks
   viewMode?: "diff" | "full"
   showLineBg?: boolean
+  isReviewed?: boolean
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -175,6 +176,7 @@ export function DiffViewer(props: DiffViewerProps) {
         <box style={{ flexDirection: "row" }}>
           <text style={{ fg: "#e6edf3" }}><b>{props.file.path}</b></text>
           <text style={{ fg: getStatusColor(props.file.status) }}> [{getStatusLabel(props.file.status)}]</text>
+          <text style={{ fg: "#f0883e" }}> {props.isReviewed ? "[Reviewed]" : "[Not Reviewed]"}</text>
         </box>
         <box style={{ flexDirection: "row" }}>
           <text style={{ fg: "#3fb950" }}>+{props.file.additions}</text>

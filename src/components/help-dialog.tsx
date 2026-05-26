@@ -45,6 +45,7 @@ const sections = [
   {
     title: "Actions",
     keybinds: [
+      { key: "Space", desc: "Mark/unmark file as reviewed" },
       { key: "e", desc: "Open file in $EDITOR" },
       { key: "r", desc: "Refresh current view" },
       { key: "?", desc: "Toggle this help" },

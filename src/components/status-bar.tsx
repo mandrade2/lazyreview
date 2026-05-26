@@ -83,10 +83,10 @@ export function StatusBar(props: StatusBarProps) {
 
     if (props.focusedPanel === "files") {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:nav n/N:chunk ${viewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav space:review n/N:chunk ${viewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     } else {
       const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:scroll n/N:chunk ${viewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll space:review n/N:chunk ${viewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     }
   }
   

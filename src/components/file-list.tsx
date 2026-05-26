@@ -3,7 +3,8 @@ import { useTerminalDimensions } from "@opentui/solid"
 import type { FileChange } from "../utils/git"
 
 interface FileListProps {
-  files: FileChange[]
+  toReviewFiles: FileChange[]
+  reviewedFiles: FileChange[]
   selectedIndex: number
   focused: boolean
   width: number
@@ -88,98 +89,192 @@ function formatPath(path: string, maxLength: number): { directory: string; fileN
   }
 }
 
+function FileRow(props: {
+  file: FileChange
+  isSelected: boolean
+  focused: boolean
+  width: number
+}) {
+  const statusIcon = getStatusIcon(props.file.status)
+  const statusColor = getStatusColor(props.file.status)
+  const additionsText = props.file.additions > 0 ? ` +${props.file.additions}` : ""
+  const deletionsText = props.file.deletions > 0 ? ` -${props.file.deletions}` : ""
+  const statsLength = additionsText.length + deletionsText.length
+
+  const padding = 2
+  const iconLength = 2
+  const pathWidth = Math.max(0, props.width - padding - iconLength - statsLength)
+  const { directory, fileName } = formatPath(props.file.path, pathWidth)
+
+  return (
+    <box
+      style={{
+        height: 1,
+        paddingLeft: 1,
+        paddingRight: 1,
+        backgroundColor: props.isSelected
+          ? props.focused ? "#388bfd26" : "#30363d"
+          : "transparent",
+        flexDirection: "row",
+      }}
+    >
+      <text style={{ fg: statusColor }}>{statusIcon} </text>
+      <Show when={directory}>
+        <text style={{ fg: "#8b949e" }}>{directory}</text>
+      </Show>
+      <text style={{ fg: props.isSelected ? "#58a6ff" : "#e6edf3" }}>{fileName}</text>
+      <box style={{ flexGrow: 1 }} />
+      <Show when={props.file.additions > 0}>
+        <text style={{ fg: "#3fb950" }}>{additionsText}</text>
+      </Show>
+      <Show when={props.file.deletions > 0}>
+        <text style={{ fg: "#f85149" }}>{deletionsText}</text>
+      </Show>
+    </box>
+  )
+}
+
 export function FileList(props: FileListProps) {
   const dimensions = useTerminalDimensions()
-  
-  // Calculate visible height (terminal height - app header - panel header - file list header - status bar)
+
+  // Calculate visible height (terminal height - app header - panel header - status bar)
   const visibleHeight = createMemo(() => dimensions().height - 5)
-  
-  // Calculate scroll offset to keep selected item visible
-  const scrollOffset = createMemo(() => {
-    const height = visibleHeight()
-    const selected = props.selectedIndex
-    
-    if (selected < height) {
-      return 0
-    }
-    return Math.max(0, selected - Math.floor(height / 2))
+
+  const hasToReview = () => props.toReviewFiles.length > 0
+  const hasReviewed = () => props.reviewedFiles.length > 0
+
+  const sectionHeight = createMemo(() => {
+    if (!hasToReview() || !hasReviewed()) return visibleHeight()
+    return Math.max(3, Math.floor(visibleHeight() / 2))
   })
-  
-  // Get visible files based on scroll offset
-  const visibleFiles = createMemo(() => {
-    const start = scrollOffset()
-    const end = start + visibleHeight()
-    return props.files.slice(start, end).map((file, i) => ({
+
+  const toReviewHeight = createMemo(() => {
+    if (!hasToReview()) return 0
+    if (!hasReviewed()) return visibleHeight()
+    return sectionHeight()
+  })
+
+  const reviewedHeight = createMemo(() => {
+    if (!hasReviewed()) return 0
+    if (!hasToReview()) return visibleHeight()
+    return visibleHeight() - sectionHeight()
+  })
+
+  const toReviewScrollOffset = createMemo(() => {
+    const height = toReviewHeight() - 1 // minus header
+    const selected = props.selectedIndex < props.toReviewFiles.length ? props.selectedIndex : -1
+    if (selected < 0 || height <= 0) return 0
+    if (selected < height) return 0
+    return Math.max(0, selected - height + 1)
+  })
+
+  const reviewedScrollOffset = createMemo(() => {
+    const height = reviewedHeight() - 1 // minus header
+    const reviewedSelected = props.selectedIndex - props.toReviewFiles.length
+    const selected = reviewedSelected >= 0 ? reviewedSelected : -1
+    if (selected < 0 || height <= 0) return 0
+    if (selected < height) return 0
+    return Math.max(0, selected - height + 1)
+  })
+
+  const visibleToReviewFiles = createMemo(() => {
+    const start = toReviewScrollOffset()
+    const end = start + Math.max(0, toReviewHeight() - 1)
+    return props.toReviewFiles.slice(start, end).map((file, i) => ({
       file,
       actualIndex: start + i,
     }))
   })
-  
+
+  const visibleReviewedFiles = createMemo(() => {
+    const start = reviewedScrollOffset()
+    const end = start + Math.max(0, reviewedHeight() - 1)
+    return props.reviewedFiles.slice(start, end).map((file, i) => ({
+      file,
+      actualIndex: start + i,
+    }))
+  })
+
+  const isToReviewSelected = (index: number) => index === props.selectedIndex
+  const isReviewedSelected = (index: number) => props.toReviewFiles.length + index === props.selectedIndex
+
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
-      {/* Header */}
-      <box
-        style={{
-          height: 1,
-          paddingLeft: 1,
-          paddingRight: 1,
-          backgroundColor: "#21262d",
-        }}
-      >
-        <text style={{ fg: "#e6edf3" }}><b>Changed Files</b> </text>
-        <text style={{ fg: "#8b949e" }}>({props.files.length})</text>
-      </box>
-      
-      {/* File list */}
-      <box
-        style={{
-          flexGrow: 1,
-          flexDirection: "column",
-        }}
-      >
-        <For each={visibleFiles()}>
-          {({ file, actualIndex }) => {
-            const isSelected = () => actualIndex === props.selectedIndex
-            const statusIcon = getStatusIcon(file.status)
-            const statusColor = getStatusColor(file.status)
-            const additionsText = file.additions > 0 ? ` +${file.additions}` : ""
-            const deletionsText = file.deletions > 0 ? ` -${file.deletions}` : ""
-            const statsLength = additionsText.length + deletionsText.length
+      <Show when={!hasToReview() && !hasReviewed()}>
+        <box style={{ padding: 1 }}>
+          <text style={{ fg: "#8b949e" }}>No changes</text>
+        </box>
+      </Show>
 
-            const padding = 2
-            const iconLength = 2
-            const pathWidth = Math.max(0, props.width - padding - iconLength - statsLength)
-            const { directory, fileName } = formatPath(file.path, pathWidth)
-            
-            return (
-              <box
-                style={{
-                  height: 1,
-                  paddingLeft: 1,
-                  paddingRight: 1,
-                  backgroundColor: isSelected() 
-                    ? props.focused ? "#388bfd26" : "#30363d" 
-                    : "transparent",
-                  flexDirection: "row",
-                }}
-              >
-                <text style={{ fg: statusColor }}>{statusIcon} </text>
-                <Show when={directory}>
-                  <text style={{ fg: "#8b949e" }}>{directory}</text>
-                </Show>
-                <text style={{ fg: isSelected() ? "#58a6ff" : "#e6edf3" }}>{fileName}</text>
-                <box style={{ flexGrow: 1 }} />
-                <Show when={file.additions > 0}>
-                  <text style={{ fg: "#3fb950" }}>{additionsText}</text>
-                </Show>
-                <Show when={file.deletions > 0}>
-                  <text style={{ fg: "#f85149" }}>{deletionsText}</text>
-                </Show>
-              </box>
-            )
+      {/* To Review section */}
+      <Show when={hasToReview()}>
+        <box
+          style={{
+            height: 1,
+            paddingLeft: 1,
+            paddingRight: 1,
+            backgroundColor: "#21262d",
+            flexShrink: 0,
+            flexDirection: "row",
           }}
-        </For>
-      </box>
+        >
+          <text style={{ fg: "#e6edf3" }}><b>To Review</b></text>
+          <text style={{ fg: "#8b949e" }}> ({props.toReviewFiles.length})</text>
+        </box>
+        <box
+          style={{
+            flexDirection: "column",
+            height: Math.max(0, toReviewHeight() - 1),
+            flexShrink: 0,
+          }}
+        >
+          <For each={visibleToReviewFiles()}>
+            {({ file, actualIndex }) => (
+              <FileRow
+                file={file}
+                isSelected={isToReviewSelected(actualIndex)}
+                focused={props.focused}
+                width={props.width}
+              />
+            )}
+          </For>
+        </box>
+      </Show>
+
+      {/* Already Reviewed section */}
+      <Show when={hasReviewed()}>
+        <box
+          style={{
+            height: 1,
+            paddingLeft: 1,
+            paddingRight: 1,
+            backgroundColor: "#21262d",
+            flexShrink: 0,
+            flexDirection: "row",
+          }}
+        >
+          <text style={{ fg: "#f0883e" }}><b>Already Reviewed</b></text>
+          <text style={{ fg: "#8b949e" }}> ({props.reviewedFiles.length})</text>
+        </box>
+        <box
+          style={{
+            flexDirection: "column",
+            height: Math.max(0, reviewedHeight() - 1),
+            flexShrink: 0,
+          }}
+        >
+          <For each={visibleReviewedFiles()}>
+            {({ file, actualIndex }) => (
+              <FileRow
+                file={file}
+                isSelected={isReviewedSelected(actualIndex)}
+                focused={props.focused}
+                width={props.width}
+              />
+            )}
+          </For>
+        </box>
+      </Show>
     </box>
   )
 }
