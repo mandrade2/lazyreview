@@ -4,10 +4,11 @@ A terminal UI for reviewing git changes with syntax highlighting.
 
 ## Why LazyReview?
 
-I love [lazygit](https://github.com/jesseduffield/lazygit) - it's an incredible tool that I use daily. But when reviewing code changes, I wanted two small things it doesn't have:
+I love [lazygit](https://github.com/jesseduffield/lazygit) - it's an incredible tool that I use daily. But when reviewing code changes, I wanted some features it's missing:
 
 1. **Syntax highlighting** in the diff viewer
 2. **Subtler colors** for change indicators (the bright red/green backgrounds can be overwhelming)
+3. Marking files as **Reviewed/To be reviewed** to keep track of what I´ve seen.
 
 ### Visual Comparison
 
@@ -19,7 +20,7 @@ I love [lazygit](https://github.com/jesseduffield/lazygit) - it's an incredible 
 
 LazyReview is a focused tool for one thing: reviewing your changes with a clean, readable diff view.
 
-**Note:** You can also configure lazygit to use a custom pager (like `delta` or `diff-so-fancy`) to achieve similar highlighting. LazyReview exists as a standalone alternative if you prefer a dedicated review tool without the full lazygit feature set.
+**Note:** You can also configure lazygit to use a custom pager (like `delta` or `diff-so-fancy`) to achieve similar highlighting. LazyReview exists as a standalone alternative if you prefer a dedicated review tool without the full lazygit feature set. It's diverged more and more with time.
 
 ## Installation
 
@@ -29,7 +30,7 @@ LazyReview is a focused tool for one thing: reviewing your changes with a clean,
 curl -fsSL https://raw.githubusercontent.com/mandrade2/lazyreview/master/install | bash
 ```
 
-This auto-detects your OS/architecture and installs the appropriate binary.
+This auto-detects your OS/architecture and installs the appropriate binary. Adapted from the Opencode install script. Remember tho, getting a file from the internet and then just bashing it is not a good practice. Prefer source and built binaries.
 
 ### Download Binary
 
@@ -115,6 +116,7 @@ Each mode shows a list in the left panel and displays diffs in the right panel.
 | `r` | Refresh current view |
 | `?` | Toggle help |
 | `q` / `Ctrl+c` | Quit |
+| `space` | Mark file as Reviewed / To be reviewed |
 
 ## Credits
 
