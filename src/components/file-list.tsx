@@ -113,7 +113,7 @@ function FileRow(props: {
         paddingLeft: 1,
         paddingRight: 1,
         backgroundColor: props.isSelected
-          ? props.focused ? "#388bfd26" : "#30363d"
+          ? props.focused ? "#388bfd56" : "#30363d"
           : "transparent",
         flexDirection: "row",
       }}
