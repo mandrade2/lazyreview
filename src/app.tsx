@@ -25,6 +25,7 @@ import {
   type DiffLine as ParsedDiffLine,
 } from "./utils/git"
 import { openFileInEditor } from "./utils/editor"
+import { loadSettings, saveSettings, type Settings } from "./utils/settings"
 
 export function App() {
   const renderer = useRenderer()
@@ -66,6 +67,9 @@ export function App() {
 
   // Toggle background highlighting on diff lines (line numbers keep their color)
   const [showLineBg, setShowLineBg] = createSignal(true)
+
+  // Settings loaded flag to prevent overwriting before load completes
+  const [settingsLoaded, setSettingsLoaded] = createSignal(false)
 
   // Search state (vim-style search in diff view)
   const [searchMode, setSearchMode] = createSignal(false) // true when typing search query
@@ -128,6 +132,15 @@ export function App() {
     setSelectedIndex(0)
     setScrollOffset(0)
     lastSelectedFilePath = null
+  })
+
+  // Persist settings whenever they change
+  createEffect(() => {
+    if (!settingsLoaded()) return
+    saveSettings({
+      diffViewMode: diffViewMode(),
+      showLineBg: showLineBg(),
+    })
   })
 
   // Clamp selected index when file list changes
@@ -266,8 +279,12 @@ export function App() {
     }
   }
   
-  // Load git changes on mount
+  // Load settings and git changes on mount
   ;(async () => {
+    const settings = await loadSettings()
+    setDiffViewMode(settings.diffViewMode)
+    setShowLineBg(settings.showLineBg)
+    setSettingsLoaded(true)
     await loadDirtyChanges()
   })()
   
