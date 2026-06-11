@@ -142,21 +142,19 @@ export function FileList(props: FileListProps) {
 
   const hasToReview = () => props.toReviewFiles.length > 0
   const hasReviewed = () => props.reviewedFiles.length > 0
+  const hasAnyFiles = () => hasToReview() || hasReviewed()
 
   const sectionHeight = createMemo(() => {
-    if (!hasToReview() || !hasReviewed()) return visibleHeight()
     return Math.max(3, Math.floor(visibleHeight() / 2))
   })
 
   const toReviewHeight = createMemo(() => {
-    if (!hasToReview()) return 0
-    if (!hasReviewed()) return visibleHeight()
+    if (!hasAnyFiles()) return 0
     return sectionHeight()
   })
 
   const reviewedHeight = createMemo(() => {
-    if (!hasReviewed()) return 0
-    if (!hasToReview()) return visibleHeight()
+    if (!hasAnyFiles()) return 0
     return visibleHeight() - sectionHeight()
   })
 
@@ -200,14 +198,14 @@ export function FileList(props: FileListProps) {
 
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
-      <Show when={!hasToReview() && !hasReviewed()}>
+      <Show when={!hasAnyFiles()}>
         <box style={{ padding: 1 }}>
           <text style={{ fg: "#8b949e" }}>No changes</text>
         </box>
       </Show>
 
       {/* To Review section */}
-      <Show when={hasToReview()}>
+      <Show when={hasAnyFiles()}>
         <box
           style={{
             height: 1,
@@ -218,7 +216,7 @@ export function FileList(props: FileListProps) {
             flexDirection: "row",
           }}
         >
-          <text style={{ fg: "#e6edf3" }}><b>To Review</b></text>
+          <text style={{ fg: "#f0883e" }}><b>To Review</b></text>
           <text style={{ fg: "#8b949e" }}> ({props.toReviewFiles.length})</text>
         </box>
         <box
@@ -228,21 +226,30 @@ export function FileList(props: FileListProps) {
             flexShrink: 0,
           }}
         >
-          <For each={visibleToReviewFiles()}>
-            {({ file, actualIndex }) => (
-              <FileRow
-                file={file}
-                isSelected={isToReviewSelected(actualIndex)}
-                focused={props.focused}
-                width={props.width}
-              />
-            )}
-          </For>
+          <Show
+            when={hasToReview()}
+            fallback={
+              <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
+                <text style={{ fg: "#8b949e" }}>None</text>
+              </box>
+            }
+          >
+            <For each={visibleToReviewFiles()}>
+              {({ file, actualIndex }) => (
+                <FileRow
+                  file={file}
+                  isSelected={isToReviewSelected(actualIndex)}
+                  focused={props.focused}
+                  width={props.width}
+                />
+              )}
+            </For>
+          </Show>
         </box>
       </Show>
 
       {/* Already Reviewed section */}
-      <Show when={hasReviewed()}>
+      <Show when={hasAnyFiles()}>
         <box
           style={{
             height: 1,
@@ -263,16 +270,25 @@ export function FileList(props: FileListProps) {
             flexShrink: 0,
           }}
         >
-          <For each={visibleReviewedFiles()}>
-            {({ file, actualIndex }) => (
-              <FileRow
-                file={file}
-                isSelected={isReviewedSelected(actualIndex)}
-                focused={props.focused}
-                width={props.width}
-              />
-            )}
-          </For>
+          <Show
+            when={hasReviewed()}
+            fallback={
+              <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
+                <text style={{ fg: "#8b949e" }}>None</text>
+              </box>
+            }
+          >
+            <For each={visibleReviewedFiles()}>
+              {({ file, actualIndex }) => (
+                <FileRow
+                  file={file}
+                  isSelected={isReviewedSelected(actualIndex)}
+                  focused={props.focused}
+                  width={props.width}
+                />
+              )}
+            </For>
+          </Show>
         </box>
       </Show>
     </box>
