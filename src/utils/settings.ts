@@ -1,5 +1,6 @@
 import { homedir } from "os"
 import { join } from "path"
+import { mkdir } from "fs/promises"
 
 export interface Settings {
   diffViewMode: "diff" | "full"
@@ -34,7 +35,7 @@ export async function loadSettings(): Promise<Settings> {
 export async function saveSettings(settings: Settings): Promise<void> {
   const path = getConfigPath()
   try {
-    await Bun.$`mkdir -p ${join(path, "..")}`.quiet()
+    await mkdir(join(path, ".."), { recursive: true })
     await Bun.write(path, JSON.stringify(settings, null, 2))
   } catch {
     // Non-critical: silently fail if we can't write config
