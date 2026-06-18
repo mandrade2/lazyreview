@@ -155,12 +155,12 @@ print_message() {
 check_version() {
     if command -v lazyreview >/dev/null 2>&1; then
         installed_version=$(lazyreview --version 2>/dev/null || echo "")
-        
+
         if [[ "$installed_version" == "$specific_version" ]]; then
-            print_message info "${MUTED}Version ${NC}$specific_version${MUTED} already installed${NC}"
+            print_message success "${GREEN}LazyReview v${specific_version} is already installed${NC}"
             exit 0
         elif [[ -n "$installed_version" ]]; then
-            print_message info "${MUTED}Upgrading from ${NC}$installed_version${MUTED} to ${NC}$specific_version"
+            print_message info "${MUTED}Upgrading from ${NC}$installed_version${MUTED} to ${NC}$specific_version${MUTED}${NC}"
         fi
     fi
 }
@@ -238,7 +238,7 @@ if [ -n "${GITHUB_ACTIONS-}" ] && [ "${GITHUB_ACTIONS}" == "true" ]; then
 fi
 
 echo ""
-echo -e "${GREEN}LazyReview installed successfully!${NC}"
+echo -e "${GREEN}LazyReview v${specific_version} installed successfully!${NC}"
 echo ""
 echo -e "${MUTED}To get started:${NC}"
 echo ""
