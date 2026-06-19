@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { detectLanguage } from "./syntax"
+import { detectLanguage } from "./shiki"
 
 describe("detectLanguage", () => {
   test("detects TypeScript files", () => {

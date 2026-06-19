@@ -1,5 +1,5 @@
-import { highlightCode } from "../utils/syntax-core"
-import type { HighlightedLine } from "../utils/syntax-types"
+import { highlightCode } from "../utils/shiki"
+import type { HighlightedLine } from "../utils/shiki"
 
 interface HighlightRequest {
   id: number

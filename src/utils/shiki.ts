@@ -1,6 +1,15 @@
 import { createHighlighter, type Highlighter, type BundledLanguage } from "shiki"
 import { applyMarkdownStyles } from "./markdown-styles"
-import type { HighlightedLine } from "./syntax-types"
+
+export interface HighlightedToken {
+  content: string
+  color: string
+  bold?: boolean
+  italic?: boolean
+  dim?: boolean
+}
+
+export type HighlightedLine = HighlightedToken[]
 
 // Default text color matching the app theme
 const DEFAULT_COLOR = "#e6edf3"
@@ -217,7 +226,9 @@ function plainTextLines(content: string): HighlightedLine[] {
 }
 
 /**
- * Highlight code and return an array of lines, each containing tokens with colors
+ * Highlight code and return an array of lines, each containing tokens with colors.
+ * This is the pure Shiki implementation, intended to run on the main thread or
+ * inside a worker.
  */
 export async function highlightCode(
   content: string,

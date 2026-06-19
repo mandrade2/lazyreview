@@ -1,4 +1,4 @@
-import type { HighlightedLine, HighlightedToken } from "./syntax-types"
+import type { HighlightedLine, HighlightedToken } from "./shiki"
 
 /**
  * Apply markdown-aware styling to highlighted lines.
