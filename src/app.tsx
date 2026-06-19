@@ -1085,6 +1085,12 @@ export function App() {
             >
               <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e" }}>
                 <b>DIFF</b>
+                <Show when={mode() === "commit" && selectedCommit()}>
+                  {` · ${selectedCommit()!.shortHash} ${selectedCommit()!.message}`}
+                </Show>
+                <Show when={mode() === "branch" && selectedBranch()}>
+                  {` · ${currentBranch() ?? "HEAD"} vs ${selectedBranch()!.name}`}
+                </Show>
               </text>
             </box>
             <Show
