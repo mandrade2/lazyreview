@@ -1,8 +1,9 @@
 import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
-import { highlightCode, type HighlightedLine } from "../utils/syntax"
+import { highlightFile, type HighlightedLine } from "../utils/dataloading"
 import { parseDiff, type DiffLine as ParsedDiffLine } from "../utils/git"
+import { perfBeginHighlight, perfEndHighlight, perfMarkFirstRender } from "../utils/perf"
 
 interface DiffViewerProps {
   file: FileChange
@@ -98,9 +99,16 @@ export function DiffViewer(props: DiffViewerProps) {
       content.split("\n").map((line) => [{ content: line, color: DEFAULT_COLOR }])
     )
 
-    highlightCode(content, props.file.path).then((highlighted) => {
+    perfBeginHighlight(props.file.path)
+
+    highlightFile(content, props.file.path).then((highlighted) => {
       if (cancelled) return
+      perfEndHighlight(props.file.path)
       setHighlightedFileLines(highlighted)
+      perfMarkFirstRender(props.file.path)
+    }).catch(() => {
+      // Stale-result rejections are expected when the user navigates quickly.
+      // The current selection is already being highlighted by a new request.
     })
 
     onCleanup(() => {

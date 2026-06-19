@@ -25,6 +25,15 @@ import {
   type DiffLine as ParsedDiffLine,
 } from "./utils/git"
 import { openFileInEditor } from "./utils/editor"
+import { preloadHighlight } from "./utils/dataloading"
+import {
+  perfBeginFileSelection,
+  perfMarkFileContentLoaded,
+  perfMarkFilesLoaded,
+  perfMarkFirstRender,
+  perfBeginNavigation,
+  perfEndNavigation,
+} from "./utils/perf"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
 
 export function App() {
@@ -163,6 +172,8 @@ export function App() {
     if (file && file.path !== lastSelectedFilePath && currentViewState === "files") {
       lastSelectedFilePath = file.path
 
+      perfBeginFileSelection(file.path)
+
       // Clear search state when switching files
       clearSearch()
 
@@ -181,6 +192,7 @@ export function App() {
           // Update the file in the files array
           setFiles((prev) => prev.map((f) => (f.path === loadedFile.path ? loadedFile : f)))
           setLoadingFile(false)
+          perfMarkFileContentLoaded(loadedFile.path)
 
           // Set scroll to first change line and reset chunk index
           const contextLines = 5
@@ -205,6 +217,25 @@ export function App() {
       }
     }
   })
+
+  // Eagerly preload syntax highlighting for nearby files when the current
+  // selection changes. Only preloads when the worker is idle and the file is
+  // small enough to avoid delaying the current file's highlight.
+  createEffect(() => {
+    const files = allVisibleFiles()
+    const index = selectedIndex()
+    const nextFile = files[index + 1]
+    if (nextFile?.content && !nextFile.isBinary) {
+      preloadHighlight(nextFile.content, nextFile.path)
+    }
+  })
+
+  // Navigation perf: mark end of navigation when selected file renders.
+  createEffect(() => {
+    const file = selectedFile()
+    if (!file) return
+    perfEndNavigation(file.path)
+  })
   
   // Load data helpers
   const loadDirtyChanges = async () => {
@@ -214,6 +245,7 @@ export function App() {
     try {
       const changes = await getGitChanges()
       setFiles(changes)
+      perfMarkFilesLoaded(changes.length)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load git changes")
     } finally {
@@ -688,6 +720,7 @@ export function App() {
         }
       } else if (focusedPanel() === "files") {
         // File list navigation
+        perfBeginNavigation(allVisibleFiles()[selectedIndex() + 1]?.path ?? "")
         setSelectedIndex(i => Math.min(i + 1, files().length - 1))
       } else if (focusedPanel() === "diff") {
         // Diff scroll
