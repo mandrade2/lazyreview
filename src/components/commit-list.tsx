@@ -6,7 +6,10 @@ interface CommitListProps {
   commits: CommitInfo[]
   selectedIndex: number
   focused: boolean
+  width: number
 }
+
+const dateColumnWidth = 13
 
 export function CommitList(props: CommitListProps) {
   const dimensions = useTerminalDimensions()
@@ -41,7 +44,14 @@ export function CommitList(props: CommitListProps) {
   const maxHashLength = createMemo(() => {
     return Math.max(...props.commits.map(c => c.shortHash.length), 7)
   })
-  
+
+  // Reserve space for the date column so messages can't push it off-screen
+  const messageMaxWidth = createMemo(() => {
+    const padding = 2
+    const hashWidth = maxHashLength() + 1
+    return Math.max(10, props.width - padding - hashWidth - dateColumnWidth)
+  })
+   
   return (
     <box
       style={{
@@ -69,10 +79,12 @@ export function CommitList(props: CommitListProps) {
                 <text style={{ fg: "#58a6ff" }}>{commit.shortHash}</text>
               </box>
               <text style={{ fg: isSelected() ? "#e6edf3" : "#8b949e" }}>
-                {truncateMessage(commit.message, 40)}
+                {truncateMessage(commit.message, messageMaxWidth())}
               </text>
               <box style={{ flexGrow: 1 }} />
-              <text style={{ fg: "#6e7681" }}>{commit.date}</text>
+              <box style={{ width: dateColumnWidth }}>
+                <text style={{ fg: "#6e7681" }}>{formatDate(commit.date, dateColumnWidth)}</text>
+              </box>
             </box>
           )
         }}
@@ -85,5 +97,12 @@ function truncateMessage(message: string, maxLength: number): string {
   if (message.length <= maxLength) {
     return message
   }
-  return message.substring(0, maxLength - 1) + "..."
+  return message.substring(0, maxLength - 1) + "…"
+}
+
+function formatDate(date: string, width: number): string {
+  if (date.length >= width) {
+    return date.slice(0, width)
+  }
+  return date.padStart(width)
 }

@@ -11,6 +11,9 @@ export interface CommitInfo {
 export interface BranchInfo {
   name: string
   isCurrent: boolean
+  shortHash: string
+  date: string
+  message: string
 }
 
 export interface FileChange {
@@ -425,7 +428,7 @@ export async function getCurrentBranch(): Promise<string | null> {
 // Get list of local branches (sorted by most recently committed)
 export async function getBranchList(): Promise<BranchInfo[]> {
   try {
-    const format = "%(refname:short)|%(HEAD)"
+    const format = "%(refname:short)|%(HEAD)|%(objectname:short)|%(committerdate:relative)|%(subject)"
     const result = await Bun.$`git -C ${targetDir} branch --sort=-committerdate --format=${format}`.quiet()
     const output = result.stdout.toString().trim()
     
@@ -434,10 +437,13 @@ export async function getBranchList(): Promise<BranchInfo[]> {
     }
     
     return output.split("\n").map(line => {
-      const [name, head] = line.split("|")
+      const [name, head, shortHash, date, ...messageParts] = line.split("|")
       return {
         name: name ?? "",
         isCurrent: head === "*",
+        shortHash: shortHash ?? "",
+        date: date ?? "",
+        message: messageParts.join("|"),
       }
     })
   } catch {

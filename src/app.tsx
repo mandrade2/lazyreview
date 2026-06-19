@@ -978,7 +978,7 @@ export function App() {
           <box
             onMouseScroll={handleSidebarScroll}
             style={{
-              width: isNarrowMode() ? "100%" : sidebarWidth(),
+              width: isNarrowMode() || viewState() === "list" ? "100%" : sidebarWidth(),
               flexShrink: 0,
               flexDirection: "column",
             }}
@@ -1037,6 +1037,7 @@ export function App() {
                       commits={commits()}
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
+                      width={isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()}
                     />
                   </Show>
                 </Show>
@@ -1055,6 +1056,7 @@ export function App() {
                       branches={branches()}
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
+                      width={isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()}
                     />
                   </Show>
                 </Show>
@@ -1063,8 +1065,8 @@ export function App() {
           </box>
         </Show>
         
-        {/* Diff viewer */}
-        <Show when={!isNarrowMode() || focusedPanel() === "diff"}>
+        {/* Diff viewer - only shown when reviewing files */}
+        <Show when={viewState() === "files" && (!isNarrowMode() || focusedPanel() === "diff")}>
           <box
             onMouseScroll={handleDiffScroll}
             style={{
