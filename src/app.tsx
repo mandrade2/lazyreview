@@ -1,4 +1,4 @@
-import { createSignal, createMemo, createEffect, Show } from "solid-js"
+import { createSignal, createMemo, createEffect, Show, onMount, onCleanup } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import type { MouseEvent } from "@opentui/core"
 import { FileList } from "./components/file-list"
@@ -26,20 +26,29 @@ import {
 } from "./utils/git"
 import { openFileInEditor } from "./utils/editor"
 import { preloadHighlight } from "./utils/dataloading"
-import {
-  perfBeginFileSelection,
-  perfMarkFileContentLoaded,
-  perfMarkFilesLoaded,
-  perfMarkFirstRender,
-  perfBeginNavigation,
-  perfEndNavigation,
-} from "./utils/perf"
+import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
 
 export function App() {
   const renderer = useRenderer()
   const dimensions = useTerminalDimensions()
-  
+
+  // Auto-copy any mouse selection to the system clipboard on mouseup and
+  // clear the selection so it doesn't stay highlighted.
+  onMount(() => {
+    const handleSelection = async (selection: { getSelectedText(): string }) => {
+      const text = selection.getSelectedText()
+      if (!text) return
+      await copyToClipboard(text)
+      renderer.clearSelection()
+    }
+
+    renderer.on("selection", handleSelection)
+    onCleanup(() => {
+      renderer.off("selection", handleSelection)
+    })
+  })
+
   // Mode and view state
   const [mode, setMode] = createSignal<AppMode>("dirty")
   const [viewState, setViewState] = createSignal<"list" | "files">("files")
@@ -172,7 +181,7 @@ export function App() {
     if (file && file.path !== lastSelectedFilePath && currentViewState === "files") {
       lastSelectedFilePath = file.path
 
-      perfBeginFileSelection(file.path)
+      // perf measurement removed
 
       // Clear search state when switching files
       clearSearch()
@@ -192,8 +201,6 @@ export function App() {
           // Update the file in the files array
           setFiles((prev) => prev.map((f) => (f.path === loadedFile.path ? loadedFile : f)))
           setLoadingFile(false)
-          perfMarkFileContentLoaded(loadedFile.path)
-
           // Set scroll to first change line and reset chunk index
           const contextLines = 5
           const targetLine = diffViewMode() === "full"
@@ -230,13 +237,6 @@ export function App() {
     }
   })
 
-  // Navigation perf: mark end of navigation when selected file renders.
-  createEffect(() => {
-    const file = selectedFile()
-    if (!file) return
-    perfEndNavigation(file.path)
-  })
-  
   // Load data helpers
   const loadDirtyChanges = async () => {
     setLoading(true)
@@ -245,7 +245,7 @@ export function App() {
     try {
       const changes = await getGitChanges()
       setFiles(changes)
-      perfMarkFilesLoaded(changes.length)
+      // perf measurement removed
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load git changes")
     } finally {
@@ -720,7 +720,7 @@ export function App() {
         }
       } else if (focusedPanel() === "files") {
         // File list navigation
-        perfBeginNavigation(allVisibleFiles()[selectedIndex() + 1]?.path ?? "")
+        // perf measurement removed
         setSelectedIndex(i => Math.min(i + 1, files().length - 1))
       } else if (focusedPanel() === "diff") {
         // Diff scroll
