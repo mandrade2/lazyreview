@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
-import { highlightFile, type HighlightedLine } from "../utils/dataloading"
+import { highlightFile, type HighlightedLine, wrapTokens } from "../utils/dataloading"
 import { parseDiff, type DiffLine as ParsedDiffLine } from "../utils/git"
 
 interface DiffViewerProps {
@@ -14,6 +14,16 @@ interface DiffViewerProps {
   viewMode?: "diff" | "full"
   showLineBg?: boolean
   isReviewed?: boolean
+  width: number
+}
+
+interface DisplayRow {
+  lineNumber: string | number | null
+  changeIndicator: string | null
+  tokens: HighlightedLine
+  isHeader: boolean
+  isAdded: boolean
+  isRemoved: boolean
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -43,7 +53,7 @@ export function DiffViewer(props: DiffViewerProps) {
   const dimensions = useTerminalDimensions()
 
   const viewMode = () => props.viewMode ?? "diff"
-  
+
   // Store highlighted lines (syntax highlighted tokens) from diff
   const [highlightedDiffLines, setHighlightedDiffLines] = createSignal<Array<{
     line: ParsedDiffLine
@@ -52,13 +62,13 @@ export function DiffViewer(props: DiffViewerProps) {
 
   // Store highlighted lines for full file view
   const [highlightedFileLines, setHighlightedFileLines] = createSignal<HighlightedLine[]>([])
-  
+
   // Parse the diff into displayable lines
   const diffLines = createMemo(() => {
     if (!props.file.diff) return []
     return parseDiff(props.file.diff)
   })
-  
+
   // Build highlighted diff lines from the full file highlighting
   // This avoids broken syntax highlighting caused by incomplete statements
   // when joining diff hunks (e.g., an unclosed `import {` from one hunk
@@ -110,47 +120,20 @@ export function DiffViewer(props: DiffViewerProps) {
       cancelled = true
     })
   })
-  
-  // Calculate visible lines based on terminal height (minus headers and status bar)
+
+  // Calculate visible rows based on terminal height (minus headers and status bar)
   const visibleHeight = createMemo(() => {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
   })
 
-  // Get the lines to display based on scroll offset
-  const visibleLines = createMemo(() => {
-    if (viewMode() === "full") {
-      const allLines = highlightedFileLines()
-      const lineCount = allLines.length
-      const start = props.scrollOffset
-      const end = Math.min(start + visibleHeight(), lineCount)
-
-      return allLines.slice(start, end).map((tokens, idx) => ({
-        viewIndex: start + idx,
-        kind: "full" as const,
-        tokens,
-        oldLineNumber: start + idx + 1,
-        newLineNumber: start + idx + 1,
-      }))
-    }
-
-    const allLines = highlightedDiffLines()
-    const lineCount = allLines.length
-    const start = props.scrollOffset
-    const end = Math.min(start + visibleHeight(), lineCount)
-
-    return allLines.slice(start, end).map((item, idx) => ({
-      viewIndex: start + idx,
-      kind: "diff" as const,
-      line: item.line,
-      tokens: item.tokens,
-    }))
-  })
-  
   // Line number width based on total lines
   const lineNumberWidth = createMemo(() => {
     const total = viewMode() === "full" ? highlightedFileLines().length : highlightedDiffLines().length
     return Math.max(4, String(total).length + 1)
   })
+
+  // Available width for the actual code content
+  const contentWidth = createMemo(() => Math.max(1, props.width - lineNumberWidth() - 1))
 
   const changeInfo = createMemo(() => {
     if (viewMode() === "full") {
@@ -162,7 +145,104 @@ export function DiffViewer(props: DiffViewerProps) {
     }
     return null
   })
-  
+
+  // Wrap logical lines into display rows that fit within the available width.
+  // Returns both the flat row list and the starting row index for each logical line.
+  const wrapData = createMemo(() => {
+    const width = contentWidth()
+    const rows: DisplayRow[] = []
+    const logicalStartRows: number[] = []
+
+    if (viewMode() === "full") {
+      const lines = highlightedFileLines()
+      const change = changeInfo()
+
+      for (let i = 0; i < lines.length; i++) {
+        logicalStartRows.push(rows.length)
+        const tokens = lines[i] ?? [{ content: "", color: DEFAULT_COLOR }]
+        const wrapped = wrapTokens(tokens, width)
+        const isAdded = !!change?.added.has(i)
+        const isRemoved = !!change?.removed.has(i)
+
+        for (let r = 0; r < wrapped.length; r++) {
+          rows.push({
+            lineNumber: r === 0 ? i + 1 : null,
+            changeIndicator: r === 0 ? " " : null,
+            tokens: wrapped[r]!,
+            isHeader: false,
+            isAdded,
+            isRemoved,
+          })
+        }
+      }
+    } else {
+      const lines = highlightedDiffLines()
+
+      for (let i = 0; i < lines.length; i++) {
+        logicalStartRows.push(rows.length)
+        const item = lines[i]!
+        const wrapped = wrapTokens(item.tokens, width)
+        const isHeader = item.line.type === "header"
+        const isAdded = item.line.type === "addition"
+        const isRemoved = item.line.type === "deletion"
+
+        for (let r = 0; r < wrapped.length; r++) {
+          rows.push({
+            lineNumber: r === 0
+              ? (isHeader ? "@@" : (item.line.newLineNumber ?? item.line.oldLineNumber ?? "-"))
+              : null,
+            changeIndicator: r === 0
+              ? (isHeader ? "~" : isAdded ? "+" : isRemoved ? "-" : " ")
+              : null,
+            tokens: wrapped[r]!,
+            isHeader,
+            isAdded,
+            isRemoved,
+          })
+        }
+      }
+    }
+
+    logicalStartRows.push(rows.length)
+    return { rows, logicalStartRows }
+  })
+
+  // Determine which display rows are visible based on the logical scroll offset.
+  const visibleRows = createMemo(() => {
+    const { rows, logicalStartRows } = wrapData()
+    const height = visibleHeight()
+    const totalLogical = Math.max(0, logicalStartRows.length - 1)
+    const startLine = Math.max(0, Math.min(props.scrollOffset, totalLogical - 1))
+
+    if (totalLogical === 0 || height <= 0) {
+      return []
+    }
+
+    const result: DisplayRow[] = []
+    let rowCount = 0
+
+    for (let i = startLine; i < totalLogical && rowCount < height; i++) {
+      const lineStart = logicalStartRows[i]!
+      const lineEnd = logicalStartRows[i + 1]!
+      const lineRows = rows.slice(lineStart, lineEnd)
+
+      if (rowCount + lineRows.length <= height) {
+        result.push(...lineRows)
+        rowCount += lineRows.length
+      } else if (rowCount === 0) {
+        // The first logical line is taller than the viewport; show its top portion.
+        result.push(...lineRows.slice(0, height))
+        rowCount = height
+        break
+      } else {
+        // The next logical line doesn't fit fully; stop to avoid clipping it.
+        break
+      }
+    }
+
+    return result
+  })
+
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       {/* File header */}
@@ -194,7 +274,7 @@ export function DiffViewer(props: DiffViewerProps) {
           )}
         </box>
       </box>
-      
+
       {/* File content */}
       <Show
         when={!props.file.isBinary && (viewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0)}
@@ -214,130 +294,91 @@ export function DiffViewer(props: DiffViewerProps) {
         }
       >
         <box style={{ flexDirection: "column", flexGrow: 1, backgroundColor: "#0d1117" }}>
-          <Index each={visibleLines()}>
+          <Index each={visibleRows()}>
             {(item) => {
-              // NOTE: when using <Index>, the callback runs once per position and
-              // `item()` updates as the underlying array slice changes (scrolling).
-              // Derive styling from `item()` inside reactive getters so background
-              // colors and line numbers update correctly.
-
-              const isDiff = () => item().kind === "diff"
-              const diffLine = (): ParsedDiffLine | null => {
-                const it = item()
-                return it.kind === "diff" ? it.line : null
-              }
-
-              const fileLineIndex = () => (isDiff()
-                ? (diffLine()?.newLineNumber ?? diffLine()?.oldLineNumber ?? 1) - 1
-                : item().viewIndex
-              )
-
-              const change = () => changeInfo()
-              const isAdded = () => (isDiff()
-                ? diffLine()?.type === "addition"
-                : !!change()?.added.has(fileLineIndex())
-              )
-              const isRemoved = () => (isDiff()
-                ? diffLine()?.type === "deletion"
-                : !!change()?.removed.has(fileLineIndex())
-              )
-              const isHeader = () => (isDiff() ? diffLine()?.type === "header" : false)
-              const isChanged = () => isAdded() || isRemoved()
-
-              const displayLineNumber = () => {
-                const it = item()
-                if (it.kind === "diff") {
-                  return it.line.newLineNumber ?? it.line.oldLineNumber ?? "-"
-                }
-                return it.newLineNumber
-              }
-
               const lineBg = () => props.showLineBg !== false
+
+              const outerBg = () => item().isAdded && lineBg()
+                ? "#1a2f1a"
+                : item().isRemoved && lineBg()
+                  ? "#2f1a1a"
+                  : item().isHeader
+                    ? "#21262d"
+                    : "#0d1117"
+
+              const gutterBg = () => item().isAdded
+                ? "#1a2f1a"
+                : item().isRemoved
+                  ? "#2f1a1a"
+                  : item().isHeader
+                    ? "#21262d"
+                    : "#161b22"
+
+              const lineNumberFg = () => item().isHeader
+                ? "#8b949e"
+                : item().isAdded
+                  ? "#3fb950"
+                  : item().isRemoved
+                    ? "#f85149"
+                    : "#484f58"
+
+              const indicatorFg = () => item().isHeader
+                ? "#d29922"
+                : item().isAdded
+                  ? "#3fb950"
+                  : item().isRemoved
+                    ? "#f85149"
+                    : "#0d1117"
+
+              const lineNumberText = () => {
+                const num = item().lineNumber
+                if (num === null) return ""
+                return num.toString().padStart(lineNumberWidth() - 1, " ")
+              }
 
               return (
                 <box
                   style={{
                     flexDirection: "row",
-                    backgroundColor: isAdded() && lineBg()
-                      ? "#1a2f1a"
-                      : isRemoved() && lineBg()
-                        ? "#2f1a1a"
-                        : isHeader()
-                          ? "#21262d"
-                          : "#0d1117",
-                    height: 1,
+                    backgroundColor: outerBg(),
+                    flexShrink: 0,
                   }}
                 >
                   {/* Line number */}
                   <box
                     style={{
                       width: lineNumberWidth(),
-                      backgroundColor: isAdded()
-                        ? "#1a2f1a"
-                        : isRemoved()
-                          ? "#2f1a1a"
-                          : isHeader()
-                            ? "#21262d"
-                            : "#161b22",
+                      backgroundColor: gutterBg(),
                     }}
                   >
-                    <text
-                      style={{
-                        fg: isHeader()
-                          ? "#8b949e"
-                          : isAdded()
-                            ? "#3fb950"
-                            : isRemoved()
-                              ? "#f85149"
-                              : "#484f58"
-                      }}
-                    >
-                      {isHeader()
-                        ? "@@"
-                        : (displayLineNumber() ?? "-")
-                            .toString()
-                            .padStart(lineNumberWidth() - 1, " ")}
+                    <text style={{ fg: lineNumberFg() }}>
+                      {lineNumberText()}
                     </text>
                   </box>
                   {/* Change indicator */}
                   <box
                     style={{
                       width: 1,
-                      backgroundColor: isAdded()
-                        ? "#1a2f1a"
-                        : isRemoved()
-                          ? "#2f1a1a"
-                          : isHeader()
-                            ? "#21262d"
-                            : "#0d1117",
+                      backgroundColor: outerBg(),
                     }}
                   >
-                    <text
-                      style={{
-                        fg: isHeader()
-                          ? "#d29922"
-                          : isAdded()
-                            ? "#3fb950"
-                            : isRemoved()
-                              ? "#f85149"
-                              : "#0d1117",
-                      }}
-                    >
-                      {isHeader() ? "~" : isAdded() ? "+" : isRemoved() ? "-" : " "}
+                    <text style={{ fg: indicatorFg() }}>
+                      {item().changeIndicator ?? " "}
                     </text>
                   </box>
                   {/* Content with syntax highlighting */}
                   <text
                     style={{
-                      flexGrow: 1,
-                      flexShrink: 1,
+                      width: contentWidth(),
+                      flexShrink: 0,
+                      wrapMode: "none",
                     }}
                   >
                     <Index each={item().tokens}>
                       {(token) => (
                         <span
                           style={{
-                            fg: isHeader() ? "#8b949e" : token().color,
+                            fg: item().isHeader ? "#8b949e" : token().color,
                             bold: token().bold,
                             italic: token().italic,
                             dim: token().dim,

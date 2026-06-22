@@ -70,6 +70,13 @@ export function App() {
 
     return Math.max(35, Math.min(48, Math.floor(dimensions().width * 0.32)))
   })
+  const diffViewerWidth = createMemo(() => {
+    if (isNarrowMode()) {
+      return dimensions().width
+    }
+
+    return Math.max(1, dimensions().width - sidebarWidth())
+  })
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
@@ -1166,6 +1173,7 @@ export function App() {
                   viewMode={diffViewMode()}
                   showLineBg={showLineBg()}
                   isReviewed={selectedFile() ? reviewedPaths().has(selectedFile()!.path) : false}
+                  width={diffViewerWidth()}
                 />
               </Show>
             </Show>

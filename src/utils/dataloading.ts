@@ -1,8 +1,56 @@
-import type { HighlightedLine } from "./shiki"
+import type { HighlightedLine, HighlightedToken } from "./shiki"
 import { highlightCode as highlightDirect } from "./shiki"
 
 export type { HighlightedLine, HighlightedToken } from "./shiki"
 export { detectLanguage } from "./shiki"
+
+/**
+ * Split a highlighted line into multiple rows so that no rendered row exceeds
+ * the given column width. Token styles are preserved across row boundaries.
+ */
+export function wrapTokens(tokens: HighlightedLine, width: number): HighlightedLine[] {
+  if (width <= 0) {
+    return [tokens]
+  }
+
+  const rows: HighlightedLine[] = []
+  let current: HighlightedToken[] = []
+  let currentLength = 0
+
+  for (const token of tokens) {
+    let remaining = token.content
+    while (remaining.length > 0) {
+      const space = width - currentLength
+      if (space <= 0) {
+        rows.push(current)
+        current = []
+        currentLength = 0
+        continue
+      }
+
+      const take = Math.min(space, remaining.length)
+      current.push({ ...token, content: remaining.slice(0, take) })
+      currentLength += take
+      remaining = remaining.slice(take)
+
+      if (currentLength === width) {
+        rows.push(current)
+        current = []
+        currentLength = 0
+      }
+    }
+  }
+
+  if (current.length > 0) {
+    rows.push(current)
+  }
+
+  if (rows.length === 0) {
+    rows.push([{ content: "", color: "#e6edf3" }])
+  }
+
+  return rows
+}
 
 interface HighlightRequest {
   id: number
