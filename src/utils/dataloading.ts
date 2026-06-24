@@ -5,6 +5,44 @@ export type { HighlightedLine, HighlightedToken } from "./shiki"
 export { detectLanguage } from "./shiki"
 
 /**
+ * Estimate how many display rows a raw line consumes when wrapped to the given
+ * width. This mirrors the row count produced by `wrapTokens` for plain content.
+ */
+export function estimateWrappedRows(lineLength: number, width: number): number {
+  if (width <= 0 || lineLength <= 0) return 1
+  return Math.ceil(lineLength / width)
+}
+
+/**
+ * Compute the maximum logical-line scroll offset for a set of lines that may
+ * wrap. Returns the earliest line index such that the remaining content fits
+ * within the visible viewport.
+ */
+export function computeWrappedMaxScroll(
+  lines: Array<{ content: string } | string>,
+  contentWidth: number,
+  visibleHeight: number,
+): number {
+  if (lines.length === 0 || visibleHeight <= 0) return 0
+
+  const width = Math.max(1, contentWidth)
+  const rowCounts = lines.map((line) => {
+    const length = typeof line === "string" ? line.length : line.content.length
+    return estimateWrappedRows(length, width)
+  })
+
+  let totalRows = 0
+  for (let i = lines.length - 1; i >= 0; i--) {
+    totalRows += rowCounts[i]!
+    if (totalRows > visibleHeight) {
+      return Math.min(i + 1, lines.length - 1)
+    }
+  }
+
+  return 0
+}
+
+/**
  * Split a highlighted line into multiple rows so that no rendered row exceeds
  * the given column width. Token styles are preserved across row boundaries.
  */

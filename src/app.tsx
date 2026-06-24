@@ -24,8 +24,16 @@ import {
   type BranchInfo,
   type DiffLine as ParsedDiffLine,
 } from "./utils/git"
+import {
+  buildFileTree,
+  flattenTree,
+  getFilesInFolder,
+  collectFolderPaths,
+  type TreeFolder,
+  type TreeFile,
+} from "./utils/file-tree"
 import { openFileInEditor } from "./utils/editor"
-import { preloadHighlight } from "./utils/dataloading"
+import { preloadHighlight, computeWrappedMaxScroll } from "./utils/dataloading"
 import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
 
@@ -93,6 +101,12 @@ export function App() {
   // Toggle background highlighting on diff lines (line numbers keep their color)
   const [showLineBg, setShowLineBg] = createSignal(true)
 
+  // File list view mode: flat list or tree view
+  const [fileListViewMode, setFileListViewMode] = createSignal<"flat" | "tree">("flat")
+
+  // Expanded folder paths in tree view
+  const [expandedFolders, setExpandedFolders] = createSignal<Set<string>>(new Set())
+
   // Settings loaded flag to prevent overwriting before load completes
   const [settingsLoaded, setSettingsLoaded] = createSignal(false)
 
@@ -128,8 +142,34 @@ export function App() {
     const fileMap = new Map(files().map(f => [f.path, f]))
     return order.map(path => fileMap.get(path)).filter((f): f is FileChange => f !== undefined)
   })
-  const allVisibleFiles = createMemo(() => [...toReviewFiles(), ...reviewedFiles()])
-  const selectedFile = createMemo(() => allVisibleFiles()[selectedIndex()] ?? null)
+
+  const toReviewTree = createMemo(() => buildFileTree(toReviewFiles()))
+  const reviewedTree = createMemo(() => buildFileTree(reviewedFiles()))
+
+  const flatToReviewItems = createMemo(() =>
+    toReviewFiles().map(f => ({ type: "file" as const, file: f, depth: 0 })),
+  )
+  const flatReviewedItems = createMemo(() =>
+    reviewedFiles().map(f => ({ type: "file" as const, file: f, depth: 0 })),
+  )
+
+  const toReviewVisibleItems = createMemo(() =>
+    fileListViewMode() === "tree"
+      ? flattenTree(toReviewTree(), expandedFolders())
+      : flatToReviewItems(),
+  )
+  const reviewedVisibleItems = createMemo(() =>
+    fileListViewMode() === "tree"
+      ? flattenTree(reviewedTree(), expandedFolders())
+      : flatReviewedItems(),
+  )
+
+  const allVisibleItems = createMemo(() => [...toReviewVisibleItems(), ...reviewedVisibleItems()])
+  const selectedItem = createMemo(() => allVisibleItems()[selectedIndex()] ?? null)
+  const selectedFile = createMemo(() => {
+    const item = selectedItem()
+    return item?.type === "file" ? item.file : null
+  })
 
   // Get selectable branches (excluding current)
   const selectableBranches = createMemo(() => 
@@ -146,8 +186,8 @@ export function App() {
   let lastSelectedFilePath: string | null = null
   const [loadingFile, setLoadingFile] = createSignal(false)
   
-  // Calculate visible height for diff viewer (terminal height - header - file header - status bar)
-  const visibleHeight = createMemo(() => dimensions().height - 4)
+  // Calculate visible height for diff viewer (terminal height - app header - panel header - file header - status bar)
+  const visibleHeight = createMemo(() => dimensions().height - 5)
 
   // Clear reviewed state when loading a new set of files
   createEffect(() => {
@@ -156,6 +196,7 @@ export function App() {
     setReviewedOrder([])
     setSelectedIndex(0)
     setScrollOffset(0)
+    setExpandedFolders(collectFolderPaths(buildFileTree(files())))
     lastSelectedFilePath = null
   })
 
@@ -165,12 +206,13 @@ export function App() {
     saveSettings({
       diffViewMode: diffViewMode(),
       showLineBg: showLineBg(),
+      fileListViewMode: fileListViewMode(),
     })
   })
 
   // Clamp selected index when file list changes
   createEffect(() => {
-    const count = allVisibleFiles().length
+    const count = allVisibleItems().length
     const current = selectedIndex()
     if (count === 0) {
       if (current !== 0) setSelectedIndex(0)
@@ -236,11 +278,11 @@ export function App() {
   // selection changes. Only preloads when the worker is idle and the file is
   // small enough to avoid delaying the current file's highlight.
   createEffect(() => {
-    const files = allVisibleFiles()
+    const items = allVisibleItems()
     const index = selectedIndex()
-    const nextFile = files[index + 1]
-    if (nextFile?.content && !nextFile.isBinary) {
-      preloadHighlight(nextFile.content, nextFile.path)
+    const nextFileItem = items.slice(index + 1).find((item): item is TreeFile => item.type === "file")
+    if (nextFileItem?.file.content && !nextFileItem.file.isBinary) {
+      preloadHighlight(nextFileItem.file.content, nextFileItem.file.path)
     }
   })
 
@@ -323,22 +365,29 @@ export function App() {
     const settings = await loadSettings()
     setDiffViewMode(settings.diffViewMode)
     setShowLineBg(settings.showLineBg)
+    setFileListViewMode(settings.fileListViewMode)
     setSettingsLoaded(true)
     await loadDirtyChanges()
   })()
   
-  // Helper to get max scroll for current file
+  // Helper to get max scroll for current file, accounting for line wrapping in narrow panes
   const getMaxScroll = () => {
     const file = selectedFile()
     if (!file) return 0
 
+    const viewportHeight = visibleHeight()
+
     if (diffViewMode() === "full") {
-      const totalLines = file.content.split("\n").length
-      return Math.max(0, totalLines - visibleHeight())
+      const lines = file.content.split("\n")
+      const lineNumberWidth = Math.max(4, String(lines.length).length + 1)
+      const contentWidth = Math.max(1, diffViewerWidth() - lineNumberWidth - 1)
+      return computeWrappedMaxScroll(lines, contentWidth, viewportHeight)
     }
 
-    const totalLines = parseDiff(file.diff ?? "").length
-    return Math.max(0, totalLines - visibleHeight())
+    const parsedDiff = parseDiff(file.diff ?? "")
+    const lineNumberWidth = Math.max(4, String(parsedDiff.length).length + 1)
+    const contentWidth = Math.max(1, diffViewerWidth() - lineNumberWidth - 1)
+    return computeWrappedMaxScroll(parsedDiff, contentWidth, viewportHeight)
   }
   
   const getDiffChunkPositions = (): number[] => {
@@ -528,7 +577,7 @@ export function App() {
       }
     } else {
       // File list
-      setSelectedIndex(i => Math.max(0, Math.min(i + delta, files().length - 1)))
+      setSelectedIndex(i => Math.max(0, Math.min(i + delta, allVisibleItems().length - 1)))
     }
   }
 
@@ -595,25 +644,51 @@ export function App() {
     }
 
     // Space to mark/unmark file as reviewed (only in files view)
-    if (key.name === "space" && viewState() === "files" && selectedFile()) {
-      const file = selectedFile()!
-      const path = file.path
-      const currentlyReviewed = reviewedPaths().has(path)
+    if (key.name === "space" && viewState() === "files" && selectedItem()) {
+      const item = selectedItem()!
 
-      if (currentlyReviewed) {
-        setReviewedPaths(prev => {
-          const next = new Set(prev)
-          next.delete(path)
-          return next
-        })
-        setReviewedOrder(prev => prev.filter(p => p !== path))
+      if (item.type === "file") {
+        const path = item.file.path
+        const currentlyReviewed = reviewedPaths().has(path)
+
+        if (currentlyReviewed) {
+          setReviewedPaths(prev => {
+            const next = new Set(prev)
+            next.delete(path)
+            return next
+          })
+          setReviewedOrder(prev => prev.filter(p => p !== path))
+        } else {
+          setReviewedPaths(prev => {
+            const next = new Set(prev)
+            next.add(path)
+            return next
+          })
+          setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
+        }
       } else {
-        setReviewedPaths(prev => {
-          const next = new Set(prev)
-          next.add(path)
-          return next
-        })
-        setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
+        // Folder: mark/unmark all files under it in the current section
+        const toReviewLength = toReviewVisibleItems().length
+        const isToReview = selectedIndex() < toReviewLength
+        const tree = isToReview ? toReviewTree() : reviewedTree()
+        const paths = getFilesInFolder(tree, item.path).map(f => f.path)
+
+        if (isToReview) {
+          setReviewedPaths(prev => new Set([...prev, ...paths]))
+          setReviewedOrder(prev => [
+            ...paths.filter(p => !prev.includes(p)),
+            ...prev.filter(p => !paths.includes(p)),
+          ])
+        } else {
+          setReviewedPaths(prev => {
+            const next = new Set(prev)
+            for (const path of paths) {
+              next.delete(path)
+            }
+            return next
+          })
+          setReviewedOrder(prev => prev.filter(p => !paths.includes(p)))
+        }
       }
       return
     }
@@ -697,9 +772,23 @@ export function App() {
             loadBranchChanges(branch)
           }
         }
-      } else if (focusedPanel() === "files" && selectedFile()) {
-        // In files view: switch to diff panel
-        setFocusedPanel("diff")
+      } else if (focusedPanel() === "files") {
+        if (selectedItem()?.type === "folder") {
+          // Toggle folder expand/collapse in tree view
+          const folder = selectedItem() as TreeFolder
+          setExpandedFolders(prev => {
+            const next = new Set(prev)
+            if (next.has(folder.path)) {
+              next.delete(folder.path)
+            } else {
+              next.add(folder.path)
+            }
+            return next
+          })
+        } else if (selectedFile()) {
+          // In files view: switch to diff panel
+          setFocusedPanel("diff")
+        }
       }
       return
     }
@@ -728,7 +817,7 @@ export function App() {
       } else if (focusedPanel() === "files") {
         // File list navigation
         // perf measurement removed
-        setSelectedIndex(i => Math.min(i + 1, files().length - 1))
+        setSelectedIndex(i => Math.min(i + 1, allVisibleItems().length - 1))
       } else if (focusedPanel() === "diff") {
         // Diff scroll
         const maxScroll = getMaxScroll()
@@ -771,13 +860,32 @@ export function App() {
           setListSelectedIndex(selectableBranches().length - 1)
         }
       } else if (focusedPanel() === "files") {
-        setSelectedIndex(files().length - 1)
+        setSelectedIndex(allVisibleItems().length - 1)
       } else if (focusedPanel() === "diff") {
         setScrollOffset(getMaxScroll())
       }
       return
     }
     
+    // t - toggle file list view mode (flat / tree)
+    if (key.name === "t" && viewState() === "files") {
+      const currentItem = selectedItem()
+      setFileListViewMode(mode => (mode === "flat" ? "tree" : "flat"))
+      // Preserve selection after the view mode switch
+      queueMicrotask(() => {
+        if (currentItem?.type === "file") {
+          const newItems = allVisibleItems()
+          const idx = newItems.findIndex(
+            item => item.type === "file" && item.file.path === currentItem.file.path,
+          )
+          setSelectedIndex(idx >= 0 ? idx : Math.min(selectedIndex(), newItems.length - 1))
+        } else {
+          setSelectedIndex(Math.min(selectedIndex(), allVisibleItems().length - 1))
+        }
+      })
+      return
+    }
+
     // Global diff scroll controls (work from any panel when in files view)
     if (viewState() === "files" && selectedFile()) {
       const halfPage = Math.floor(visibleHeight() / 2)
@@ -1055,8 +1163,8 @@ export function App() {
                 {/* Dirty mode or files view: show file list */}
                 <Show when={mode() === "dirty" || viewState() === "files"}>
                   <FileList
-                    toReviewFiles={toReviewFiles()}
-                    reviewedFiles={reviewedFiles()}
+                    toReviewItems={toReviewVisibleItems()}
+                    reviewedItems={reviewedVisibleItems()}
                     selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
                     width={sidebarWidth()}
@@ -1184,7 +1292,7 @@ export function App() {
       <StatusBar
         mode={mode()}
         viewState={viewState()}
-        fileCount={files().length}
+        visibleItemCount={allVisibleItems().length}
         selectedIndex={selectedIndex()}
         focusedPanel={focusedPanel()}
         listCount={mode() === "commit" ? commits().length : selectableBranches().length}
@@ -1197,6 +1305,7 @@ export function App() {
         currentMatchIndex={currentMatchIndex()}
         diffViewMode={diffViewMode()}
         showLineBg={showLineBg()}
+        fileListViewMode={fileListViewMode()}
       />
       
       <Show when={showHelp()}>
