@@ -5,11 +5,13 @@ import { mkdir } from "fs/promises"
 export interface Settings {
   diffViewMode: "diff" | "full"
   showLineBg: boolean
+  fileListViewMode: "flat" | "tree"
 }
 
 const defaultSettings: Settings = {
   diffViewMode: "diff",
   showLineBg: true,
+  fileListViewMode: "flat",
 }
 
 function getConfigPath(): string {
@@ -26,6 +28,7 @@ export async function loadSettings(): Promise<Settings> {
     return {
       diffViewMode: parsed.diffViewMode === "full" ? "full" : "diff",
       showLineBg: typeof parsed.showLineBg === "boolean" ? parsed.showLineBg : true,
+      fileListViewMode: parsed.fileListViewMode === "tree" ? "tree" : "flat",
     }
   } catch {
     return defaultSettings

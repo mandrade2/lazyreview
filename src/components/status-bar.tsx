@@ -5,11 +5,12 @@ import type { AppMode } from "../utils/git"
 interface StatusBarProps {
   mode: AppMode
   viewState: "list" | "files"
-  fileCount: number
+  visibleItemCount: number
   selectedIndex: number
   focusedPanel: "files" | "diff"
   diffViewMode?: "diff" | "full"
   showLineBg?: boolean
+  fileListViewMode?: "flat" | "tree"
   listCount?: number
   listSelectedIndex?: number
   contextInfo?: string // commit hash or branch name
@@ -54,8 +55,8 @@ export function StatusBar(props: StatusBarProps) {
       if (count === 0) return "Empty"
       return `${index + 1}/${count}`
     }
-    if (props.fileCount === 0) return "No changes"
-    return `${props.selectedIndex + 1}/${props.fileCount}`
+    if (props.visibleItemCount === 0) return "No changes"
+    return `${props.selectedIndex + 1}/${props.visibleItemCount}`
   }
   
   const contextText = () => {
@@ -78,15 +79,15 @@ export function StatusBar(props: StatusBarProps) {
     // File view - different keybinds based on mode and panel
     const hasBack = props.mode !== "dirty"
     const backKey = hasBack ? "esc:back " : ""
-    
+
     const bgToggle = `b:bg${(props.showLineBg ?? true) ? "-" : "+"}`
+    const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
+    const listViewToggle = `t:${(props.fileListViewMode ?? "flat") === "flat" ? "tree" : "flat"}`
 
     if (props.focusedPanel === "files") {
-      const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:nav space:review n/N:chunk ${viewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     } else {
-      const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
-      return `j/k:scroll space:review n/N:chunk ${viewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
     }
   }
   

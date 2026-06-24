@@ -1,32 +1,42 @@
 import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
-import type { FileChange } from "../utils/git"
+import type { TreeItem, TreeFolder, TreeFile } from "../utils/file-tree"
 
 interface FileListProps {
-  toReviewFiles: FileChange[]
-  reviewedFiles: FileChange[]
+  toReviewItems: TreeItem[]
+  reviewedItems: TreeItem[]
   selectedIndex: number
   focused: boolean
   width: number
 }
 
-function getStatusIcon(status: FileChange["status"]): string {
+function getStatusIcon(status: TreeFile["file"]["status"]): string {
   switch (status) {
-    case "added": return "A"
-    case "modified": return "M"
-    case "deleted": return "D"
-    case "renamed": return "R"
-    case "untracked": return "?"
+    case "added":
+      return "A"
+    case "modified":
+      return "M"
+    case "deleted":
+      return "D"
+    case "renamed":
+      return "R"
+    case "untracked":
+      return "?"
   }
 }
 
-function getStatusColor(status: FileChange["status"]): string {
+function getStatusColor(status: TreeFile["file"]["status"]): string {
   switch (status) {
-    case "added": return "#3fb950"
-    case "modified": return "#d29922"
-    case "deleted": return "#f85149"
-    case "renamed": return "#a371f7"
-    case "untracked": return "#8b949e"
+    case "added":
+      return "#3fb950"
+    case "modified":
+      return "#d29922"
+    case "deleted":
+      return "#f85149"
+    case "renamed":
+      return "#a371f7"
+    case "untracked":
+      return "#8b949e"
   }
 }
 
@@ -89,22 +99,38 @@ function formatPath(path: string, maxLength: number): { directory: string; fileN
   }
 }
 
+function getRowBackgroundColor(isSelected: boolean, focused: boolean): string {
+  if (isSelected) {
+    return focused ? "#388bfd56" : "#30363d"
+  }
+  return "transparent"
+}
+
 function FileRow(props: {
-  file: FileChange
+  item: TreeFile
   isSelected: boolean
   focused: boolean
   width: number
 }) {
-  const statusIcon = getStatusIcon(props.file.status)
-  const statusColor = getStatusColor(props.file.status)
-  const additionsText = props.file.additions > 0 ? ` +${props.file.additions}` : ""
-  const deletionsText = props.file.deletions > 0 ? ` -${props.file.deletions}` : ""
+  const file = props.item.file
+  const statusIcon = getStatusIcon(file.status)
+  const statusColor = getStatusColor(file.status)
+  const additionsText = file.additions > 0 ? ` +${file.additions}` : ""
+  const deletionsText = file.deletions > 0 ? ` -${file.deletions}` : ""
   const statsLength = additionsText.length + deletionsText.length
 
   const padding = 2
+  const indent = props.item.depth * 2
   const iconLength = 2
-  const pathWidth = Math.max(0, props.width - padding - iconLength - statsLength)
-  const { directory, fileName } = formatPath(props.file.path, pathWidth)
+  const pathWidth = Math.max(0, props.width - padding - indent - iconLength - statsLength)
+
+  const { directory, fileName } =
+    props.item.depth === 0
+      ? formatPath(file.path, pathWidth)
+      : {
+          directory: "",
+          fileName: truncateMiddle(file.path.split("/").pop() ?? file.path, pathWidth),
+        }
 
   return (
     <box
@@ -112,26 +138,71 @@ function FileRow(props: {
         height: 1,
         paddingLeft: 1,
         paddingRight: 1,
-        backgroundColor: props.isSelected
-          ? props.focused ? "#388bfd56" : "#30363d"
-          : "transparent",
+        backgroundColor: getRowBackgroundColor(props.isSelected, props.focused),
         flexDirection: "row",
       }}
     >
+      <Show when={indent > 0}>
+        <text style={{ fg: "#8b949e" }}>{" ".repeat(indent)}</text>
+      </Show>
       <text style={{ fg: statusColor }}>{statusIcon} </text>
       <Show when={directory}>
         <text style={{ fg: "#8b949e" }}>{directory}</text>
       </Show>
       <text style={{ fg: props.isSelected ? "#58a6ff" : "#e6edf3" }}>{fileName}</text>
       <box style={{ flexGrow: 1 }} />
-      <Show when={props.file.additions > 0}>
+      <Show when={file.additions > 0}>
         <text style={{ fg: "#3fb950" }}>{additionsText}</text>
       </Show>
-      <Show when={props.file.deletions > 0}>
+      <Show when={file.deletions > 0}>
         <text style={{ fg: "#f85149" }}>{deletionsText}</text>
       </Show>
     </box>
   )
+}
+
+function FolderRow(props: {
+  item: TreeFolder
+  isSelected: boolean
+  focused: boolean
+  width: number
+}) {
+  const padding = 2
+  const indent = props.item.depth * 2
+  const iconLength = 2
+  const nameWidth = Math.max(0, props.width - padding - indent - iconLength)
+  const name = truncateMiddle(props.item.name, nameWidth)
+  const prefix = props.item.expanded ? "- " : "+ "
+
+  return (
+    <box
+      style={{
+        height: 1,
+        paddingLeft: 1,
+        paddingRight: 1,
+        backgroundColor: getRowBackgroundColor(props.isSelected, props.focused),
+        flexDirection: "row",
+      }}
+    >
+      <Show when={indent > 0}>
+        <text style={{ fg: "#8b949e" }}>{" ".repeat(indent)}</text>
+      </Show>
+      <text style={{ fg: "#d29922" }}>{prefix}</text>
+      <text style={{ fg: props.isSelected ? "#58a6ff" : "#e6edf3" }}>{name}</text>
+    </box>
+  )
+}
+
+function FileListRow(props: {
+  item: TreeItem
+  isSelected: boolean
+  focused: boolean
+  width: number
+}) {
+  if (props.item.type === "folder") {
+    return <FolderRow item={props.item} isSelected={props.isSelected} focused={props.focused} width={props.width} />
+  }
+  return <FileRow item={props.item} isSelected={props.isSelected} focused={props.focused} width={props.width} />
 }
 
 export function FileList(props: FileListProps) {
@@ -140,8 +211,10 @@ export function FileList(props: FileListProps) {
   // Calculate visible height (terminal height - app header - panel header - status bar)
   const visibleHeight = createMemo(() => dimensions().height - 5)
 
-  const hasToReview = () => props.toReviewFiles.length > 0
-  const hasReviewed = () => props.reviewedFiles.length > 0
+  const toReviewFileCount = () => props.toReviewItems.filter((item) => item.type === "file").length
+  const reviewedFileCount = () => props.reviewedItems.filter((item) => item.type === "file").length
+  const hasToReview = () => toReviewFileCount() > 0
+  const hasReviewed = () => reviewedFileCount() > 0
   const hasAnyFiles = () => hasToReview() || hasReviewed()
 
   const sectionHeight = createMemo(() => {
@@ -160,7 +233,7 @@ export function FileList(props: FileListProps) {
 
   const toReviewScrollOffset = createMemo(() => {
     const height = toReviewHeight() - 1 // minus header
-    const selected = props.selectedIndex < props.toReviewFiles.length ? props.selectedIndex : -1
+    const selected = props.selectedIndex < props.toReviewItems.length ? props.selectedIndex : -1
     if (selected < 0 || height <= 0) return 0
     if (selected < height) return 0
     return Math.max(0, selected - height + 1)
@@ -168,33 +241,33 @@ export function FileList(props: FileListProps) {
 
   const reviewedScrollOffset = createMemo(() => {
     const height = reviewedHeight() - 1 // minus header
-    const reviewedSelected = props.selectedIndex - props.toReviewFiles.length
+    const reviewedSelected = props.selectedIndex - props.toReviewItems.length
     const selected = reviewedSelected >= 0 ? reviewedSelected : -1
     if (selected < 0 || height <= 0) return 0
     if (selected < height) return 0
     return Math.max(0, selected - height + 1)
   })
 
-  const visibleToReviewFiles = createMemo(() => {
+  const visibleToReviewItems = createMemo(() => {
     const start = toReviewScrollOffset()
     const end = start + Math.max(0, toReviewHeight() - 1)
-    return props.toReviewFiles.slice(start, end).map((file, i) => ({
-      file,
+    return props.toReviewItems.slice(start, end).map((item, i) => ({
+      item,
       actualIndex: start + i,
     }))
   })
 
-  const visibleReviewedFiles = createMemo(() => {
+  const visibleReviewedItems = createMemo(() => {
     const start = reviewedScrollOffset()
     const end = start + Math.max(0, reviewedHeight() - 1)
-    return props.reviewedFiles.slice(start, end).map((file, i) => ({
-      file,
+    return props.reviewedItems.slice(start, end).map((item, i) => ({
+      item,
       actualIndex: start + i,
     }))
   })
 
   const isToReviewSelected = (index: number) => index === props.selectedIndex
-  const isReviewedSelected = (index: number) => props.toReviewFiles.length + index === props.selectedIndex
+  const isReviewedSelected = (index: number) => props.toReviewItems.length + index === props.selectedIndex
 
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
@@ -216,8 +289,10 @@ export function FileList(props: FileListProps) {
             flexDirection: "row",
           }}
         >
-          <text style={{ fg: "#f0883e" }}><b>To Review</b></text>
-          <text style={{ fg: "#8b949e" }}> ({props.toReviewFiles.length})</text>
+          <text style={{ fg: "#f0883e" }}>
+            <b>To Review</b>
+          </text>
+          <text style={{ fg: "#8b949e" }}> ({toReviewFileCount()})</text>
         </box>
         <box
           style={{
@@ -234,10 +309,10 @@ export function FileList(props: FileListProps) {
               </box>
             }
           >
-            <For each={visibleToReviewFiles()}>
-              {({ file, actualIndex }) => (
-                <FileRow
-                  file={file}
+            <For each={visibleToReviewItems()}>
+              {({ item, actualIndex }) => (
+                <FileListRow
+                  item={item}
                   isSelected={isToReviewSelected(actualIndex)}
                   focused={props.focused}
                   width={props.width}
@@ -260,8 +335,10 @@ export function FileList(props: FileListProps) {
             flexDirection: "row",
           }}
         >
-          <text style={{ fg: "#f0883e" }}><b>Already Reviewed</b></text>
-          <text style={{ fg: "#8b949e" }}> ({props.reviewedFiles.length})</text>
+          <text style={{ fg: "#f0883e" }}>
+            <b>Already Reviewed</b>
+          </text>
+          <text style={{ fg: "#8b949e" }}> ({reviewedFileCount()})</text>
         </box>
         <box
           style={{
@@ -278,10 +355,10 @@ export function FileList(props: FileListProps) {
               </box>
             }
           >
-            <For each={visibleReviewedFiles()}>
-              {({ file, actualIndex }) => (
-                <FileRow
-                  file={file}
+            <For each={visibleReviewedItems()}>
+              {({ item, actualIndex }) => (
+                <FileListRow
+                  item={item}
                   isSelected={isReviewedSelected(actualIndex)}
                   focused={props.focused}
                   width={props.width}

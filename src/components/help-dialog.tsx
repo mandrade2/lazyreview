@@ -20,7 +20,8 @@ const sections = [
       { key: "g", desc: "Go to first item / top" },
       { key: "G", desc: "Go to last item / bottom" },
       { key: "Tab / h / l", desc: "Switch between panels" },
-      { key: "Enter", desc: "Select / open diff view" },
+      { key: "Enter", desc: "Select / open diff view / toggle folder" },
+      { key: "t", desc: "Toggle flat / tree file list" },
     ],
   },
   {
@@ -45,7 +46,7 @@ const sections = [
   {
     title: "Actions",
     keybinds: [
-      { key: "Space", desc: "Mark/unmark file as reviewed" },
+      { key: "Space", desc: "Mark/unmark file or folder as reviewed" },
       { key: "e", desc: "Open file in $EDITOR" },
       { key: "r", desc: "Refresh current view" },
       { key: "?", desc: "Toggle this help" },
