@@ -37,6 +37,12 @@ import { preloadHighlight, computeWrappedMaxScroll } from "./utils/dataloading"
 import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
 
+function truncate(str: string, maxLength: number): string {
+  if (maxLength <= 0) return ""
+  if (str.length <= maxLength) return str
+  return str.slice(0, Math.max(0, maxLength - 3)) + "..."
+}
+
 export function App() {
   const renderer = useRenderer()
   const dimensions = useTerminalDimensions()
@@ -1068,6 +1074,24 @@ export function App() {
       }
     }
   }
+
+  const filesHeaderWidth = () =>
+    Math.max(1, (isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()) - 1)
+  const filesHeaderText = () => truncate(leftPanelHeader(), filesHeaderWidth())
+
+  const diffHeaderWidth = () => Math.max(1, diffViewerWidth() - 1)
+
+  const diffHeaderSuffix = () => {
+    const maxSuffixWidth = Math.max(0, diffHeaderWidth() - 4)
+    if (maxSuffixWidth === 0) return ""
+    if (mode() === "commit" && selectedCommit()) {
+      return truncate(` · ${selectedCommit()!.shortHash} ${selectedCommit()!.message}`, maxSuffixWidth)
+    }
+    if (mode() === "branch" && selectedBranch()) {
+      return truncate(` · ${currentBranch() ?? "HEAD"} vs ${selectedBranch()!.name}`, maxSuffixWidth)
+    }
+    return ""
+  }
   
   // Diff panel placeholder message
   const diffPlaceholderMessage = () => {
@@ -1140,8 +1164,8 @@ export function App() {
                 paddingLeft: 1,
               }}
             >
-              <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e" }}>
-                <b>{leftPanelHeader()}</b>
+              <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e", width: filesHeaderWidth(), wrapMode: "none" }}>
+                <b>{filesHeaderText()}</b>
               </text>
             </box>
             <Show
@@ -1231,14 +1255,9 @@ export function App() {
                 paddingLeft: 1,
               }}
             >
-              <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e" }}>
+              <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e", width: diffHeaderWidth(), wrapMode: "none" }}>
                 <b>DIFF</b>
-                <Show when={mode() === "commit" && selectedCommit()}>
-                  {` · ${selectedCommit()!.shortHash} ${selectedCommit()!.message}`}
-                </Show>
-                <Show when={mode() === "branch" && selectedBranch()}>
-                  {` · ${currentBranch() ?? "HEAD"} vs ${selectedBranch()!.name}`}
-                </Show>
+                {diffHeaderSuffix()}
               </text>
             </box>
             <Show

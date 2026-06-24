@@ -46,6 +46,12 @@ function getStatusColor(status: FileChange["status"]): string {
   }
 }
 
+function truncate(str: string, maxLength: number): string {
+  if (maxLength <= 0) return ""
+  if (str.length <= maxLength) return str
+  return str.slice(0, Math.max(0, maxLength - 3)) + "..."
+}
+
 // Default text color
 const DEFAULT_COLOR = "#e6edf3"
 
@@ -243,6 +249,22 @@ export function DiffViewer(props: DiffViewerProps) {
     return result
   })
 
+  const headerWidth = () => Math.max(1, props.width - 2)
+
+  const statusText = () => ` [${getStatusLabel(props.file.status)}]`
+  const reviewedText = () => ` ${props.isReviewed ? "[Reviewed]" : "[Not Reviewed]"}`
+  const pathMaxWidth = () => Math.max(3, headerWidth() - statusText().length - reviewedText().length)
+
+  const lineInfoText = () =>
+    viewMode() === "full"
+      ? ` | Full ${props.scrollOffset + 1}/${highlightedFileLines().length}`
+      : ` | Line ${props.scrollOffset + 1}/${highlightedDiffLines().length}`
+
+  const chunkInfoText = () =>
+    props.totalChunks > 0 && props.currentChunk >= 0
+      ? ` | Chunk ${props.currentChunk + 1}/${props.totalChunks}`
+      : ""
+
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       {/* File header */}
@@ -256,22 +278,20 @@ export function DiffViewer(props: DiffViewerProps) {
           justifyContent: "center",
         }}
       >
-        <box style={{ flexDirection: "row" }}>
-          <text style={{ fg: "#e6edf3" }}><b>{props.file.path}</b></text>
-          <text style={{ fg: getStatusColor(props.file.status) }}> [{getStatusLabel(props.file.status)}]</text>
-          <text style={{ fg: "#f0883e" }}> {props.isReviewed ? "[Reviewed]" : "[Not Reviewed]"}</text>
-        </box>
-        <box style={{ flexDirection: "row" }}>
-          <text style={{ fg: "#3fb950" }}>+{props.file.additions}</text>
-          <text style={{ fg: "#f85149" }}> -{props.file.deletions}</text>
-          <text style={{ fg: "#8b949e" }}>
-            {viewMode() === "full"
-              ? ` | Full ${props.scrollOffset + 1}/${highlightedFileLines().length}`
-              : ` | Line ${props.scrollOffset + 1}/${highlightedDiffLines().length}`}
+        <box style={{ flexDirection: "row", width: headerWidth() }}>
+          <text style={{ fg: "#e6edf3", width: pathMaxWidth(), wrapMode: "none" }}>
+            <b>{truncate(props.file.path, pathMaxWidth())}</b>
           </text>
-          {props.totalChunks > 0 && props.currentChunk >= 0 && (
-            <text style={{ fg: "#d29922" }}> | Chunk {props.currentChunk + 1}/{props.totalChunks}</text>
-          )}
+          <text style={{ fg: getStatusColor(props.file.status), wrapMode: "none" }}>{statusText()}</text>
+          <text style={{ fg: "#f0883e", wrapMode: "none" }}>{reviewedText()}</text>
+        </box>
+        <box style={{ flexDirection: "row", width: headerWidth() }}>
+          <text style={{ fg: "#3fb950", wrapMode: "none" }}>+{props.file.additions}</text>
+          <text style={{ fg: "#f85149", wrapMode: "none" }}> -{props.file.deletions}</text>
+          <text style={{ fg: "#8b949e", wrapMode: "none" }}>{lineInfoText()}</text>
+          <Show when={chunkInfoText()}>
+            <text style={{ fg: "#d29922", wrapMode: "none" }}>{chunkInfoText()}</text>
+          </Show>
         </box>
       </box>
 
