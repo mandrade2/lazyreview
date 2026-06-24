@@ -452,32 +452,32 @@ export async function getBranchList(): Promise<BranchInfo[]> {
 }
 
 // Get files changed in a specific commit (shows what that commit introduced)
-// Optimized to only get file list initially
+// Loads full diffs/content eagerly so behavior matches dirty mode.
 export async function getCommitChanges(commitHash: string): Promise<FileChange[]> {
   try {
-    // Get file list only (fast) - stats loaded lazily per file
+    // Get file list only (fast) - stats loaded eagerly per file below
     const statusResult = await Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r ${commitHash}`.quiet()
     const statusOutput = statusResult.stdout.toString().trim()
-    
+
     if (!statusOutput) {
       return []
     }
-    
+
     // Parse name-status
     const changes: FileChange[] = []
     for (const line of statusOutput.split("\n")) {
       if (!line.trim()) continue
-      
+
       const parts = line.split("\t")
       const statusCode = parts[0]
       let filePath = parts.slice(1).join("\t")
       let oldPath: string | undefined
-      
+
       if (statusCode?.startsWith("R")) {
         oldPath = parts[1]
         filePath = parts[2] ?? filePath
       }
-      
+
       let status: FileChange["status"]
       switch (statusCode?.[0]) {
         case "A": status = "added"; break
@@ -485,58 +485,62 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         case "R": status = "renamed"; break
         default: status = "modified"
       }
-      
+
       changes.push({
         path: filePath,
         status,
         oldPath,
-        additions: 0, // Loaded lazily via loadFileDetails
-        deletions: 0, // Loaded lazily via loadFileDetails
-        diff: "", // Loaded lazily via loadFileDetails
-        content: "", // Loaded lazily via loadFileDetails
+        additions: 0,
+        deletions: 0,
+        diff: "",
+        content: "",
         firstChangeLine: 0,
         firstChangeDiffLine: 0,
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
-        isBinary: false, // Detected lazily via loadFileDetails
+        isBinary: false,
       })
     }
-    
-    return changes
+
+    // Eagerly load full content/diff for every file to match dirty mode behavior
+    const loaded = await Promise.all(
+      changes.map((file) => loadFileDetails(file, { type: "commit", hash: commitHash })),
+    )
+
+    return loaded
   } catch {
     return []
   }
 }
 
 // Get files changed between current branch and target branch
-// This is optimized to be fast - it only gets file names initially
-// Stats, content, and diff are loaded lazily when a file is selected
+// Loads full diffs/content eagerly so behavior matches dirty mode.
 export async function getBranchChanges(targetBranch: string): Promise<FileChange[]> {
   try {
-    // Get file list only (fast) - stats loaded lazily per file
+    // Get file list only (fast) - stats loaded eagerly per file below
     const statusResult = await Bun.$`git -C ${targetDir} diff --name-status ${targetBranch}...HEAD`.quiet()
     const statusOutput = statusResult.stdout.toString().trim()
-    
+
     if (!statusOutput) {
       return []
     }
-    
+
     // Parse name-status: status\tfilepath
     const changes: FileChange[] = []
     for (const line of statusOutput.split("\n")) {
       if (!line.trim()) continue
-      
+
       const parts = line.split("\t")
       const statusCode = parts[0]
       let filePath = parts.slice(1).join("\t")
       let oldPath: string | undefined
-      
+
       if (statusCode?.startsWith("R")) {
         oldPath = parts[1]
         filePath = parts[2] ?? filePath
       }
-      
+
       let status: FileChange["status"]
       switch (statusCode?.[0]) {
         case "A": status = "added"; break
@@ -544,25 +548,30 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         case "R": status = "renamed"; break
         default: status = "modified"
       }
-      
+
       changes.push({
         path: filePath,
         status,
         oldPath,
-        additions: 0, // Loaded lazily
-        deletions: 0, // Loaded lazily
-        diff: "", // Loaded lazily
-        content: "", // Loaded lazily
+        additions: 0,
+        deletions: 0,
+        diff: "",
+        content: "",
         firstChangeLine: 0,
         firstChangeDiffLine: 0,
         changedLines: new Set<number>(),
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
-        isBinary: false, // Detected lazily via loadFileDetails
+        isBinary: false,
       })
     }
-    
-    return changes
+
+    // Eagerly load full content/diff for every file to match dirty mode behavior
+    const loaded = await Promise.all(
+      changes.map((file) => loadFileDetails(file, { type: "branch", name: targetBranch })),
+    )
+
+    return loaded
   } catch {
     return []
   }
