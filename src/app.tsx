@@ -202,7 +202,6 @@ export function App() {
     setReviewedOrder([])
     setSelectedIndex(0)
     setScrollOffset(0)
-    setExpandedFolders(collectFolderPaths(buildFileTree(files())))
     lastSelectedFilePath = null
   })
 
@@ -300,6 +299,7 @@ export function App() {
     try {
       const changes = await getGitChanges()
       setFiles(changes)
+      setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
       // perf measurement removed
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load git changes")
@@ -345,6 +345,7 @@ export function App() {
     try {
       const changes = await getCommitChanges(commit.hash)
       setFiles(changes)
+      setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load commit changes")
     } finally {
@@ -359,6 +360,7 @@ export function App() {
     try {
       const changes = await getBranchChanges(branch.name)
       setFiles(changes)
+      setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load branch changes")
     } finally {
