@@ -673,6 +673,10 @@ export function App() {
             return next
           })
           setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
+          if (fileListViewMode() === "tree") {
+            const firstFileIndex = allVisibleItems().findIndex(item => item.type === "file")
+            setSelectedIndex(firstFileIndex >= 0 ? firstFileIndex : 0)
+          }
         }
       } else {
         // Folder: mark/unmark all files under it in the current section
@@ -687,6 +691,10 @@ export function App() {
             ...paths.filter(p => !prev.includes(p)),
             ...prev.filter(p => !paths.includes(p)),
           ])
+          if (fileListViewMode() === "tree") {
+            const firstFileIndex = allVisibleItems().findIndex(item => item.type === "file")
+            setSelectedIndex(firstFileIndex >= 0 ? firstFileIndex : 0)
+          }
         } else {
           setReviewedPaths(prev => {
             const next = new Set(prev)
