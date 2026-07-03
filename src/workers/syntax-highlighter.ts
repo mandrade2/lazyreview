@@ -3,12 +3,14 @@ import type { HighlightedLine } from "../utils/shiki"
 
 interface HighlightRequest {
   id: number
+  key: string
   content: string
   filePath: string
 }
 
 interface HighlightResponse {
   id: number
+  key: string
   result: HighlightedLine[]
 }
 
@@ -20,7 +22,7 @@ interface WorkerContext {
 const ctx = globalThis as unknown as WorkerContext
 
 ctx.onmessage = async (event: MessageEvent<HighlightRequest>) => {
-  const { id, content, filePath } = event.data
+  const { id, key, content, filePath } = event.data
   const result = await highlightCode(content, filePath)
-  ctx.postMessage({ id, result } satisfies HighlightResponse)
+  ctx.postMessage({ id, key, result } satisfies HighlightResponse)
 }

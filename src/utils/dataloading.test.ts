@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { estimateWrappedRows, computeWrappedMaxScroll } from "./dataloading"
+import { estimateWrappedRows, computeWrappedMaxScroll, highlightFile, clearHighlightCache } from "./dataloading"
 
 describe("estimateWrappedRows", () => {
   test("returns 1 for empty or short lines", () => {
@@ -59,5 +59,16 @@ describe("computeWrappedMaxScroll", () => {
   test("accepts objects with content property", () => {
     const lines = [{ content: "0123456789" }, { content: "0123456789" }]
     expect(computeWrappedMaxScroll(lines, 5, 2)).toBe(1)
+  })
+})
+
+describe("highlightFile", () => {
+  test("returns colored tokens for TypeScript TSX files", async () => {
+    clearHighlightCache()
+    const content = `import React from "react"\nexport function App() { return <div>Hello</div> }\n`
+    const result = await highlightFile(content, "src/components/App.tsx")
+    expect(result.length).toBeGreaterThan(0)
+    const colors = [...new Set(result.flat().map((token) => token.color))]
+    expect(colors.length).toBeGreaterThan(1)
   })
 })

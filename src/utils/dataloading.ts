@@ -278,11 +278,15 @@ export async function highlightFile(
     const result = await runHighlightInWorker(key, content, filePath)
     return result
   } catch (error) {
-    // Stale-result rejections are expected when the user navigates quickly;
-    // don't spam the console for those.
-    if (!(error instanceof Error && error.message === "Highlight result is stale")) {
-      console.error("Failed to highlight in worker, falling back to main thread:", error)
+    // Stale-result and stopped-worker rejections are expected when the user
+    // navigates quickly; don't spam the console or waste main-thread work for
+    // those.
+    const expectedMessages = ["Highlight result is stale", "Highlighter worker stopped"]
+    const isExpected = error instanceof Error && expectedMessages.includes(error.message)
+    if (isExpected) {
+      throw error
     }
+    console.error("Failed to highlight in worker, falling back to main thread:", error)
     const result = await highlightDirect(content, filePath)
     setCached(key, result)
     return result

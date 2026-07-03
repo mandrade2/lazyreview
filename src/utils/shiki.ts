@@ -278,8 +278,8 @@ export async function highlightCode(
     }
 
     return highlighted
-  } catch {
-    // Any error, fall back to plain text
+  } catch (error) {
+    console.error(`Failed to highlight ${filePath} as ${lang}:`, error)
     return plainTextLines(content)
   }
 }
