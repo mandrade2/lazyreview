@@ -660,12 +660,19 @@ export function App() {
         const currentlyReviewed = reviewedPaths().has(path)
 
         if (currentlyReviewed) {
+          const previousIndex = selectedIndex()
+          const previousToReviewLength = toReviewVisibleItems().length
           setReviewedPaths(prev => {
             const next = new Set(prev)
             next.delete(path)
             return next
           })
           setReviewedOrder(prev => prev.filter(p => p !== path))
+          const nextToReviewItems = toReviewVisibleItems()
+          const nextReviewedItems = reviewedVisibleItems()
+          const previousIndexInReviewed = previousIndex - previousToReviewLength
+          const nextReviewedIndex = Math.min(previousIndexInReviewed, nextReviewedItems.length - 1)
+          setSelectedIndex(nextReviewedItems.length > 0 ? nextToReviewItems.length + nextReviewedIndex : 0)
         } else {
           setReviewedPaths(prev => {
             const next = new Set(prev)
@@ -673,10 +680,10 @@ export function App() {
             return next
           })
           setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
-          if (fileListViewMode() === "tree") {
-            const firstFileIndex = allVisibleItems().findIndex(item => item.type === "file")
-            setSelectedIndex(firstFileIndex >= 0 ? firstFileIndex : 0)
-          }
+          const previousIndex = selectedIndex()
+          const nextToReviewItems = toReviewVisibleItems()
+          const nextIndex = Math.min(previousIndex, nextToReviewItems.length - 1)
+          setSelectedIndex(nextToReviewItems.length > 0 ? nextIndex : 0)
         }
       } else {
         // Folder: mark/unmark all files under it in the current section
@@ -691,11 +698,13 @@ export function App() {
             ...paths.filter(p => !prev.includes(p)),
             ...prev.filter(p => !paths.includes(p)),
           ])
-          if (fileListViewMode() === "tree") {
-            const firstFileIndex = allVisibleItems().findIndex(item => item.type === "file")
-            setSelectedIndex(firstFileIndex >= 0 ? firstFileIndex : 0)
-          }
+          const previousIndex = selectedIndex()
+          const nextToReviewItems = toReviewVisibleItems()
+          const nextIndex = Math.min(previousIndex, nextToReviewItems.length - 1)
+          setSelectedIndex(nextToReviewItems.length > 0 ? nextIndex : 0)
         } else {
+          const previousIndex = selectedIndex()
+          const previousToReviewLength = toReviewVisibleItems().length
           setReviewedPaths(prev => {
             const next = new Set(prev)
             for (const path of paths) {
@@ -704,6 +713,11 @@ export function App() {
             return next
           })
           setReviewedOrder(prev => prev.filter(p => !paths.includes(p)))
+          const nextToReviewItems = toReviewVisibleItems()
+          const nextReviewedItems = reviewedVisibleItems()
+          const previousIndexInReviewed = previousIndex - previousToReviewLength
+          const nextReviewedIndex = Math.min(previousIndexInReviewed, nextReviewedItems.length - 1)
+          setSelectedIndex(nextReviewedItems.length > 0 ? nextToReviewItems.length + nextReviewedIndex : 0)
         }
       }
       return

@@ -3,3 +3,4 @@ preload = ["@opentui/solid/preload"]
 [test]
 preload = ["./tests/preload.ts", "@opentui/solid/preload"]
 pathIgnorePatterns = ["preview/**", "__snapshots__/**"]
+maxConcurrency = 1

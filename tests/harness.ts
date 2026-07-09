@@ -6,7 +6,7 @@ import type {
   TestVisualIdleOptions,
 } from "@opentui/core/testing"
 
-type CapturedFrame = ReturnType<TestRendererSetup["captureSpans"]>
+export type CapturedFrame = ReturnType<TestRendererSetup["captureSpans"]>
 
 export type KeyToken = string | { type: "text"; value: string }
 
