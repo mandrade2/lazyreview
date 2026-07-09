@@ -77,6 +77,38 @@ export async function buildFixture(definition: FixtureDefinition): Promise<Built
   }
 }
 
+export function buildPageScrollFixture(): Promise<BuiltFixture> {
+  const lineCount = 100
+  const originalLines: string[] = []
+  for (let i = 1; i <= lineCount; i++) {
+    originalLines.push(`const v${i} = ${i};`)
+  }
+  const originalContent = originalLines.join("\n") + "\n"
+
+  const modifiedLines = [...originalLines]
+  for (let i = 41; i <= 80; i++) {
+    modifiedLines[i - 1] = `const v${i} = ${i * 10};`
+  }
+  const modifiedContent = modifiedLines.join("\n") + "\n"
+
+  return buildFixture({
+    name: "page-scroll",
+    commits: [
+      {
+        message: "initial",
+        files: {
+          "src/long.ts": originalContent,
+        },
+      },
+    ],
+    dirty: {
+      modified: {
+        "src/long.ts": modifiedContent,
+      },
+    },
+  })
+}
+
 export function buildGoldenFixture(): Promise<BuiltFixture> {
   return buildFixture({
     name: "golden",

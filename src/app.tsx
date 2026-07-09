@@ -1028,6 +1028,15 @@ export function App() {
         setScrollOffset(o => Math.max(o - fullPage, 0))
         return
       }
+      // PageUp / PageDown - full page scroll (work from any panel)
+      if (key.name === "pageup") {
+        setScrollOffset(o => Math.max(o - fullPage, 0))
+        return
+      }
+      if (key.name === "pagedown") {
+        setScrollOffset(o => Math.min(o + fullPage, maxScroll))
+        return
+      }
       // Ctrl+up - single line up
       if (key.ctrl && key.name === "up") {
         setScrollOffset(o => Math.max(o - 1, 0))
