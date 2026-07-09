@@ -1,0 +1,197 @@
+import { mkdir, rm } from "fs/promises"
+import { join, dirname } from "path"
+import { tmpdir } from "os"
+
+export interface FixtureDefinition {
+  name: string
+  commits: Array<{ message: string; files: Record<string, string> }>
+  dirty?: {
+    modified?: Record<string, string>
+    added?: Record<string, string>
+    deleted?: string[]
+    renamed?: Record<string, string>
+    untracked?: Record<string, string>
+  }
+}
+
+export interface BuiltFixture {
+  path: string
+  cleanup(): Promise<void>
+}
+
+export async function buildFixture(definition: FixtureDefinition): Promise<BuiltFixture> {
+  const dir = join(tmpdir(), `lazyreview-${definition.name}-${Date.now()}`)
+  await mkdir(dir, { recursive: true })
+
+  try {
+    await Bun.$`git -C ${dir} init`.quiet()
+    await Bun.$`git -C ${dir} config user.email "test@example.com"`.quiet()
+    await Bun.$`git -C ${dir} config user.name "Test User"`.quiet()
+
+    for (const commit of definition.commits) {
+      for (const [relativePath, content] of Object.entries(commit.files)) {
+        const absolutePath = join(dir, relativePath)
+        await mkdir(dirname(absolutePath), { recursive: true })
+        await Bun.write(absolutePath, content)
+      }
+      await Bun.$`git -C ${dir} add .`.quiet()
+      await Bun.$`git -C ${dir} commit -m ${commit.message}`.quiet()
+    }
+
+    if (definition.dirty) {
+      for (const [relativePath, content] of Object.entries(definition.dirty.modified ?? {})) {
+        await Bun.write(join(dir, relativePath), content)
+      }
+
+      for (const relativePath of definition.dirty.deleted ?? []) {
+        await Bun.$`git -C ${dir} rm ${relativePath}`.quiet()
+      }
+
+      for (const [newPath, oldPath] of Object.entries(definition.dirty.renamed ?? {})) {
+        await Bun.$`git -C ${dir} mv ${oldPath} ${newPath}`.quiet()
+      }
+
+      for (const [relativePath, content] of Object.entries(definition.dirty.added ?? {})) {
+        const absolutePath = join(dir, relativePath)
+        await mkdir(dirname(absolutePath), { recursive: true })
+        await Bun.write(absolutePath, content)
+        await Bun.$`git -C ${dir} add ${relativePath}`.quiet()
+      }
+
+      for (const [relativePath, content] of Object.entries(definition.dirty.untracked ?? {})) {
+        const absolutePath = join(dir, relativePath)
+        await mkdir(dirname(absolutePath), { recursive: true })
+        await Bun.write(absolutePath, content)
+      }
+    }
+  } catch (error) {
+    await rm(dir, { recursive: true, force: true })
+    throw error
+  }
+
+  return {
+    path: dir,
+    cleanup: async () => {
+      await rm(dir, { recursive: true, force: true })
+    },
+  }
+}
+
+export function buildGoldenFixture(): Promise<BuiltFixture> {
+  return buildFixture({
+    name: "golden",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          ".gitignore": "node_modules/\ndist/\n*.log\n",
+          "package.json": JSON.stringify(
+            {
+              name: "golden-repo",
+              version: "1.0.0",
+              dependencies: { "solid-js": "^1.9.0" },
+            },
+            null,
+            2,
+          ),
+          "tsconfig.json": JSON.stringify(
+            {
+              compilerOptions: {
+                target: "ESNext",
+                module: "ESNext",
+                jsx: "preserve",
+                strict: true,
+              },
+            },
+            null,
+            2,
+          ),
+          "README.md": "# Golden Repo\n\nA sample TypeScript project for testing.\n",
+          "src/index.ts": `import { greet } from "./utils"
+import { config } from "./config"
+
+export function main() {
+  const message = greet(config.name)
+  console.log(message)
+}
+
+main()
+`,
+          "src/utils.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+export function add(a: number, b: number): number {
+  return a + b
+}
+`,
+          "src/config.ts": `export const config = {
+  name: "world",
+  debug: false,
+}
+`,
+          "src/legacy.ts": `export function oldHelper() {
+  return "legacy"
+}
+`,
+        },
+      },
+    ],
+    dirty: {
+      modified: {
+        "src/index.ts": `import { greet, farewell } from "./utils"
+import { config } from "./config"
+
+export function main() {
+  const message = greet(config.name)
+  console.log(message)
+  console.log(farewell(config.name))
+}
+
+export function startup() {
+  main()
+}
+
+startup()
+`,
+        "src/utils.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+export function farewell(name: string): string {
+  return \`Goodbye, \${name}!\`
+}
+
+export function add(a: number, b: number): number {
+  return a + b
+}
+
+export function multiply(a: number, b: number): number {
+  return a * b
+}
+`,
+      },
+      added: {
+        "src/components/counter.tsx": `import { createSignal } from "solid-js"
+
+export function Counter() {
+  const [count, setCount] = createSignal(0)
+
+  return (
+    <button onClick={() => setCount((c) => c + 1)}>
+      Count: {count()}
+    </button>
+  )
+}
+`,
+      },
+      deleted: ["src/legacy.ts"],
+      renamed: {
+        "src/app.config.ts": "src/config.ts",
+      },
+      untracked: {
+        "docs/guide.md": "# Guide\n\nThis is a new markdown file.\n",
+      },
+    },
+  })
+}

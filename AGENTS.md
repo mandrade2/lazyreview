@@ -11,10 +11,15 @@ bun run index.ts [target-directory]
 # Type check
 bun run --bun tsc --noEmit
 
-# Run tests (when added)
+# Run tests
 bun test                    # all tests
-bun test src/utils          # tests in directory
+bun test src/utils          # unit tests only
+bun test tests/scenarios    # integration scenarios
 bun test --watch            # watch mode
+
+# Preview integration scenarios
+bun run test:preview golden 80 24
+bun run tests/preview.ts golden 80 24
 
 # Install dependencies
 bun install
@@ -32,13 +37,13 @@ lazyreview/
 │   └── release.ts           # Release automation script
 ├── src/
 │   ├── app.tsx              # Main app component - layout, state, keyboard
-│   ├── components/
-│   │   ├── header.tsx       # Top bar with title
-│   │   ├── status-bar.tsx   # Bottom bar with keybinds
-│   │   ├── file-list.tsx    # Sidebar showing changed files
-│   │   └── diff-viewer.tsx  # File viewer with highlighted changes
-│   └── utils/
-│       └── git.ts           # Git operations and diff parsing
+│   ├── components/          # UI components
+│   └── utils/               # Git operations, diff parsing, helpers
+└── tests/                   # Integration test harness and scenarios
+    ├── harness.ts           # OpenTUI test renderer wrapper
+    ├── fixtures.ts          # Temp git fixture builder
+    ├── preview.ts           # Preview scenario output as ANSI/replay
+    └── scenarios/           # Snapshot scenarios
 ```
 
 ## Technology Stack
@@ -143,7 +148,7 @@ const colors = {
 
 ## Testing Approach
 
-When writing tests, use Bun's test runner:
+Unit tests use Bun's test runner:
 
 ```typescript
 import { test, expect, describe } from "bun:test"
@@ -157,6 +162,12 @@ describe("parseChangedLines", () => {
   })
 })
 ```
+
+Integration scenarios render the full app through OpenTUI's test renderer.
+They use temp git fixtures, send key sequences, and snapshot both the
+structured spans and the raw ANSI output. Scenarios live in `tests/scenarios/`
+and are run with `bun test tests/scenarios`. Preview outputs can be generated
+with `bun run test:preview <scenario> <width> <height>`.
 
 ## Common Tasks
 
