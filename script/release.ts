@@ -16,9 +16,17 @@ const tag = `v${version}`
 
 console.log(`\nPreparing release ${tag}...\n`)
 
+function onlyPerfBaselineChanged(status: string): boolean {
+  const lines = status.trim().split("\n").filter(Boolean)
+  return lines.every((line) => {
+    const file = line.slice(3)
+    return file === "perf/baseline.json"
+  })
+}
+
 // Check for uncommitted changes
 const status = await Bun.$`git status --porcelain`.text()
-if (status.trim()) {
+if (status.trim() && !onlyPerfBaselineChanged(status)) {
   console.error("Error: You have uncommitted changes. Please commit or stash them first.")
   process.exit(1)
 }
@@ -28,6 +36,20 @@ const existingTags = await Bun.$`git tag -l ${tag}`.text()
 if (existingTags.trim()) {
   console.error(`Error: Tag ${tag} already exists. Update the version in package.json first.`)
   process.exit(1)
+}
+
+// Run benchmark and save baseline
+console.log("\nRunning performance benchmarks...")
+await Bun.$`bun run script/benchmark.ts`
+
+// Commit the performance baseline so the release tag includes it
+const perfStatus = await Bun.$`git status --porcelain perf/baseline.json`.text()
+if (perfStatus.trim()) {
+  console.log("\nCommitting performance baseline...")
+  await Bun.$`git add perf/baseline.json`
+  await Bun.$`git commit -m ${`chore: update perf baseline for ${tag}`}`
+} else {
+  console.log("\nPerformance baseline unchanged, skipping commit.")
 }
 
 // Build all platforms
