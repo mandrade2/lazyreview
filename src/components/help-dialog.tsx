@@ -48,6 +48,7 @@ const sections = [
     keybinds: [
       { key: "Space", desc: "Mark/unmark file or folder as reviewed" },
       { key: "e", desc: "Open file in $EDITOR" },
+      { key: "o", desc: "Open file in opencode" },
       { key: "r", desc: "Refresh current view" },
       { key: "?", desc: "Toggle this help" },
       { key: "q / Ctrl+c", desc: "Quit" },

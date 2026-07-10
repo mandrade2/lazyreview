@@ -2577,7 +2577,7 @@ exports[`golden scenario snapshots: initial-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search enter:view e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...nter:view e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -2632,7 +2632,7 @@ exports[`golden scenario snapshots: initial-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34m[Files] Diff\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m1/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search enter:view e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34m[Files] Diff\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m1/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...nter:view e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;
 
 exports[`golden scenario snapshots: navigate-down-spans 1`] = `
@@ -6115,7 +6115,7 @@ exports[`golden scenario snapshots: navigate-down-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search enter:view e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...nter:view e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -6170,7 +6170,7 @@ exports[`golden scenario snapshots: navigate-down-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34m[Files] Diff\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search enter:view e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34m[Files] Diff\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...nter:view e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;
 
 exports[`golden scenario snapshots: focus-diff-before-highlight-spans 1`] = `
@@ -9653,7 +9653,7 @@ exports[`golden scenario snapshots: focus-diff-before-highlight-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -9708,7 +9708,7 @@ exports[`golden scenario snapshots: focus-diff-before-highlight-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;
 
 exports[`golden scenario snapshots: focus-diff-after-highlight-spans 1`] = `
@@ -14073,7 +14073,7 @@ exports[`golden scenario snapshots: focus-diff-after-highlight-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -14128,7 +14128,7 @@ exports[`golden scenario snapshots: focus-diff-after-highlight-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                                                                \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;
 
 exports[`golden scenario snapshots: mark-reviewed-spans 1`] = `
@@ -18031,7 +18031,7 @@ exports[`golden scenario snapshots: mark-reviewed-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -18086,7 +18086,7 @@ exports[`golden scenario snapshots: mark-reviewed-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;63;185;80;48;2;26;47;26m 13\x1B[38;2;255;255;255;48;2;26;47;26m \x1B[38;2;63;185;80;48;2;26;47;26m+\x1B[38;2;255;255;255;48;2;26;47;26m                                        \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;63;185;80;48;2;26;47;26m 14\x1B[38;2;255;255;255;48;2;26;47;26m \x1B[38;2;63;185;80;48;2;26;47;26m+\x1B[38;2;230;237;243;48;2;26;47;26mstartup()\x1B[38;2;255;255;255;48;2;26;47;26m                               \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;72;79;88;48;2;22;27;34m 15\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;13;17;23;48;2;13;17;23m \x1B[38;2;255;255;255;48;2;13;17;23m                                        \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;
 
 exports[`golden scenario snapshots: navigate-next-spans 1`] = `
@@ -21989,7 +21989,7 @@ exports[`golden scenario snapshots: navigate-next-spans 1`] = `
               255,
             ],
           },
-          "text": "... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit",
+          "text": "...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit",
           "width": 61,
         },
         {
@@ -22044,5 +22044,5 @@ exports[`golden scenario snapshots: navigate-next-ansi 1`] = `
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;63;185;80;48;2;26;47;26m 13\x1B[38;2;255;255;255;48;2;26;47;26m \x1B[38;2;63;185;80;48;2;26;47;26m+\x1B[38;2;255;255;255;48;2;26;47;26m                                        \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;63;185;80;48;2;26;47;26m 14\x1B[38;2;255;255;255;48;2;26;47;26m \x1B[38;2;63;185;80;48;2;26;47;26m+\x1B[38;2;230;237;243;48;2;26;47;26mstartup()\x1B[38;2;255;255;255;48;2;26;47;26m                               \x1B[0m
 \x1B[38;2;255;255;255;48;2;13;17;23m                                   \x1B[38;2;72;79;88;48;2;22;27;34m 15\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;13;17;23;48;2;13;17;23m \x1B[38;2;255;255;255;48;2;13;17;23m                                        \x1B[0m
-\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m... /:search ^d/^u:half e:edit r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
+\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;88;166;255;48;2;22;27;34mFiles [Diff]\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;230;237;243;48;2;22;27;34m2/6\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[38;2;139;148;158;48;2;22;27;34m...d/^u:half e:edit o:opencode r:refresh m:mode ?:help q:quit\x1B[38;2;255;255;255;48;2;22;27;34m \x1B[0m"
 `;

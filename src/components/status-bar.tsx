@@ -85,9 +85,9 @@ export function StatusBar(props: StatusBarProps) {
     const listViewToggle = `t:${(props.fileListViewMode ?? "flat") === "flat" ? "tree" : "flat"}`
 
     if (props.focusedPanel === "files") {
-      return `j/k:nav space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search enter:view e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:nav space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search enter:view e:edit o:opencode r:refresh ${backKey}m:mode ?:help q:quit`
     } else {
-      return `j/k:scroll space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search ^d/^u:half e:edit r:refresh ${backKey}m:mode ?:help q:quit`
+      return `j/k:scroll space:review n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search ^d/^u:half e:edit o:opencode r:refresh ${backKey}m:mode ?:help q:quit`
     }
   }
   

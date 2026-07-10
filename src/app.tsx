@@ -6,6 +6,7 @@ import { DiffViewer } from "./components/diff-viewer"
 import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
+import { OpencodeDialog } from "./components/opencode-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
 import {
@@ -33,6 +34,7 @@ import {
   type TreeFile,
 } from "./utils/file-tree"
 import { openFileInEditor } from "./utils/editor"
+import { openFileInOpencode } from "./utils/opencode"
 import { preloadHighlight, computeWrappedMaxScroll } from "./utils/dataloading"
 import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
@@ -122,6 +124,16 @@ export function App() {
   const [searchActive, setSearchActive] = createSignal(false) // true when search results are shown
   const [searchMatches, setSearchMatches] = createSignal<Array<{ line: number; start: number; length: number }>>([])
   const [currentMatchIndex, setCurrentMatchIndex] = createSignal(0)
+
+  // Scroll offset to restore after an external edit/opencode session.
+  // When not null, the file-detail effect will use this instead of jumping to
+  // the first change.
+  const [pendingScrollOffset, setPendingScrollOffset] = createSignal<number | null>(null)
+
+  // Opencode dialog state
+  const [opencodeDialogOpen, setOpencodeDialogOpen] = createSignal(false)
+  const [opencodePrompt, setOpencodePrompt] = createSignal("")
+  const [opencodeFile, setOpencodeFile] = createSignal<FileChange | null>(null)
 
   // Clear search state (defined early for use in effects)
   const clearSearch = () => {
@@ -232,50 +244,65 @@ export function App() {
     const currentMode = mode()
     const currentViewState = viewState()
 
-    if (file && file.path !== lastSelectedFilePath && currentViewState === "files") {
-      lastSelectedFilePath = file.path
+    if (!file || currentViewState !== "files") {
+      setPendingScrollOffset(null)
+      return
+    }
 
-      // perf measurement removed
+    if (file.path === lastSelectedFilePath) return
 
-      // Clear search state when switching files
-      clearSearch()
+    lastSelectedFilePath = file.path
 
-      // Check if file needs lazy loading (no content yet)
-      if (!file.content && (currentMode === "commit" || currentMode === "branch")) {
-        setLoadingFile(true)
+    // perf measurement removed
 
-        const compareTarget =
-          currentMode === "commit" && selectedCommit()
-            ? { type: "commit" as const, hash: selectedCommit()!.hash }
-            : currentMode === "branch" && selectedBranch()
-              ? { type: "branch" as const, name: selectedBranch()!.name }
-              : { type: "dirty" as const }
+    // Clear search state when switching files
+    clearSearch()
 
-        loadFileDetails(file, compareTarget).then((loadedFile) => {
-          // Update the file in the files array
-          setFiles((prev) => prev.map((f) => (f.path === loadedFile.path ? loadedFile : f)))
-          setLoadingFile(false)
-          // Set scroll to first change line and reset chunk index
-          const contextLines = 5
-          const targetLine = diffViewMode() === "full"
-            ? Math.max(0, loadedFile.firstChangeLine - contextLines)
-            : Math.max(0, loadedFile.firstChangeDiffLine - contextLines)
-          setScrollOffset(targetLine)
-        }).catch((err) => {
-          console.error("Failed to load file:", file.path, err)
-          setLoadingFile(false)
-        }).catch(() => {
-          // If loading fails, still mark as not loading
-          setLoadingFile(false)
-        })
+    const applyScrollOffset = (fallbackTarget: number) => {
+      const pending = pendingScrollOffset()
+      if (pending !== null) {
+        setScrollOffset(pending)
+        setPendingScrollOffset(null)
       } else {
-        // File already has content, just update scroll and reset chunk index
+        setScrollOffset(fallbackTarget)
+      }
+    }
+
+    // Check if file needs lazy loading (no content yet)
+    if (!file.content && (currentMode === "commit" || currentMode === "branch")) {
+      setLoadingFile(true)
+
+      const compareTarget =
+        currentMode === "commit" && selectedCommit()
+          ? { type: "commit" as const, hash: selectedCommit()!.hash }
+          : currentMode === "branch" && selectedBranch()
+            ? { type: "branch" as const, name: selectedBranch()!.name }
+            : { type: "dirty" as const }
+
+      loadFileDetails(file, compareTarget).then((loadedFile) => {
+        // Update the file in the files array
+        setFiles((prev) => prev.map((f) => (f.path === loadedFile.path ? loadedFile : f)))
+        setLoadingFile(false)
+        // Set scroll to first change line and reset chunk index
         const contextLines = 5
         const targetLine = diffViewMode() === "full"
-          ? Math.max(0, file.firstChangeLine - contextLines)
-          : Math.max(0, file.firstChangeDiffLine - contextLines)
-        setScrollOffset(targetLine)
-      }
+          ? Math.max(0, loadedFile.firstChangeLine - contextLines)
+          : Math.max(0, loadedFile.firstChangeDiffLine - contextLines)
+        applyScrollOffset(targetLine)
+      }).catch((err) => {
+        console.error("Failed to load file:", file.path, err)
+        setLoadingFile(false)
+      }).catch(() => {
+        // If loading fails, still mark as not loading
+        setLoadingFile(false)
+      })
+    } else {
+      // File already has content, just update scroll and reset chunk index
+      const contextLines = 5
+      const targetLine = diffViewMode() === "full"
+        ? Math.max(0, file.firstChangeLine - contextLines)
+        : Math.max(0, file.firstChangeDiffLine - contextLines)
+      applyScrollOffset(targetLine)
     }
   })
 
@@ -292,10 +319,10 @@ export function App() {
   })
 
   // Load data helpers
-  const loadDirtyChanges = async () => {
+  const loadDirtyChanges = async (preserveReviewState = false) => {
     setLoading(true)
     setError(null)
-    setFilesGeneration(g => g + 1)
+    if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getGitChanges()
       setFiles(changes)
@@ -338,10 +365,10 @@ export function App() {
     }
   }
   
-  const loadCommitChanges = async (commit: CommitInfo) => {
+  const loadCommitChanges = async (commit: CommitInfo, preserveReviewState = false) => {
     setLoading(true)
     setError(null)
-    setFilesGeneration(g => g + 1)
+    if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getCommitChanges(commit.hash)
       setFiles(changes)
@@ -353,10 +380,10 @@ export function App() {
     }
   }
   
-  const loadBranchChanges = async (branch: BranchInfo) => {
+  const loadBranchChanges = async (branch: BranchInfo, preserveReviewState = false) => {
     setLoading(true)
     setError(null)
-    setFilesGeneration(g => g + 1)
+    if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getBranchChanges(branch.name)
       setFiles(changes)
@@ -365,6 +392,38 @@ export function App() {
       setError(e instanceof Error ? e.message : "Failed to load branch changes")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Run an external session (editor or opencode) and keep the review state
+  // intact when control returns to lazyreview.
+  const handleExternalSession = async (openSession: () => Promise<unknown>) => {
+    const savedFilePath = selectedFile()?.path
+    const savedScrollOffset = scrollOffset()
+
+    await openSession()
+
+    // Reset the file tracker so the details effect reloads the current file.
+    lastSelectedFilePath = null
+    setPendingScrollOffset(savedScrollOffset)
+
+    if (mode() === "dirty") {
+      await loadDirtyChanges(true)
+    } else if (mode() === "commit" && selectedCommit()) {
+      await loadCommitChanges(selectedCommit()!, true)
+    } else if (mode() === "branch" && selectedBranch()) {
+      await loadBranchChanges(selectedBranch()!, true)
+    }
+
+    // Restore selection to the same file path if it still exists.
+    if (savedFilePath) {
+      const items = allVisibleItems()
+      const newIndex = items.findIndex(
+        item => item.type === "file" && item.file.path === savedFilePath
+      )
+      if (newIndex >= 0) {
+        setSelectedIndex(newIndex)
+      }
     }
   }
   
@@ -601,9 +660,45 @@ export function App() {
   }
 
   useKeyboard(async (key) => {
-    // Quit with q or Ctrl+c - ALWAYS works, regardless of state (except when in search mode)
-    if ((key.ctrl && key.name === "c") || (key.name === "q" && !searchMode())) {
+    // Quit with q or Ctrl+c - ALWAYS works, regardless of state (except when in search mode or opencode dialog)
+    if ((key.ctrl && key.name === "c") || (key.name === "q" && !searchMode() && !opencodeDialogOpen())) {
       renderer.destroy()
+      return
+    }
+
+    // Opencode dialog input handling
+    if (opencodeDialogOpen()) {
+      if (key.name === "escape") {
+        setOpencodeDialogOpen(false)
+        setOpencodePrompt("")
+        setOpencodeFile(null)
+        return
+      }
+      if (key.name === "return") {
+        const file = opencodeFile()
+        const prompt = opencodePrompt()
+        if (file) {
+          setOpencodeDialogOpen(false)
+          setOpencodePrompt("")
+          setOpencodeFile(null)
+          await handleExternalSession(() =>
+            openFileInOpencode(file, {
+              prompt,
+              suspend: () => renderer.suspend(),
+              resume: () => renderer.resume(),
+            })
+          )
+        }
+        return
+      }
+      if (key.name === "backspace") {
+        setOpencodePrompt((q) => q.slice(0, -1))
+        return
+      }
+      if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+        setOpencodePrompt((q) => q + key.sequence)
+        return
+      }
       return
     }
 
@@ -1071,18 +1166,21 @@ export function App() {
     
     // Open file in editor with 'e' (only in files view with a selected file)
     if (key.name === "e" && viewState() === "files" && selectedFile()) {
-      await openFileInEditor(selectedFile()!, {
-        suspend: () => renderer.suspend(),
-        resume: () => renderer.resume(),
-      })
-      // Refresh current mode's data after editing
-      if (mode() === "dirty") {
-        loadDirtyChanges()
-      } else if (mode() === "commit" && selectedCommit()) {
-        loadCommitChanges(selectedCommit()!)
-      } else if (mode() === "branch" && selectedBranch()) {
-        loadBranchChanges(selectedBranch()!)
-      }
+      await handleExternalSession(() =>
+        openFileInEditor(selectedFile()!, {
+          suspend: () => renderer.suspend(),
+          resume: () => renderer.resume(),
+        })
+      )
+      return
+    }
+
+    // Open file in opencode with 'o' (only in files view with a selected file)
+    if (key.name === "o" && viewState() === "files" && selectedFile()) {
+      const file = selectedFile()!
+      setOpencodeFile(file)
+      setOpencodePrompt(`@${file.path} `)
+      setOpencodeDialogOpen(true)
       return
     }
   })
@@ -1362,6 +1460,10 @@ export function App() {
       
       <Show when={showHelp()}>
         <HelpDialog onClose={() => setShowHelp(false)} />
+      </Show>
+
+      <Show when={opencodeDialogOpen()}>
+        <OpencodeDialog prompt={opencodePrompt()} />
       </Show>
     </box>
   )
