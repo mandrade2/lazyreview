@@ -1,0 +1,412 @@
+{
+  "version": "0.1.9",
+  "timestamp": "2026-07-10T17:35:05.508Z",
+  "sha": "b71b950",
+  "results": {
+    "cold-ts-10": {
+      "command": "bun script/benchmark-highlight.ts 10 ts cold",
+      "mean": 0.33161315350000004,
+      "stddev": 0.0051293555125640974,
+      "min": 0.32621023670000004,
+      "max": 0.3408869037,
+      "median": 0.33018109120000005,
+      "unit": "s"
+    },
+    "cold-ts-100": {
+      "command": "bun script/benchmark-highlight.ts 100 ts cold",
+      "mean": 0.3390290882799999,
+      "stddev": 0.006150657648369755,
+      "min": 0.33211741788,
+      "max": 0.35053775088,
+      "median": 0.33716552188000004,
+      "unit": "s"
+    },
+    "cold-ts-500": {
+      "command": "bun script/benchmark-highlight.ts 500 ts cold",
+      "mean": 0.34871220172,
+      "stddev": 0.005762504987816658,
+      "min": 0.34136617662,
+      "max": 0.35981213462,
+      "median": 0.34742494762,
+      "unit": "s"
+    },
+    "cold-ts-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 ts cold",
+      "mean": 0.36058330344,
+      "stddev": 0.009575466351241702,
+      "min": 0.34922611624,
+      "max": 0.38064565724000005,
+      "median": 0.35738805324,
+      "unit": "s"
+    },
+    "cold-ts-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 ts cold",
+      "mean": 0.43376609086,
+      "stddev": 0.01201528723426331,
+      "min": 0.42508410756000004,
+      "max": 0.45770277456,
+      "median": 0.42905152406,
+      "unit": "s"
+    },
+    "cold-tsx-10": {
+      "command": "bun script/benchmark-highlight.ts 10 tsx cold",
+      "mean": 0.39446148918000007,
+      "stddev": 0.010597089905812611,
+      "min": 0.38532923078000003,
+      "max": 0.4171023977800001,
+      "median": 0.3911197727800001,
+      "unit": "s"
+    },
+    "cold-tsx-100": {
+      "command": "bun script/benchmark-highlight.ts 100 tsx cold",
+      "mean": 0.39913940166000006,
+      "stddev": 0.008706886452125051,
+      "min": 0.38909404296000005,
+      "max": 0.41792225096,
+      "median": 0.39619827246000006,
+      "unit": "s"
+    },
+    "cold-tsx-500": {
+      "command": "bun script/benchmark-highlight.ts 500 tsx cold",
+      "mean": 0.4116363592200001,
+      "stddev": 0.010450781837764916,
+      "min": 0.40171194632000007,
+      "max": 0.43629003032,
+      "median": 0.4089465093200001,
+      "unit": "s"
+    },
+    "cold-tsx-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 tsx cold",
+      "mean": 0.43854188490000007,
+      "stddev": 0.012016084451422675,
+      "min": 0.42622120580000006,
+      "max": 0.45747312180000005,
+      "median": 0.43415951830000005,
+      "unit": "s"
+    },
+    "cold-tsx-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 tsx cold",
+      "mean": 0.5829652741,
+      "stddev": 0.007564936407485892,
+      "min": 0.5717043154,
+      "max": 0.5984880664,
+      "median": 0.5832203159,
+      "unit": "s"
+    },
+    "cold-md-10": {
+      "command": "bun script/benchmark-highlight.ts 10 md cold",
+      "mean": 0.2798556243,
+      "stddev": 0.01190748487348432,
+      "min": 0.27112425370000004,
+      "max": 0.30331500370000003,
+      "median": 0.27466989920000007,
+      "unit": "s"
+    },
+    "cold-md-100": {
+      "command": "bun script/benchmark-highlight.ts 100 md cold",
+      "mean": 0.28270684496,
+      "stddev": 0.006506328704136794,
+      "min": 0.27635101966,
+      "max": 0.29560735366,
+      "median": 0.27950468666,
+      "unit": "s"
+    },
+    "cold-md-500": {
+      "command": "bun script/benchmark-highlight.ts 500 md cold",
+      "mean": 0.2907500652,
+      "stddev": 0.006217764068530056,
+      "min": 0.2842484775,
+      "max": 0.3014546445,
+      "median": 0.288717082,
+      "unit": "s"
+    },
+    "cold-md-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 md cold",
+      "mean": 0.29568096336000005,
+      "stddev": 0.009951869191213523,
+      "min": 0.28842058806,
+      "max": 0.32242683806,
+      "median": 0.29217113005999995,
+      "unit": "s"
+    },
+    "cold-md-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 md cold",
+      "mean": 0.32511896746,
+      "stddev": 0.007996027258217391,
+      "min": 0.31719201756000004,
+      "max": 0.33773714256000004,
+      "median": 0.32204649656000006,
+      "unit": "s"
+    },
+    "warm-worker-ts-10": {
+      "command": "bun script/benchmark-highlight.ts 10 ts warm-worker",
+      "mean": 0.34001534898,
+      "stddev": 0.010405801771101238,
+      "min": 0.32727280748000004,
+      "max": 0.35600301548,
+      "median": 0.33535851548000006,
+      "unit": "s"
+    },
+    "warm-worker-ts-100": {
+      "command": "bun script/benchmark-highlight.ts 100 ts warm-worker",
+      "mean": 0.34341777748,
+      "stddev": 0.009756143137250897,
+      "min": 0.33601347328000003,
+      "max": 0.36667989028000003,
+      "median": 0.33960736878000003,
+      "unit": "s"
+    },
+    "warm-worker-ts-500": {
+      "command": "bun script/benchmark-highlight.ts 500 ts warm-worker",
+      "mean": 0.34858173678000004,
+      "stddev": 0.009655303286819626,
+      "min": 0.33992025268000003,
+      "max": 0.37005866968,
+      "median": 0.34556862868000005,
+      "unit": "s"
+    },
+    "warm-worker-ts-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 ts warm-worker",
+      "mean": 0.35710618488,
+      "stddev": 0.007625751269497649,
+      "min": 0.34682516478,
+      "max": 0.37498362278,
+      "median": 0.35704210128,
+      "unit": "s"
+    },
+    "warm-worker-ts-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 ts warm-worker",
+      "mean": 0.42761954493999993,
+      "stddev": 0.007008826619135874,
+      "min": 0.42014607034,
+      "max": 0.44229423634000004,
+      "median": 0.42532229884000006,
+      "unit": "s"
+    },
+    "warm-worker-tsx-10": {
+      "command": "bun script/benchmark-highlight.ts 10 tsx warm-worker",
+      "mean": 0.38834522571999996,
+      "stddev": 0.00729951407126246,
+      "min": 0.38157993412,
+      "max": 0.40497418412,
+      "median": 0.38629510062000005,
+      "unit": "s"
+    },
+    "warm-worker-tsx-100": {
+      "command": "bun script/benchmark-highlight.ts 100 tsx warm-worker",
+      "mean": 0.40012374083999996,
+      "stddev": 0.00844650345620177,
+      "min": 0.39092529464000003,
+      "max": 0.41604325364,
+      "median": 0.39721250364,
+      "unit": "s"
+    },
+    "warm-worker-tsx-500": {
+      "command": "bun script/benchmark-highlight.ts 500 tsx warm-worker",
+      "mean": 0.41908082844,
+      "stddev": 0.009539307464610205,
+      "min": 0.40993579984000006,
+      "max": 0.43766759084000006,
+      "median": 0.41452771584000003,
+      "unit": "s"
+    },
+    "warm-worker-tsx-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 tsx warm-worker",
+      "mean": 0.44143795828000004,
+      "stddev": 0.009210037283909914,
+      "min": 0.43009803368000005,
+      "max": 0.45945919968000004,
+      "median": 0.43932365818,
+      "unit": "s"
+    },
+    "warm-worker-tsx-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 tsx warm-worker",
+      "mean": 0.5914278833600001,
+      "stddev": 0.009902302457266143,
+      "min": 0.57979088376,
+      "max": 0.61039975776,
+      "median": 0.58722932126,
+      "unit": "s"
+    },
+    "warm-worker-md-10": {
+      "command": "bun script/benchmark-highlight.ts 10 md warm-worker",
+      "mean": 0.28081552837999996,
+      "stddev": 0.006139115621917868,
+      "min": 0.27574996168,
+      "max": 0.29476391968,
+      "median": 0.27806102418,
+      "unit": "s"
+    },
+    "warm-worker-md-100": {
+      "command": "bun script/benchmark-highlight.ts 100 md warm-worker",
+      "mean": 0.28461892748000006,
+      "stddev": 0.0060626528490005695,
+      "min": 0.27826469798000003,
+      "max": 0.29405348998,
+      "median": 0.28245219848,
+      "unit": "s"
+    },
+    "warm-worker-md-500": {
+      "command": "bun script/benchmark-highlight.ts 500 md warm-worker",
+      "mean": 0.29503215982,
+      "stddev": 0.010583620225764515,
+      "min": 0.28723985942,
+      "max": 0.32206381842,
+      "median": 0.29065967242,
+      "unit": "s"
+    },
+    "warm-worker-md-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 md warm-worker",
+      "mean": 0.29724269979999995,
+      "stddev": 0.006272200016954766,
+      "min": 0.2905653916,
+      "max": 0.30997968260000003,
+      "median": 0.2957210376,
+      "unit": "s"
+    },
+    "warm-worker-md-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 md warm-worker",
+      "mean": 0.33435751678000003,
+      "stddev": 0.01181895459491801,
+      "min": 0.32020349578000007,
+      "max": 0.35424970378,
+      "median": 0.32799684978000004,
+      "unit": "s"
+    },
+    "cached-ts-10": {
+      "command": "bun script/benchmark-highlight.ts 10 ts cached",
+      "mean": 0.34207460578000004,
+      "stddev": 0.011608866562172708,
+      "min": 0.33382317248000004,
+      "max": 0.37280621348000004,
+      "median": 0.33895288098000004,
+      "unit": "s"
+    },
+    "cached-ts-100": {
+      "command": "bun script/benchmark-highlight.ts 100 ts cached",
+      "mean": 0.34972184914,
+      "stddev": 0.012920392981205913,
+      "min": 0.33637569884,
+      "max": 0.37310649084,
+      "median": 0.34405071984,
+      "unit": "s"
+    },
+    "cached-ts-500": {
+      "command": "bun script/benchmark-highlight.ts 500 ts cached",
+      "mean": 0.3474764866,
+      "stddev": 0.006790467802888118,
+      "min": 0.3402049703,
+      "max": 0.36008255330000005,
+      "median": 0.34416888630000003,
+      "unit": "s"
+    },
+    "cached-ts-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 ts cached",
+      "mean": 0.354506429,
+      "stddev": 0.006362473126534757,
+      "min": 0.3480064577,
+      "max": 0.3678928327,
+      "median": 0.3518504582,
+      "unit": "s"
+    },
+    "cached-ts-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 ts cached",
+      "mean": 0.42472860496000003,
+      "stddev": 0.007075275487037094,
+      "min": 0.41645249666000006,
+      "max": 0.43623912166000006,
+      "median": 0.4229874131600001,
+      "unit": "s"
+    },
+    "cached-tsx-10": {
+      "command": "bun script/benchmark-highlight.ts 10 tsx cached",
+      "mean": 0.38956463943999997,
+      "stddev": 0.008127199636648666,
+      "min": 0.38136220174,
+      "max": 0.40649270174,
+      "median": 0.38582061874,
+      "unit": "s"
+    },
+    "cached-tsx-100": {
+      "command": "bun script/benchmark-highlight.ts 100 tsx cached",
+      "mean": 0.39874751834,
+      "stddev": 0.007940218466744475,
+      "min": 0.38908672594,
+      "max": 0.41381080994,
+      "median": 0.39652524744,
+      "unit": "s"
+    },
+    "cached-tsx-500": {
+      "command": "bun script/benchmark-highlight.ts 500 tsx cached",
+      "mean": 0.41705420924,
+      "stddev": 0.01067474573891249,
+      "min": 0.40528819244000003,
+      "max": 0.43848335944,
+      "median": 0.41407612944,
+      "unit": "s"
+    },
+    "cached-tsx-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 tsx cached",
+      "mean": 0.44228484310000005,
+      "stddev": 0.011684767228962115,
+      "min": 0.42973338980000003,
+      "max": 0.46438188880000003,
+      "median": 0.4377686803,
+      "unit": "s"
+    },
+    "cached-tsx-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 tsx cached",
+      "mean": 0.5901176049,
+      "stddev": 0.009978812244624906,
+      "min": 0.5720610966,
+      "max": 0.6079312216,
+      "median": 0.5931932841,
+      "unit": "s"
+    },
+    "cached-md-10": {
+      "command": "bun script/benchmark-highlight.ts 10 md cached",
+      "mean": 0.2803136183,
+      "stddev": 0.007472810842924318,
+      "min": 0.27343249750000004,
+      "max": 0.29396816350000005,
+      "median": 0.2766307055,
+      "unit": "s"
+    },
+    "cached-md-100": {
+      "command": "bun script/benchmark-highlight.ts 100 md cached",
+      "mean": 0.28222556928000003,
+      "stddev": 0.00423299383687852,
+      "min": 0.27852490698000004,
+      "max": 0.29002528098,
+      "median": 0.28100894848,
+      "unit": "s"
+    },
+    "cached-md-500": {
+      "command": "bun script/benchmark-highlight.ts 500 md cached",
+      "mean": 0.2908091895,
+      "stddev": 0.00636225634372076,
+      "min": 0.2840272268,
+      "max": 0.3057463108,
+      "median": 0.2891509978,
+      "unit": "s"
+    },
+    "cached-md-1000": {
+      "command": "bun script/benchmark-highlight.ts 1000 md cached",
+      "mean": 0.29450482432,
+      "stddev": 0.00831331191114618,
+      "min": 0.28395099472,
+      "max": 0.31170745372,
+      "median": 0.29252414072,
+      "unit": "s"
+    },
+    "cached-md-5000": {
+      "command": "bun script/benchmark-highlight.ts 5000 md cached",
+      "mean": 0.32037010584000003,
+      "stddev": 0.007988431424617332,
+      "min": 0.31377272644000004,
+      "max": 0.33682951844000003,
+      "median": 0.31633043544,
+      "unit": "s"
+    }
+  }
+}
