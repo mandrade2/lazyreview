@@ -133,3 +133,33 @@ export function findLineWithContent(
 ): CapturedFrame["lines"][0] | null {
   return findLine(frame, (text) => text.includes(content))
 }
+
+export interface LineNumberAndIndicator {
+  lineNumber: number
+  indicator: string
+}
+
+// Find all diff-panel rows that contain the given content, returning their
+// rendered line number and change indicator. This is useful for asserting that
+// removed lines appear with their old line number and are distinguished from
+// added/context lines.
+export function findLineNumbersWithContent(
+  frame: CapturedFrame,
+  content: string,
+  sidebarWidth: number,
+): LineNumberAndIndicator[] {
+  const results: LineNumberAndIndicator[] = []
+  for (const line of frame.lines) {
+    const text = lineTextFrom(line, sidebarWidth)
+    if (text.includes(content)) {
+      const match = text.match(/^\s*(\d+)\s*([-+ ])/)
+      if (match) {
+        results.push({
+          lineNumber: parseInt(match[1]!, 10),
+          indicator: match[2]!,
+        })
+      }
+    }
+  }
+  return results
+}

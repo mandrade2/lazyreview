@@ -37,28 +37,55 @@ interface RemovedLine {
 // deleted content inline, not just the new file content from disk.
 function buildRemovedLinesByPosition(diffLines: ParsedDiffLine[]): Map<number, RemovedLine[]> {
   const removed = new Map<number, RemovedLine[]>()
-  let nextOldLine = 1
-  let nextNewLine = 1
 
-  for (const line of diffLines) {
-    if (line.type === "header") {
-      const match = line.content.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/)
-      if (match) {
-        nextOldLine = parseInt(match[1] ?? "1", 10)
-        nextNewLine = parseInt(match[2] ?? "1", 10)
-      }
-    } else if (line.type === "deletion") {
-      const insertionPosition = nextNewLine - 1
-      const arr = removed.get(insertionPosition) ?? []
-      arr.push({ content: line.content, oldLineNumber: nextOldLine })
-      removed.set(insertionPosition, arr)
-      nextOldLine++
-    } else if (line.type === "addition") {
-      nextNewLine++
-    } else if (line.type === "context") {
-      nextOldLine++
-      nextNewLine++
+  for (let i = 0; i < diffLines.length; i++) {
+    const line = diffLines[i]!
+    if (line.type !== "deletion") continue
+
+    // Collect consecutive deleted lines so replacements are kept together.
+    const pending: RemovedLine[] = []
+    let j = i
+    while (j < diffLines.length && diffLines[j]!.type === "deletion") {
+      const deletion = diffLines[j]!
+      pending.push({ content: deletion.content, oldLineNumber: deletion.oldLineNumber })
+      j++
     }
+
+    // Find the next non-deletion line in the hunk to know where this removed
+    // block belongs in the new file. The block is inserted before that line.
+    let insertionPosition = -1
+    for (let k = j; k < diffLines.length; k++) {
+      const nextLine = diffLines[k]!
+      if (nextLine.type === "header") break
+      if (nextLine.type === "addition" || nextLine.type === "context") {
+        if (nextLine.newLineNumber !== undefined) {
+          insertionPosition = nextLine.newLineNumber - 1
+          break
+        }
+      }
+    }
+
+    // If the removed block is at the end of the hunk, insert it after the last
+    // new-file line seen before the block.
+    if (insertionPosition < 0) {
+      for (let k = i - 1; k >= 0; k--) {
+        const prevLine = diffLines[k]!
+        if (prevLine.type === "header") break
+        if (prevLine.type === "addition" || prevLine.type === "context") {
+          if (prevLine.newLineNumber !== undefined) {
+            insertionPosition = prevLine.newLineNumber
+            break
+          }
+        }
+      }
+    }
+
+    if (insertionPosition >= 0) {
+      const existing = removed.get(insertionPosition) ?? []
+      removed.set(insertionPosition, [...existing, ...pending])
+    }
+
+    i = j - 1
   }
 
   return removed

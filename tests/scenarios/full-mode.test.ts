@@ -5,7 +5,7 @@ import { tmpdir } from "os"
 import { createHarness } from "../harness"
 import { buildGoldenFixture } from "../fixtures"
 import { runScenario } from "./full-mode"
-import { lineText, lineTextFrom } from "../assertions"
+import { lineText, lineTextFrom, findLineNumbersWithContent } from "../assertions"
 import { getGitChanges, setTargetDir } from "../../src/utils/git"
 
 const SIDEBAR_WIDTH = 35
@@ -44,14 +44,30 @@ test("full mode renders removed changes inline with default settings", async () 
     }
 
     // The modified index.ts should show the removed top-level main() call
-    // inline alongside the new startup() call.
+    // inline alongside the new startup() call. The previous test only checked
+    // that the text appeared somewhere, which is why the line-number bug slipped
+    // through. We now assert the exact rendered line numbers and indicators.
     const modifiedSnapshot = snapshots.find((s) => s.name === "navigate-modified")
     expect(modifiedSnapshot).toBeDefined()
-    const modifiedText = modifiedSnapshot!.spans.lines
-      .map((line) => lineTextFrom(line, SIDEBAR_WIDTH))
-      .join("\n")
-    expect(modifiedText).toContain("-main()")
-    expect(modifiedText).toContain("startup()")
+
+    const mainMatches = findLineNumbersWithContent(
+      modifiedSnapshot!.spans,
+      "main()",
+      SIDEBAR_WIDTH,
+    )
+    const removedMain = mainMatches.find((m) => m.indicator === "-")
+    expect(removedMain).toEqual({ lineNumber: 9, indicator: "-" })
+    expect(mainMatches).toContainEqual({ lineNumber: 11, indicator: " " })
+
+    const startupMatches = findLineNumbersWithContent(
+      modifiedSnapshot!.spans,
+      "startup()",
+      SIDEBAR_WIDTH,
+    )
+    // The new startup() function definition at line 10 and the top-level call at
+    // line 14.
+    expect(startupMatches).toContainEqual({ lineNumber: 10, indicator: " " })
+    expect(startupMatches).toContainEqual({ lineNumber: 14, indicator: " " })
 
     // Stats in the file list should still match the underlying git data even
     // while the diff panel is in full mode.
