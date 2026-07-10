@@ -24,6 +24,44 @@ interface DisplayRow {
   isHeader: boolean
   isAdded: boolean
   isRemoved: boolean
+  oldLineNumber?: number // for inline removed lines in full view
+}
+
+interface RemovedLine {
+  content: string
+  oldLineNumber?: number
+}
+
+// Build a map of new-file position (0-indexed) to the removed lines that should
+// be inserted before that new-file line. This lets the full-file view show
+// deleted content inline, not just the new file content from disk.
+function buildRemovedLinesByPosition(diffLines: ParsedDiffLine[]): Map<number, RemovedLine[]> {
+  const removed = new Map<number, RemovedLine[]>()
+  let nextOldLine = 1
+  let nextNewLine = 1
+
+  for (const line of diffLines) {
+    if (line.type === "header") {
+      const match = line.content.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/)
+      if (match) {
+        nextOldLine = parseInt(match[1] ?? "1", 10)
+        nextNewLine = parseInt(match[2] ?? "1", 10)
+      }
+    } else if (line.type === "deletion") {
+      const insertionPosition = nextNewLine - 1
+      const arr = removed.get(insertionPosition) ?? []
+      arr.push({ content: line.content, oldLineNumber: nextOldLine })
+      removed.set(insertionPosition, arr)
+      nextOldLine++
+    } else if (line.type === "addition") {
+      nextNewLine++
+    } else if (line.type === "context") {
+      nextOldLine++
+      nextNewLine++
+    }
+  }
+
+  return removed
 }
 
 function getStatusLabel(status: FileChange["status"]): string {
@@ -147,9 +185,21 @@ export function DiffViewer(props: DiffViewerProps) {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
   })
 
-  // Line number width based on total lines
+  // Line number width based on total lines. In full view, account for old
+  // line numbers of removed lines so they don't overflow the gutter.
   const lineNumberWidth = createMemo(() => {
-    const total = effectiveViewMode() === "full" ? highlightedFileLines().length : highlightedDiffLines().length
+    if (effectiveViewMode() === "full") {
+      const newLength = highlightedFileLines().length
+      let maxOld = 0
+      for (const line of diffLines()) {
+        if (line.type === "deletion" && line.oldLineNumber !== undefined) {
+          maxOld = Math.max(maxOld, line.oldLineNumber)
+        }
+      }
+      const total = Math.max(newLength, maxOld)
+      return Math.max(4, String(total).length + 1)
+    }
+    const total = highlightedDiffLines().length
     return Math.max(4, String(total).length + 1)
   })
 
@@ -177,9 +227,34 @@ export function DiffViewer(props: DiffViewerProps) {
     if (effectiveViewMode() === "full") {
       const lines = highlightedFileLines()
       const change = changeInfo()
+      const removedByPosition = props.file.status === "deleted"
+        ? new Map<number, RemovedLine[]>()
+        : buildRemovedLinesByPosition(diffLines())
 
       for (let i = 0; i < lines.length; i++) {
         logicalStartRows.push(rows.length)
+
+        // Insert removed diff lines before this new-file line so deletions are
+        // visible in the full-file view.
+        const removed = removedByPosition.get(i)
+        if (removed) {
+          for (const removedLine of removed) {
+            const removedTokens = [{ content: removedLine.content, color: DEFAULT_COLOR }]
+            const wrapped = wrapTokens(removedTokens, width)
+            for (let r = 0; r < wrapped.length; r++) {
+              rows.push({
+                lineNumber: r === 0 ? removedLine.oldLineNumber ?? null : null,
+                changeIndicator: r === 0 ? "-" : null,
+                tokens: wrapped[r]!,
+                isHeader: false,
+                isAdded: false,
+                isRemoved: true,
+                oldLineNumber: removedLine.oldLineNumber,
+              })
+            }
+          }
+        }
+
         const tokens = lines[i] ?? [{ content: "", color: DEFAULT_COLOR }]
         const wrapped = wrapTokens(tokens, width)
         const isAdded = !!change?.added.has(i)

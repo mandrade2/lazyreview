@@ -33,7 +33,7 @@
     "bench": "bun run script/benchmark.ts",
     "test": "bun test",
     "test:preview": "bun run tests/preview.ts",
-    "preview": "bun run test:preview golden 200 50",
+    "preview": "bun run test:preview golden 120 50",
     "replay": "bun run tests/preview.ts"
   },
   "devDependencies": {

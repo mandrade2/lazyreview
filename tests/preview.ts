@@ -5,8 +5,8 @@ import { createHarness } from "./harness"
 import { buildGoldenFixture } from "./fixtures"
 
 const scenarioName = Bun.argv[2]
-const width = parseInt(Bun.argv[3] ?? "80", 10)
-const height = parseInt(Bun.argv[4] ?? "24", 10)
+const width = parseInt(Bun.argv[3] ?? "120", 10)
+const height = parseInt(Bun.argv[4] ?? "50", 10)
 
 const scenariosDir = join(import.meta.dir, "scenarios")
 
