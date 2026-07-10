@@ -162,4 +162,14 @@ index 1234567..0000000
       { type: "context", content: "line3", oldLineNumber: 3, newLineNumber: 3 },
     ])
   })
+
+  test("handles rename metadata with no content changes", () => {
+    const diff = `diff --git a/old.ts b/new.ts
+similarity index 100%
+rename from old.ts
+rename to new.ts`
+    const result = parseDiff(diff)
+
+    expect(result).toEqual([])
+  })
 })

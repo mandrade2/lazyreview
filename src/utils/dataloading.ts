@@ -332,6 +332,16 @@ export function preloadHighlight(content: string, filePath: string) {
 }
 
 /**
+ * Clear the highlight cache and terminate the worker. Useful when unloading a
+ * repository or running isolated tests that should not share worker state.
+ */
+export function resetHighlighter() {
+  terminateWorker()
+  clearHighlightCache()
+  currentKey = null
+}
+
+/**
  * Clear the highlight cache. Useful when unloading a repository or testing.
  */
 export function clearHighlightCache() {

@@ -255,13 +255,20 @@ export async function getGitChanges(): Promise<FileChange[]> {
           removedLines.add(i)
         }
       } else {
-        // For modified/added files - get current content
+        // For modified/added/renamed files - get current content
         content = await readFileContent(filePath)
         
-        // Get diff (staged or unstaged)
-        const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${filePath}`.quiet()
-        const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${filePath}`.quiet()
-        diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        // For renamed files, include both old and new paths so git reports the
+        // rename metadata instead of showing the new path as a new file.
+        if (status === "renamed" && oldPath) {
+          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${oldPath} ${filePath}`.quiet()
+          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${oldPath} ${filePath}`.quiet()
+          diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        } else {
+          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${filePath}`.quiet()
+          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${filePath}`.quiet()
+          diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        }
         
         // Parse diff to find changed lines
         const { changedLines: parsedChanged, addedLines: parsedAdded, removedLines: parsedRemoved } = parseChangedLines(diff)
@@ -599,14 +606,23 @@ export async function loadFileDetails(
         content = showResult.stdout.toString()
       } else {
         content = await readFileContent(file.path)
-        const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.path}`.quiet()
-        const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.path}`.quiet()
-        diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        // For renamed files, include both old and new paths so git reports the
+        // rename metadata instead of showing the new path as a new file.
+        if (file.status === "renamed" && file.oldPath) {
+          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.oldPath} ${file.path}`.quiet()
+          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.oldPath} ${file.path}`.quiet()
+          diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        } else {
+          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.path}`.quiet()
+          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.path}`.quiet()
+          diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
+        }
       }
     } else if (compareTarget.type === "commit") {
       // Commit mode - changes in a specific commit
       const hash = compareTarget.hash
-      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${file.path}`.quiet()
+      const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
+      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${diffArgs}`.quiet()
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {
@@ -619,7 +635,8 @@ export async function loadFileDetails(
     } else if (compareTarget.type === "branch") {
       // Branch mode - changes between branches
       const branch = compareTarget.name
-      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${file.path}`.quiet()
+      const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
+      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${diffArgs}`.quiet()
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {

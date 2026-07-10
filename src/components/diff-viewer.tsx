@@ -127,6 +127,21 @@ export function DiffViewer(props: DiffViewerProps) {
     })
   })
 
+  // For pure renames with no content changes, the diff only contains rename
+  // metadata and has no displayable lines. Fall back to full-file view so the
+  // user can still see the file contents.
+  const isRenameWithoutDiff = createMemo(() =>
+    props.file.status === "renamed"
+    && highlightedDiffLines().length === 0
+    && highlightedFileLines().length > 0,
+  )
+  const effectiveViewMode = createMemo(() => {
+    if (viewMode() === "diff" && isRenameWithoutDiff()) {
+      return "full"
+    }
+    return viewMode()
+  })
+
   // Calculate visible rows based on terminal height (minus headers and status bar)
   const visibleHeight = createMemo(() => {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
@@ -134,7 +149,7 @@ export function DiffViewer(props: DiffViewerProps) {
 
   // Line number width based on total lines
   const lineNumberWidth = createMemo(() => {
-    const total = viewMode() === "full" ? highlightedFileLines().length : highlightedDiffLines().length
+    const total = effectiveViewMode() === "full" ? highlightedFileLines().length : highlightedDiffLines().length
     return Math.max(4, String(total).length + 1)
   })
 
@@ -142,7 +157,7 @@ export function DiffViewer(props: DiffViewerProps) {
   const contentWidth = createMemo(() => Math.max(1, props.width - lineNumberWidth() - 1))
 
   const changeInfo = createMemo(() => {
-    if (viewMode() === "full") {
+    if (effectiveViewMode() === "full") {
       return {
         added: props.file.addedLines,
         removed: props.file.removedLines,
@@ -159,7 +174,7 @@ export function DiffViewer(props: DiffViewerProps) {
     const rows: DisplayRow[] = []
     const logicalStartRows: number[] = []
 
-    if (viewMode() === "full") {
+    if (effectiveViewMode() === "full") {
       const lines = highlightedFileLines()
       const change = changeInfo()
 
@@ -256,7 +271,7 @@ export function DiffViewer(props: DiffViewerProps) {
   const pathMaxWidth = () => Math.max(3, headerWidth() - statusText().length - reviewedText().length)
 
   const lineInfoText = () =>
-    viewMode() === "full"
+    effectiveViewMode() === "full"
       ? ` | Full ${props.scrollOffset + 1}/${highlightedFileLines().length}`
       : ` | Line ${props.scrollOffset + 1}/${highlightedDiffLines().length}`
 
@@ -297,7 +312,7 @@ export function DiffViewer(props: DiffViewerProps) {
 
       {/* File content */}
       <Show
-        when={!props.file.isBinary && (viewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0)}
+        when={!props.file.isBinary && (effectiveViewMode() === "full" ? highlightedFileLines().length > 0 : highlightedDiffLines().length > 0)}
         fallback={
           <box
             style={{
