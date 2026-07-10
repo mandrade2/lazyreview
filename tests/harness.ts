@@ -1,6 +1,7 @@
 import { testRender } from "@opentui/solid"
 import { App } from "../src/app"
 import { setTargetDir } from "../src/utils/git"
+import { resetHighlighter } from "../src/utils/dataloading"
 import type {
   TestRendererSetup,
   TestVisualIdleOptions,
@@ -85,6 +86,7 @@ function spansToAnsi(frame: CapturedFrame): string {
 
 export async function createHarness(options: HarnessOptions): Promise<Harness> {
   setTargetDir(options.fixture)
+  resetHighlighter()
 
   const setup: TestRendererSetup = await testRender(App, {
     width: options.width,
