@@ -109,6 +109,119 @@ export function buildPageScrollFixture(): Promise<BuiltFixture> {
   })
 }
 
+export function buildCommitReviewFixture(): Promise<BuiltFixture> {
+  return buildFixture({
+    name: "commit-review",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          "README.md": "# Commit Review Test\n\nA repo for testing commit review mode.\n",
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+`,
+        },
+      },
+      {
+        message: "add farewell",
+        files: {
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+export function farewell(name: string): string {
+  return \`Goodbye, \${name}!\`
+}
+`,
+        },
+      },
+    ],
+  })
+}
+
+export async function buildBranchReviewFixture(): Promise<BuiltFixture> {
+  const fixture = await buildFixture({
+    name: "branch-review",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          "README.md": "# Branch Review Test\n\nA repo for testing branch review mode.\n",
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+`,
+        },
+      },
+    ],
+  })
+
+  const dir = fixture.path
+
+  // Rename the default branch to a known name so the scenario can reference it.
+  await Bun.$`git -C ${dir} branch -m main`.quiet()
+
+  // Create a feature branch that adds a farewell function.
+  await Bun.$`git -C ${dir} checkout -b feature`.quiet()
+  await Bun.write(
+    join(dir, "src/index.ts"),
+    `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+export function farewell(name: string): string {
+  return \`Goodbye, \${name}!\`
+}
+`,
+  )
+  await Bun.$`git -C ${dir} add .`.quiet()
+  await Bun.$`git -C ${dir} commit -m "add farewell"`.quiet()
+
+  // Add a utils file on main so the branches diverge.
+  await Bun.$`git -C ${dir} checkout main`.quiet()
+  await Bun.write(
+    join(dir, "src/utils.ts"),
+    `export function add(a: number, b: number): number {
+  return a + b
+}
+`,
+  )
+  await Bun.$`git -C ${dir} add .`.quiet()
+  await Bun.$`git -C ${dir} commit -m "add utils"`.quiet()
+
+  // Leave HEAD on feature so the app compares feature vs main.
+  await Bun.$`git -C ${dir} checkout feature`.quiet()
+
+  return fixture
+}
+
+export async function buildIdenticalBranchesFixture(): Promise<BuiltFixture> {
+  const fixture = await buildFixture({
+    name: "identical-branches",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          "README.md": "# Identical Branches Test\n\nA repo for testing identical branches.\n",
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+`,
+        },
+      },
+    ],
+  })
+
+  const dir = fixture.path
+  await Bun.$`git -C ${dir} branch -m main`.quiet()
+  await Bun.$`git -C ${dir} checkout -b feature`.quiet()
+  // Leave main checked out so both branches exist and are identical.
+  await Bun.$`git -C ${dir} checkout main`.quiet()
+
+  return fixture
+}
+
 export function buildGoldenFixture(): Promise<BuiltFixture> {
   return buildFixture({
     name: "golden",

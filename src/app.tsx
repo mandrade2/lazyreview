@@ -851,17 +851,18 @@ export function App() {
         setFocusedPanel("files")
         return
       }
-      if (viewState() === "files" && mode() !== "dirty") {
-        // Files -> List (for commit/branch modes)
-        setViewState("list")
-        setSelectedCommit(null)
-        setSelectedBranch(null)
-        setFiles([])
-        setSelectedIndex(0)
-        setScrollOffset(0)
-        // Don't reset listSelectedIndex - keep the previous selection
-        return
-      }
+    if (viewState() === "files" && mode() !== "dirty") {
+      // Files -> List (for commit/branch modes)
+      setViewState("list")
+      setSelectedCommit(null)
+      setSelectedBranch(null)
+      setFiles([])
+      setSelectedIndex(0)
+      setScrollOffset(0)
+      setLoading(false)
+      // Don't reset listSelectedIndex - keep the previous selection
+      return
+    }
       // At top level (list view or dirty mode files), do nothing
       return
     }
@@ -1303,7 +1304,9 @@ export function App() {
               when={!loading()}
               fallback={
                 <box style={{ padding: 1 }}>
-                  <text style={{ fg: "#8b949e" }}>Loading...</text>
+                  <text style={{ fg: "#8b949e" }}>
+                    {files().length === 0 && viewState() === "files" ? "No changes" : "Loading..."}
+                  </text>
                 </box>
               }
             >
@@ -1408,7 +1411,7 @@ export function App() {
               }
             >
               <Show
-                when={!loadingFile() && selectedFile()?.content}
+                when={!loadingFile() && selectedFile() !== null}
                 fallback={
                   <box
                     style={{

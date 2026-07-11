@@ -463,7 +463,7 @@ export async function getBranchList(): Promise<BranchInfo[]> {
 export async function getCommitChanges(commitHash: string): Promise<FileChange[]> {
   try {
     // Get file list only (fast) - stats loaded eagerly per file below
-    const statusResult = await Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r ${commitHash}`.quiet()
+    const statusResult = await Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r --root ${commitHash}`.quiet()
     const statusOutput = statusResult.stdout.toString().trim()
 
     if (!statusOutput) {
@@ -621,16 +621,25 @@ export async function loadFileDetails(
     } else if (compareTarget.type === "commit") {
       // Commit mode - changes in a specific commit
       const hash = compareTarget.hash
-      const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
-      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${diffArgs}`.quiet()
-      diff = diffResult.stdout.toString()
-      
+
       if (file.status !== "deleted") {
         const showResult = await Bun.$`git -C ${gitRoot} show ${hash}:${file.path}`.quiet()
         content = showResult.stdout.toString()
       } else {
         const showResult = await Bun.$`git -C ${gitRoot} show ${hash}^:${file.path}`.quiet()
         content = showResult.stdout.toString()
+      }
+
+      const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
+      try {
+        const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${diffArgs}`.quiet()
+        diff = diffResult.stdout.toString()
+      } catch {
+        // Root commits have no parent, so `hash^..hash` is invalid. For added
+        // files in a root commit, generate a unified diff from the content.
+        if (file.status === "added") {
+          diff = generateUnifiedDiff(file.path, content)
+        }
       }
     } else if (compareTarget.type === "branch") {
       // Branch mode - changes between branches
