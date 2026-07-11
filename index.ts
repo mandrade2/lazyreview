@@ -24,5 +24,6 @@ render(App, {
   onDestroy: () => {
     process.stdout.write("\x1b[?1000l")
     process.stdout.write("\x1b[?25h")
+    process.exit(0)
   },
 })

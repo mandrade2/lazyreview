@@ -34,6 +34,7 @@ export interface Harness {
   sleep(ms: number): Promise<void>
   ansi(): string
   spans(): CapturedFrame
+  isDestroyed(): boolean
   destroy(): Promise<void>
 }
 
@@ -147,8 +148,11 @@ export async function createHarness(options: HarnessOptions): Promise<Harness> {
     sleep,
     ansi: () => spansToAnsi(setup.captureSpans()),
     spans: () => setup.captureSpans(),
+    isDestroyed: () => setup.renderer.isDestroyed,
     destroy: async () => {
-      setup.renderer.destroy()
+      if (!setup.renderer.isDestroyed) {
+        setup.renderer.destroy()
+      }
     },
   }
 }

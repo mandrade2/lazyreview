@@ -660,8 +660,19 @@ export function App() {
   }
 
   useKeyboard(async (key) => {
-    // Quit with q or Ctrl+c - ALWAYS works, regardless of state (except when in search mode or opencode dialog)
-    if ((key.ctrl && key.name === "c") || (key.name === "q" && !searchMode() && !opencodeDialogOpen())) {
+    // Quit with q or Ctrl+c. q is blocked while a dialog or search input has
+    // keyboard precedence so it does not accidentally exit the app.
+    if (key.ctrl && key.name === "c") {
+      renderer.destroy()
+      return
+    }
+
+    if (key.name === "q" && !searchMode() && !opencodeDialogOpen()) {
+      // When the help dialog is shown, q closes it instead of quitting.
+      if (showHelp()) {
+        setShowHelp(false)
+        return
+      }
       renderer.destroy()
       return
     }
