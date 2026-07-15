@@ -60,6 +60,17 @@ export interface DiffLine {
   newLineNumber?: number
 }
 
+// Width for the line number gutter, sized so the largest displayed line
+// number always fits (plus one trailing space).
+export function getLineNumberWidth(diffLines: DiffLine[], fileLineCount: number): number {
+  let max = fileLineCount
+  for (const line of diffLines) {
+    if (line.newLineNumber !== undefined && line.newLineNumber > max) max = line.newLineNumber
+    if (line.oldLineNumber !== undefined && line.oldLineNumber > max) max = line.oldLineNumber
+  }
+  return Math.max(4, String(max).length + 1)
+}
+
 async function readFileContent(path: string): Promise<string> {
   try {
     const gitRoot = await getGitRoot()

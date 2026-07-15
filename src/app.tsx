@@ -24,6 +24,7 @@ import {
   type CommitInfo,
   type BranchInfo,
   type DiffLine as ParsedDiffLine,
+  getLineNumberWidth,
 } from "./utils/git"
 import {
   buildFileTree,
@@ -446,13 +447,13 @@ export function App() {
 
     if (diffViewMode() === "full") {
       const lines = file.content.split("\n")
-      const lineNumberWidth = Math.max(4, String(lines.length).length + 1)
+      const lineNumberWidth = getLineNumberWidth(parseDiff(file.diff ?? ""), lines.length)
       const contentWidth = Math.max(1, diffViewerWidth() - lineNumberWidth - 1)
       return computeWrappedMaxScroll(lines, contentWidth, viewportHeight)
     }
 
     const parsedDiff = parseDiff(file.diff ?? "")
-    const lineNumberWidth = Math.max(4, String(parsedDiff.length).length + 1)
+    const lineNumberWidth = getLineNumberWidth(parsedDiff, 0)
     const contentWidth = Math.max(1, diffViewerWidth() - lineNumberWidth - 1)
     return computeWrappedMaxScroll(parsedDiff, contentWidth, viewportHeight)
   }

@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parseDiff, parseChangedLines } from "./git"
+import { parseDiff, parseChangedLines, getLineNumberWidth } from "./git"
 
 describe("parseDiff", () => {
   test("returns empty array for empty diff", () => {
@@ -220,5 +220,35 @@ export function Spinner() {`
 
     expect(removedLines).toEqual([])
     expect(changedLines).toEqual([1, 1])
+  })
+})
+
+describe("getLineNumberWidth", () => {
+  test("has a minimum width of 4", () => {
+    expect(getLineNumberWidth([], 0)).toBe(4)
+    expect(getLineNumberWidth([], 12)).toBe(4)
+  })
+
+  test("fits 5-digit line numbers in a small diff hunk (regression: gutter wrap)", () => {
+    const diff = `@@ -9998,3 +9998,4 @@
+ context
++added
+ context
+ context`
+    const lines = parseDiff(diff)
+    expect(lines).toHaveLength(5)
+    expect(getLineNumberWidth(lines, 0)).toBe(6)
+  })
+
+  test("accounts for old line numbers of deletions", () => {
+    const diff = `@@ -99999,2 +1,1 @@
+-removed
+ context`
+    const lines = parseDiff(diff)
+    expect(getLineNumberWidth(lines, 1)).toBe(7)
+  })
+
+  test("accounts for file line count", () => {
+    expect(getLineNumberWidth([], 12345)).toBe(6)
   })
 })

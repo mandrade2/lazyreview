@@ -2,7 +2,7 @@ import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
 import { highlightFile, type HighlightedLine, wrapTokens } from "../utils/dataloading"
-import { parseDiff, type DiffLine as ParsedDiffLine } from "../utils/git"
+import { parseDiff, getLineNumberWidth, type DiffLine as ParsedDiffLine } from "../utils/git"
 
 interface DiffViewerProps {
   file: FileChange
@@ -212,22 +212,13 @@ export function DiffViewer(props: DiffViewerProps) {
     return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
   })
 
-  // Line number width based on total lines. In full view, account for old
-  // line numbers of removed lines so they don't overflow the gutter.
+  // Line number width based on the largest line number displayed, so
+  // the gutter never clips or wraps regardless of digit count.
   const lineNumberWidth = createMemo(() => {
     if (effectiveViewMode() === "full") {
-      const newLength = highlightedFileLines().length
-      let maxOld = 0
-      for (const line of diffLines()) {
-        if (line.type === "deletion" && line.oldLineNumber !== undefined) {
-          maxOld = Math.max(maxOld, line.oldLineNumber)
-        }
-      }
-      const total = Math.max(newLength, maxOld)
-      return Math.max(4, String(total).length + 1)
+      return getLineNumberWidth(diffLines(), highlightedFileLines().length)
     }
-    const total = highlightedDiffLines().length
-    return Math.max(4, String(total).length + 1)
+    return getLineNumberWidth(diffLines(), 0)
   })
 
   // Available width for the actual code content
