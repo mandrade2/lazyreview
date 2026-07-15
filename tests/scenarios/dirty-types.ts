@@ -17,11 +17,13 @@ export async function runScenario(harness: Harness): Promise<ScenarioResult> {
   // Navigate through each file type so we can verify their rendering.
   // The expected order from the golden fixture is:
   // 0: renamed (app.config.ts), 1: added (counter.tsx), 2: modified (index.ts),
-  // 3: deleted (legacy.ts), 4: modified (utils.ts), 5: untracked (guide.md)
+  // 3: deleted (legacy.ts), 4: modified pure deletion (spinner.ts),
+  // 5: modified (utils.ts), 6: untracked (guide.md)
   const navigationNames = [
     "navigate-added",
     "navigate-modified",
     "navigate-deleted",
+    "navigate-modified-pure-deletion",
     "navigate-modified-2",
     "navigate-untracked",
   ]

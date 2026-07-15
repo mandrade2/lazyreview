@@ -48,6 +48,7 @@ test("dirty mode renders all change types with matching stats", async () => {
         "navigate-added",
         "navigate-modified",
         "navigate-deleted",
+        "navigate-modified-pure-deletion",
         "navigate-modified-2",
         "navigate-untracked",
         "renamed-selected",
@@ -61,6 +62,7 @@ test("dirty mode renders all change types with matching stats", async () => {
     expect(initialText).toContain("A src/components/counter.tsx")
     expect(initialText).toContain("M src/index.ts")
     expect(initialText).toContain("D src/legacy.ts")
+    expect(initialText).toContain("M src/spinner.ts")
     expect(initialText).toContain("M src/utils.ts")
     expect(initialText).toContain("? docs/guide.md")
 

@@ -133,7 +133,7 @@ interface ParsedChanges {
 }
 
 // Parse a diff to extract the line numbers that were changed (0-indexed, in the new file)
-function parseChangedLines(diff: string): ParsedChanges {
+export function parseChangedLines(diff: string): ParsedChanges {
   const changedLines: number[] = []
   const addedLines: number[] = []
   const removedLines: number[] = []
@@ -152,10 +152,13 @@ function parseChangedLines(diff: string): ParsedChanges {
       addedLines.push(currentLine)
       currentLine++
     } else if (line.startsWith("-") && !line.startsWith("---")) {
-      // Deletion - don't increment currentLine (line doesn't exist in new file)
-      // But we should mark the position where deletion happened
+      // Deletion - don't increment currentLine (line doesn't exist in new file).
+      // Record the position in changedLines so navigation can jump here, but do
+      // NOT add it to removedLines: the position points at the next surviving
+      // new-file line, which must not be painted as removed. Deleted content is
+      // shown inline via buildRemovedLinesByPosition in the diff viewer, and
+      // fully deleted files mark every line removed in getGitChanges.
       changedLines.push(currentLine)
-      removedLines.push(currentLine)
     } else if (line.startsWith(" ") || line === "") {
       // Context line
       currentLine++

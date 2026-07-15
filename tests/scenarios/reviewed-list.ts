@@ -18,7 +18,7 @@ export async function runScenario(harness: Harness): Promise<ScenarioResult> {
   snapshots.push(await harness.snapshot("after-marking"))
 
   // Navigate down to the reviewed section.
-  await harness.send(["j", "j", "j", "j"])
+  await harness.send(["j", "j", "j", "j", "j"])
   snapshots.push(await harness.snapshot("in-reviewed-section"))
 
   // Unmark the first reviewed file. The selection should move to the next

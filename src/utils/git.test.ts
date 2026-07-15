@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parseDiff } from "./git"
+import { parseDiff, parseChangedLines } from "./git"
 
 describe("parseDiff", () => {
   test("returns empty array for empty diff", () => {
@@ -171,5 +171,54 @@ rename to new.ts`
     const result = parseDiff(diff)
 
     expect(result).toEqual([])
+  })
+})
+
+describe("parseChangedLines", () => {
+  test("pure deletion does not mark the surviving new-file line as removed", () => {
+    // The deleted import block leaves "export function Spinner() {" at
+    // new-file index 1. That line survives and must not end up in
+    // removedLines, otherwise the full view paints it red.
+    const diff = `@@ -1,6 +1,4 @@
+ context line
+-import { ScreenBase } from './Screenbase';
+-
+export function Spinner() {`
+    const { removedLines } = parseChangedLines(diff)
+
+    expect(removedLines).not.toContain(1)
+    expect(removedLines).toHaveLength(0)
+  })
+
+  test("deletion position is still tracked in changedLines for navigation", () => {
+    const diff = `@@ -1,3 +1,2 @@
+ keep
+-removed
+ still here`
+    const { changedLines } = parseChangedLines(diff)
+
+    expect(changedLines).toContain(1)
+  })
+
+  test("modification marks the new line as added, not removed", () => {
+    const diff = `@@ -1,2 +1,2 @@
+-old
++new
+ context`
+    const { addedLines, removedLines } = parseChangedLines(diff)
+
+    expect(addedLines).toEqual([0])
+    expect(removedLines).toEqual([])
+  })
+
+  test("deletion at end of file does not produce removed new-file lines", () => {
+    const diff = `@@ -1,3 +1,1 @@
+ keep
+-gone one
+-gone two`
+    const { removedLines, changedLines } = parseChangedLines(diff)
+
+    expect(removedLines).toEqual([])
+    expect(changedLines).toEqual([1, 1])
   })
 })

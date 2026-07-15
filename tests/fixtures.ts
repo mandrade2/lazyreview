@@ -279,6 +279,18 @@ export function add(a: number, b: number): number {
   return "legacy"
 }
 `,
+          "src/spinner.ts": `export function keepOne() {
+  return 1
+}
+
+export function removedTwo() {
+  return 2
+}
+
+export function keepThree() {
+  return 3
+}
+`,
         },
       },
     ],
@@ -313,6 +325,18 @@ export function add(a: number, b: number): number {
 
 export function multiply(a: number, b: number): number {
   return a * b
+}
+`,
+        // Pure deletion: the removedTwo block is deleted with no additions,
+        // so keepThree is a surviving context line right after the deletion.
+        // This covers the regression where the full view painted that
+        // surviving line with the "removed" background.
+        "src/spinner.ts": `export function keepOne() {
+  return 1
+}
+
+export function keepThree() {
+  return 3
 }
 `,
       },

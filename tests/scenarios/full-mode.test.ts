@@ -5,10 +5,12 @@ import { tmpdir } from "os"
 import { createHarness } from "../harness"
 import { buildGoldenFixture } from "../fixtures"
 import { runScenario } from "./full-mode"
-import { lineText, lineTextFrom, findLineNumbersWithContent } from "../assertions"
+import { lineText, lineTextFrom, findLineNumbersWithContent, getSpanBackground } from "../assertions"
+import type { CapturedFrame } from "../harness"
 import { getGitChanges, setTargetDir } from "../../src/utils/git"
 
 const SIDEBAR_WIDTH = 35
+const REMOVED_BG = "#2f1a1a"
 
 // This test runs with the default settings:
 //   diffViewMode: "diff"   (toggled to "full" by the scenario)
@@ -69,6 +71,36 @@ test("full mode renders removed changes inline with default settings", async () 
     expect(startupMatches).toContainEqual({ lineNumber: 10, indicator: " " })
     expect(startupMatches).toContainEqual({ lineNumber: 14, indicator: " " })
 
+    // Regression: spinner.ts deletes the removedTwo block with no additions,
+    // so keepThree is a surviving context line right after the deletion. It
+    // must keep the default background; before the fix the deletion position
+    // leaked into removedLines and the surviving line was painted red.
+    const pureDeletionSnapshot = snapshots.find(
+      (s) => s.name === "navigate-modified-pure-deletion",
+    )
+    expect(pureDeletionSnapshot).toBeDefined()
+
+    const findRow = (content: string): CapturedFrame["lines"][0] | undefined =>
+      pureDeletionSnapshot!.spans.lines.find((line) =>
+        lineTextFrom(line, SIDEBAR_WIDTH).includes(content),
+      )
+    const rowBackgrounds = (row: CapturedFrame["lines"][0]) =>
+      new Set(row.spans.map((span) => getSpanBackground(span)))
+
+    const removedRow = findRow("removedTwo")
+    expect(removedRow).toBeDefined()
+    expect(rowBackgrounds(removedRow!).has(REMOVED_BG)).toBe(true)
+    expect(
+      findLineNumbersWithContent(pureDeletionSnapshot!.spans, "removedTwo", SIDEBAR_WIDTH),
+    ).toContainEqual({ lineNumber: 5, indicator: "-" })
+
+    const survivingRow = findRow("keepThree")
+    expect(survivingRow).toBeDefined()
+    expect(rowBackgrounds(survivingRow!).has(REMOVED_BG)).toBe(false)
+    expect(
+      findLineNumbersWithContent(pureDeletionSnapshot!.spans, "keepThree", SIDEBAR_WIDTH),
+    ).toContainEqual({ lineNumber: 5, indicator: " " })
+
     // Stats in the file list should still match the underlying git data even
     // while the diff panel is in full mode.
     const snapshotNames = [
@@ -76,6 +108,7 @@ test("full mode renders removed changes inline with default settings", async () 
       "navigate-added",
       "navigate-modified",
       "navigate-deleted",
+      "navigate-modified-pure-deletion",
       "navigate-modified-2",
       "navigate-untracked",
     ]
