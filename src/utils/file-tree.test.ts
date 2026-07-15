@@ -2,6 +2,7 @@ import { test, expect, describe } from "bun:test"
 import {
   buildFileTree,
   flattenTree,
+  findNearestFileIndex,
   getFilesInFolder,
   collectFolderPaths,
 } from "./file-tree"
@@ -149,5 +150,62 @@ describe("collectFolderPaths", () => {
     expect(paths).toContain("a/b")
     expect(paths).toContain("a/b/c")
     expect(paths.size).toBe(3)
+  })
+})
+
+describe("findNearestFileIndex", () => {
+  test("returns 0 for an empty list", () => {
+    expect(findNearestFileIndex([], 5)).toBe(0)
+  })
+
+  test("keeps the index when it already points to a file", () => {
+    const tree = buildFileTree([makeFile("a.ts"), makeFile("b.ts")])
+    const items = flattenTree(tree, new Set())
+
+    expect(findNearestFileIndex(items, 1)).toBe(1)
+  })
+
+  test("skips folders forward to the next file", () => {
+    const tree = buildFileTree([
+      makeFile("docs/guide.md"),
+      makeFile("src/components/counter.tsx"),
+      makeFile("src/app.ts"),
+    ])
+    const items = flattenTree(tree, new Set(["docs", "src", "src/components"]))
+
+    // items: folder:docs, file:guide.md, folder:src, folder:src/components,
+    //        file:counter.tsx, file:app.ts
+    expect(items[1]?.type).toBe("file")
+    expect(items[2]?.type).toBe("folder")
+
+    // guide.md removed -> index 1 now lands on folder:src, skip to counter.tsx
+    const remaining = items.filter(item => item.type === "folder" || item.type === "file" && item.file.path !== "docs/guide.md")
+    expect(findNearestFileIndex(remaining, 1)).toBe(3)
+    expect(remaining[3]?.type).toBe("file")
+    expect((remaining[3] as { file: FileChange }).file.path).toBe("src/components/counter.tsx")
+  })
+
+  test("falls back to the previous file when no file follows", () => {
+    const tree = buildFileTree([
+      makeFile("src/a.ts"),
+      makeFile("src/b.ts"),
+      makeFile("root.ts"),
+    ])
+    const expanded = new Set(["src"])
+    const items = flattenTree(tree, expanded)
+
+    // items: folder:src, file:a.ts, file:b.ts, file:root.ts
+    // root.ts removed -> index 3 clamps to file:b.ts
+    const remaining = items.filter(item => item.type === "folder" || item.type === "file" && item.file.path !== "root.ts")
+    expect(findNearestFileIndex(remaining, 3)).toBe(2)
+    expect((remaining[2] as { file: FileChange }).file.path).toBe("src/b.ts")
+  })
+
+  test("clamps out-of-range start index", () => {
+    const tree = buildFileTree([makeFile("a.ts"), makeFile("b.ts")])
+    const items = flattenTree(tree, new Set())
+
+    expect(findNearestFileIndex(items, 10)).toBe(1)
+    expect(findNearestFileIndex(items, -3)).toBe(0)
   })
 })

@@ -97,6 +97,20 @@ function findNode(root: TreeNode, folderPath: string): TreeNode | null {
   return null
 }
 
+export function findNearestFileIndex(items: TreeItem[], startIndex: number): number {
+  if (items.length === 0) return 0
+  const clamped = Math.min(Math.max(startIndex, 0), items.length - 1)
+
+  for (let i = clamped; i < items.length; i++) {
+    if (items[i]?.type === "file") return i
+  }
+  for (let i = clamped - 1; i >= 0; i--) {
+    if (items[i]?.type === "file") return i
+  }
+
+  return clamped
+}
+
 export function getFilesInFolder(
   root: TreeNode,
   folderPath: string,
