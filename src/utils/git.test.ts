@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parseDiff, parseChangedLines, getLineNumberWidth } from "./git"
+import { parseDiff, parseChangedLines, getLineNumberWidth, runGit } from "./git"
 
 describe("parseDiff", () => {
   test("returns empty array for empty diff", () => {
@@ -250,5 +250,57 @@ describe("getLineNumberWidth", () => {
 
   test("accounts for file line count", () => {
     expect(getLineNumberWidth([], 12345)).toBe(6)
+  })
+})
+
+describe("runGit", () => {
+  test("returns the command result when it succeeds", async () => {
+    const result = await runGit(() => Promise.resolve("ok"))
+    expect(result).toBe("ok")
+  })
+
+  test("retries when the command hangs and returns the retry result", async () => {
+    let calls = 0
+    const result = await runGit(
+      () => {
+        calls++
+        // First attempt never resolves (simulates the hung Bun.$ spawn);
+        // the retry succeeds.
+        return calls === 1
+          ? new Promise<string>(() => {})
+          : Promise.resolve("recovered")
+      },
+      { timeoutMs: 50, attempts: 3 },
+    )
+    expect(result).toBe("recovered")
+    expect(calls).toBe(2)
+  })
+
+  test("throws after exhausting all attempts", async () => {
+    let calls = 0
+    await expect(
+      runGit(
+        () => {
+          calls++
+          return new Promise<string>(() => {})
+        },
+        { timeoutMs: 20, attempts: 2 },
+      ),
+    ).rejects.toThrow("timed out")
+    expect(calls).toBe(2)
+  })
+
+  test("rethrows command failures after retrying", async () => {
+    let calls = 0
+    await expect(
+      runGit(
+        () => {
+          calls++
+          return Promise.reject(new Error("spawn failed"))
+        },
+        { timeoutMs: 1000, attempts: 2 },
+      ),
+    ).rejects.toThrow("spawn failed")
+    expect(calls).toBe(2)
   })
 })

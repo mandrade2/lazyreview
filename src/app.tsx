@@ -29,6 +29,7 @@ import {
 import {
   buildFileTree,
   flattenTree,
+  findNearestFileIndex,
   getFilesInFolder,
   collectFolderPaths,
   type TreeFolder,
@@ -319,37 +320,51 @@ export function App() {
     }
   })
 
-  // Load data helpers
+  // Load data helpers. A monotonic epoch guards against races: an older load
+  // that resolves after the user switched mode/selection must not overwrite
+  // the newer load's state (e.g. the initial dirty load resolving after
+  // entering commit mode would wipe the commit's file list).
+  let loadEpoch = 0
+  const nextLoadEpoch = () => ++loadEpoch
+  const isCurrentLoad = (epoch: number) => epoch === loadEpoch
+
   const loadDirtyChanges = async (preserveReviewState = false) => {
+    const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
     if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getGitChanges()
+      if (!isCurrentLoad(epoch)) return
       setFiles(changes)
       setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
       // perf measurement removed
     } catch (e) {
+      if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load git changes")
     } finally {
-      setLoading(false)
+      if (isCurrentLoad(epoch)) setLoading(false)
     }
   }
   
   const loadCommits = async () => {
+    const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
     try {
       const commitList = await getCommitList()
+      if (!isCurrentLoad(epoch)) return
       setCommits(commitList)
     } catch (e) {
+      if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load commits")
     } finally {
-      setLoading(false)
+      if (isCurrentLoad(epoch)) setLoading(false)
     }
   }
   
   const loadBranches = async () => {
+    const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
     try {
@@ -357,42 +372,50 @@ export function App() {
         getBranchList(),
         getCurrentBranch(),
       ])
+      if (!isCurrentLoad(epoch)) return
       setBranches(branchList)
       setCurrentBranch(current)
     } catch (e) {
+      if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load branches")
     } finally {
-      setLoading(false)
+      if (isCurrentLoad(epoch)) setLoading(false)
     }
   }
   
   const loadCommitChanges = async (commit: CommitInfo, preserveReviewState = false) => {
+    const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
     if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getCommitChanges(commit.hash)
+      if (!isCurrentLoad(epoch)) return
       setFiles(changes)
       setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
     } catch (e) {
+      if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load commit changes")
     } finally {
-      setLoading(false)
+      if (isCurrentLoad(epoch)) setLoading(false)
     }
   }
   
   const loadBranchChanges = async (branch: BranchInfo, preserveReviewState = false) => {
+    const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
     if (!preserveReviewState) setFilesGeneration(g => g + 1)
     try {
       const changes = await getBranchChanges(branch.name)
+      if (!isCurrentLoad(epoch)) return
       setFiles(changes)
       setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
     } catch (e) {
+      if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load branch changes")
     } finally {
-      setLoading(false)
+      if (isCurrentLoad(epoch)) setLoading(false)
     }
   }
 
@@ -781,16 +804,38 @@ export function App() {
           const nextReviewedIndex = Math.min(previousIndexInReviewed, nextReviewedItems.length - 1)
           setSelectedIndex(nextReviewedItems.length > 0 ? nextToReviewItems.length + nextReviewedIndex : 0)
         } else {
+          // Remember the next file by path before mutating: removing the
+          // marked file can also remove now-empty folder rows above the next
+          // file, shifting the list by more than one row.
+          const previousItems = toReviewVisibleItems()
+          let nextFilePath: string | null = null
+          for (let i = selectedIndex() + 1; i < previousItems.length; i++) {
+            const nextItem = previousItems[i]
+            if (nextItem?.type === "file") {
+              nextFilePath = nextItem.file.path
+              break
+            }
+          }
           setReviewedPaths(prev => {
             const next = new Set(prev)
             next.add(path)
             return next
           })
           setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
-          const previousIndex = selectedIndex()
           const nextToReviewItems = toReviewVisibleItems()
-          const nextIndex = Math.min(previousIndex, nextToReviewItems.length - 1)
-          setSelectedIndex(nextToReviewItems.length > 0 ? nextIndex : 0)
+          const nextIndex = nextFilePath === null
+            ? -1
+            : nextToReviewItems.findIndex(
+                item => item.type === "file" && item.file.path === nextFilePath,
+              )
+          if (nextIndex >= 0) {
+            setSelectedIndex(nextIndex)
+          } else if (nextToReviewItems.length > 0) {
+            // Marked the last file: select the new last file.
+            setSelectedIndex(findNearestFileIndex(nextToReviewItems, nextToReviewItems.length - 1))
+          } else {
+            setSelectedIndex(findNearestFileIndex(allVisibleItems(), 0))
+          }
         }
       } else {
         // Folder: mark/unmark all files under it in the current section
@@ -865,6 +910,9 @@ export function App() {
       }
     if (viewState() === "files" && mode() !== "dirty") {
       // Files -> List (for commit/branch modes)
+      // Invalidate any in-flight commit/branch load so it can't repopulate
+      // the file list after we've gone back to the list view.
+      nextLoadEpoch()
       setViewState("list")
       setSelectedCommit(null)
       setSelectedBranch(null)

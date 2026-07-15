@@ -34,20 +34,82 @@ export interface FileChange {
 
 // Target directory for git operations
 let targetDir = process.cwd()
+let cachedGitRoot: string | null = null
 
 export function setTargetDir(dir: string) {
   targetDir = dir
+  cachedGitRoot = null
 }
 
 export function getTargetDir() {
   return targetDir
 }
 
+// Bun.$ subprocess promises can permanently hang when spawned while a Worker
+// is starting up (observed on Bun 1.3.x with the syntax-highlight worker).
+// A hung spawn never resolves, which would wedge file loading forever, so
+// every git invocation is retried with a timeout.
+const gitTimeoutMs = 10000
+const gitAttempts = 3
+
+export async function runGit<T>(
+  command: () => Promise<T>,
+  options: { timeoutMs?: number; attempts?: number } = {},
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? gitTimeoutMs
+  const maxAttempts = options.attempts ?? gitAttempts
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      return await Promise.race([
+        command(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`git command timed out after ${timeoutMs}ms`)),
+            timeoutMs,
+          )
+        }),
+      ])
+    } catch (error) {
+      lastError = error
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  throw lastError
+}
+
+// Run async tasks over items with bounded concurrency to limit the number of
+// simultaneous git subprocesses.
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++
+      results[index] = await fn(items[index]!)
+    }
+  })
+  await Promise.all(lanes)
+  return results
+}
+
+const maxConcurrentFileLoads = 8
+
 // Get the git repository root directory
 export async function getGitRoot(): Promise<string> {
+  if (cachedGitRoot) {
+    return cachedGitRoot
+  }
   try {
-    const result = await Bun.$`git -C ${targetDir} rev-parse --show-toplevel`.quiet()
-    return result.stdout.toString().trim()
+    const result = await runGit(() => Bun.$`git -C ${targetDir} rev-parse --show-toplevel`.quiet())
+    cachedGitRoot = result.stdout.toString().trim()
+    return cachedGitRoot
   } catch {
     return targetDir
   }
@@ -186,7 +248,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
   
   // Get staged and unstaged changes
   // Use -uall to show all untracked files (not just directories)
-  const statusResult = await Bun.$`git -C ${gitRoot} status --porcelain -uall`.text()
+  const statusResult = await runGit(() => Bun.$`git -C ${gitRoot} status --porcelain -uall`.text())
   
   if (!statusResult.trim()) {
     return []
@@ -257,10 +319,10 @@ export async function getGitChanges(): Promise<FileChange[]> {
         }
       } else if (status === "deleted") {
         // For deleted files, get content from git
-        const result = await Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${filePath}`.quiet()
+        const result = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${filePath}`.quiet())
         diff = result.stdout.toString()
         // Get the old content from git
-        const showResult = await Bun.$`git -C ${gitRoot} show HEAD:${filePath}`.quiet()
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show HEAD:${filePath}`.quiet())
         content = showResult.stdout.toString()
         // All lines are deletions
         const lines = content.split("\n")
@@ -275,12 +337,12 @@ export async function getGitChanges(): Promise<FileChange[]> {
         // For renamed files, include both old and new paths so git reports the
         // rename metadata instead of showing the new path as a new file.
         if (status === "renamed" && oldPath) {
-          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${oldPath} ${filePath}`.quiet()
-          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${oldPath} ${filePath}`.quiet()
+          const stagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${oldPath} ${filePath}`.quiet())
+          const unstagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${oldPath} ${filePath}`.quiet())
           diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         } else {
-          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${filePath}`.quiet()
-          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${filePath}`.quiet()
+          const stagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${filePath}`.quiet())
+          const unstagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${filePath}`.quiet())
           diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         }
         
@@ -410,7 +472,7 @@ export function parseDiff(diff: string): DiffLine[] {
 export async function getCommitList(limit = 50): Promise<CommitInfo[]> {
   try {
     const format = "%H|%h|%an|%ar|%s"
-    const result = await Bun.$`git -C ${targetDir} log --format=${format} -n ${limit}`.quiet()
+    const result = await runGit(() => Bun.$`git -C ${targetDir} log --format=${format} -n ${limit}`.quiet())
     const output = result.stdout.toString().trim()
     
     if (!output) {
@@ -435,7 +497,7 @@ export async function getCommitList(limit = 50): Promise<CommitInfo[]> {
 // Get current branch name (null if detached HEAD)
 export async function getCurrentBranch(): Promise<string | null> {
   try {
-    const result = await Bun.$`git -C ${targetDir} rev-parse --abbrev-ref HEAD`.quiet()
+    const result = await runGit(() => Bun.$`git -C ${targetDir} rev-parse --abbrev-ref HEAD`.quiet())
     const branch = result.stdout.toString().trim()
     if (branch === "HEAD") {
       return null // Detached HEAD
@@ -450,7 +512,7 @@ export async function getCurrentBranch(): Promise<string | null> {
 export async function getBranchList(): Promise<BranchInfo[]> {
   try {
     const format = "%(refname:short)|%(HEAD)|%(objectname:short)|%(committerdate:relative)|%(subject)"
-    const result = await Bun.$`git -C ${targetDir} branch --sort=-committerdate --format=${format}`.quiet()
+    const result = await runGit(() => Bun.$`git -C ${targetDir} branch --sort=-committerdate --format=${format}`.quiet())
     const output = result.stdout.toString().trim()
     
     if (!output) {
@@ -477,7 +539,7 @@ export async function getBranchList(): Promise<BranchInfo[]> {
 export async function getCommitChanges(commitHash: string): Promise<FileChange[]> {
   try {
     // Get file list only (fast) - stats loaded eagerly per file below
-    const statusResult = await Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r --root ${commitHash}`.quiet()
+    const statusResult = await runGit(() => Bun.$`git -C ${targetDir} diff-tree --no-commit-id --name-status -r --root ${commitHash}`.quiet())
     const statusOutput = statusResult.stdout.toString().trim()
 
     if (!statusOutput) {
@@ -525,8 +587,10 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
     }
 
     // Eagerly load full content/diff for every file to match dirty mode behavior
-    const loaded = await Promise.all(
-      changes.map((file) => loadFileDetails(file, { type: "commit", hash: commitHash })),
+    const loaded = await mapWithConcurrency(
+      changes,
+      maxConcurrentFileLoads,
+      (file) => loadFileDetails(file, { type: "commit", hash: commitHash }),
     )
 
     return loaded
@@ -540,7 +604,7 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
 export async function getBranchChanges(targetBranch: string): Promise<FileChange[]> {
   try {
     // Get file list only (fast) - stats loaded eagerly per file below
-    const statusResult = await Bun.$`git -C ${targetDir} diff --name-status ${targetBranch}...HEAD`.quiet()
+    const statusResult = await runGit(() => Bun.$`git -C ${targetDir} diff --name-status ${targetBranch}...HEAD`.quiet())
     const statusOutput = statusResult.stdout.toString().trim()
 
     if (!statusOutput) {
@@ -588,8 +652,10 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
     }
 
     // Eagerly load full content/diff for every file to match dirty mode behavior
-    const loaded = await Promise.all(
-      changes.map((file) => loadFileDetails(file, { type: "branch", name: targetBranch })),
+    const loaded = await mapWithConcurrency(
+      changes,
+      maxConcurrentFileLoads,
+      (file) => loadFileDetails(file, { type: "branch", name: targetBranch }),
     )
 
     return loaded
@@ -614,21 +680,21 @@ export async function loadFileDetails(
         content = await readFileContent(file.path)
         diff = generateUnifiedDiff(file.path, content)
       } else if (file.status === "deleted") {
-        const result = await Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${file.path}`.quiet()
+        const result = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${file.path}`.quiet())
         diff = result.stdout.toString()
-        const showResult = await Bun.$`git -C ${gitRoot} show HEAD:${file.path}`.quiet()
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show HEAD:${file.path}`.quiet())
         content = showResult.stdout.toString()
       } else {
         content = await readFileContent(file.path)
         // For renamed files, include both old and new paths so git reports the
         // rename metadata instead of showing the new path as a new file.
         if (file.status === "renamed" && file.oldPath) {
-          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.oldPath} ${file.path}`.quiet()
-          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.oldPath} ${file.path}`.quiet()
+          const stagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.oldPath} ${file.path}`.quiet())
+          const unstagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.oldPath} ${file.path}`.quiet())
           diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         } else {
-          const stagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.path}`.quiet()
-          const unstagedResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.path}`.quiet()
+          const stagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${file.path}`.quiet())
+          const unstagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${file.path}`.quiet())
           diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()
         }
       }
@@ -637,16 +703,16 @@ export async function loadFileDetails(
       const hash = compareTarget.hash
 
       if (file.status !== "deleted") {
-        const showResult = await Bun.$`git -C ${gitRoot} show ${hash}:${file.path}`.quiet()
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${hash}:${file.path}`.quiet())
         content = showResult.stdout.toString()
       } else {
-        const showResult = await Bun.$`git -C ${gitRoot} show ${hash}^:${file.path}`.quiet()
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${hash}^:${file.path}`.quiet())
         content = showResult.stdout.toString()
       }
 
       const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
       try {
-        const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${diffArgs}`.quiet()
+        const diffResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${hash}^..${hash} -- ${diffArgs}`.quiet())
         diff = diffResult.stdout.toString()
       } catch {
         // Root commits have no parent, so `hash^..hash` is invalid. For added
@@ -659,13 +725,13 @@ export async function loadFileDetails(
       // Branch mode - changes between branches
       const branch = compareTarget.name
       const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
-      const diffResult = await Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${diffArgs}`.quiet()
+      const diffResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${diffArgs}`.quiet())
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {
         content = await readFileContent(file.path)
       } else {
-        const showResult = await Bun.$`git -C ${gitRoot} show ${branch}:${file.path}`.quiet()
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${branch}:${file.path}`.quiet())
         content = showResult.stdout.toString()
       }
     }
