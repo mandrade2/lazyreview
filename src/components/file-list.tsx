@@ -22,6 +22,8 @@ function getStatusIcon(status: TreeFile["file"]["status"]): string {
       return "R"
     case "untracked":
       return "?"
+    case "conflicted":
+      return "C"
   }
 }
 
@@ -37,6 +39,8 @@ function getStatusColor(status: TreeFile["file"]["status"]): string {
       return "#a371f7"
     case "untracked":
       return "#8b949e"
+    case "conflicted":
+      return "#f0883e"
   }
 }
 

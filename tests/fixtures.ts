@@ -222,6 +222,72 @@ export async function buildIdenticalBranchesFixture(): Promise<BuiltFixture> {
   return fixture
 }
 
+export async function buildMergeConflictFixture(): Promise<BuiltFixture> {
+  const fixture = await buildFixture({
+    name: "merge-conflict",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          "README.md": "# Merge Conflict Test\n\nA repo for testing merge conflicts.\n",
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+`,
+          "src/utils.ts": `export function add(a: number, b: number): number {
+  return a + b
+}
+`,
+        },
+      },
+    ],
+  })
+
+  const dir = fixture.path
+  await Bun.$`git -C ${dir} branch -m main`.quiet()
+
+  // feature changes the greeting and adds a helper (the helper auto-merges).
+  await Bun.$`git -C ${dir} checkout -b feature`.quiet()
+  await Bun.write(
+    join(dir, "src/index.ts"),
+    `export function greet(name: string): string {
+  return \`Bonjour, \${name}!\`
+}
+`,
+  )
+  await Bun.write(
+    join(dir, "src/utils.ts"),
+    `export function add(a: number, b: number): number {
+  return a + b
+}
+
+export function subtract(a: number, b: number): number {
+  return a - b
+}
+`,
+  )
+  await Bun.$`git -C ${dir} add .`.quiet()
+  await Bun.$`git -C ${dir} commit -m "french greeting and subtract"`.quiet()
+
+  // main changes the same greeting line, guaranteeing a conflict.
+  await Bun.$`git -C ${dir} checkout main`.quiet()
+  await Bun.write(
+    join(dir, "src/index.ts"),
+    `export function greet(name: string): string {
+  return \`Hola, \${name}!\`
+}
+`,
+  )
+  await Bun.$`git -C ${dir} add .`.quiet()
+  await Bun.$`git -C ${dir} commit -m "spanish greeting"`.quiet()
+
+  // Merging feature leaves src/index.ts conflicted (UU); src/utils.ts merges
+  // cleanly and stays staged as modified. Merge exits non-zero on conflict.
+  await Bun.$`git -C ${dir} merge feature`.quiet().nothrow()
+
+  return fixture
+}
+
 export function buildGoldenFixture(): Promise<BuiltFixture> {
   return buildFixture({
     name: "golden",

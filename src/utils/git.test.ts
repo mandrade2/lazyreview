@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parseDiff, parseChangedLines, getLineNumberWidth, runGit } from "./git"
+import { parseDiff, parseChangedLines, getLineNumberWidth, runGit, generateConflictDiff } from "./git"
 
 describe("parseDiff", () => {
   test("returns empty array for empty diff", () => {
@@ -220,6 +220,59 @@ export function Spinner() {`
 
     expect(removedLines).toEqual([])
     expect(changedLines).toEqual([1, 1])
+  })
+})
+
+describe("generateConflictDiff", () => {
+  test("returns empty string when there are no conflict markers", () => {
+    expect(generateConflictDiff("const a = 1\nconst b = 2\n")).toBe("")
+  })
+
+  test("emits conflict block lines as additions with surrounding context", () => {
+    const content = `export function greet(name: string): string {
+<<<<<<< HEAD
+  return \`Hola, \${name}!\`
+=======
+  return \`Bonjour, \${name}!\`
+>>>>>>> feature
+}
+`
+    const diff = generateConflictDiff(content)
+    const parsed = parseDiff(diff)
+
+    const additions = parsed.filter((line) => line.type === "addition")
+    expect(additions.map((line) => line.content)).toEqual([
+      "<<<<<<< HEAD",
+      "  return `Hola, ${name}!`",
+      "=======",
+      "  return `Bonjour, ${name}!`",
+      ">>>>>>> feature",
+    ])
+
+    // The whole file is one hunk: 3 context lines (including the trailing
+    // empty line from the final newline) + 5 conflict lines.
+    expect(parsed[0]).toEqual({ type: "header", content: "@@ -1,3 +1,8 @@" })
+    expect(parsed.filter((line) => line.type === "context")).toHaveLength(3)
+
+    const { changedLines, addedLines } = parseChangedLines(diff)
+    expect(addedLines).toEqual([1, 2, 3, 4, 5])
+    expect(changedLines).toEqual([1, 2, 3, 4, 5])
+  })
+
+  test("splits distant conflict blocks into separate hunks", () => {
+    const lines = [
+      "<<<<<<< HEAD",
+      "ours",
+      "=======",
+      "theirs",
+      ">>>>>>> feature",
+    ]
+    for (let i = 0; i < 20; i++) lines.push(`filler ${i}`)
+    lines.push("<<<<<<< HEAD", "ours2", "=======", "theirs2", ">>>>>>> feature")
+    const diff = generateConflictDiff(lines.join("\n") + "\n")
+
+    const headers = parseDiff(diff).filter((line) => line.type === "header")
+    expect(headers).toHaveLength(2)
   })
 })
 

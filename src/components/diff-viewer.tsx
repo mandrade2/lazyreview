@@ -24,7 +24,46 @@ interface DisplayRow {
   isHeader: boolean
   isAdded: boolean
   isRemoved: boolean
+  conflictRole: ConflictRole
   oldLineNumber?: number // for inline removed lines in full view
+}
+
+type ConflictRole = "none" | "marker" | "ours" | "base" | "theirs"
+
+// Scan line contents to classify conflict-marker lines and which side of a
+// conflict block each line belongs to. Only used for conflicted files.
+function createConflictScanner() {
+  let state: "normal" | "ours" | "base" | "theirs" = "normal"
+  const scan = (content: string): ConflictRole => {
+    if (state === "normal" && content.startsWith("<<<<<<<")) {
+      state = "ours"
+      return "marker"
+    }
+    if (state === "ours" && content.startsWith("|||||||")) {
+      state = "base"
+      return "marker"
+    }
+    if ((state === "ours" || state === "base") && content.startsWith("=======")) {
+      state = "theirs"
+      return "marker"
+    }
+    if (state !== "normal" && content.startsWith(">>>>>>>")) {
+      state = "normal"
+      return "marker"
+    }
+    return state === "normal" ? "none" : state
+  }
+  scan.reset = () => {
+    state = "normal"
+  }
+  return scan
+}
+
+const conflictBackgrounds: Record<Exclude<ConflictRole, "none">, string> = {
+  marker: "#3b2d5c",
+  ours: "#12261c",
+  base: "#1c2128",
+  theirs: "#2a1a3f",
 }
 
 interface RemovedLine {
@@ -98,6 +137,7 @@ function getStatusLabel(status: FileChange["status"]): string {
     case "deleted": return "Deleted"
     case "renamed": return "Renamed"
     case "untracked": return "Untracked"
+    case "conflicted": return "Conflicted"
   }
 }
 
@@ -108,6 +148,7 @@ function getStatusColor(status: FileChange["status"]): string {
     case "deleted": return "#f85149"
     case "renamed": return "#a371f7"
     case "untracked": return "#8b949e"
+    case "conflicted": return "#f0883e"
   }
 }
 
@@ -248,6 +289,8 @@ export function DiffViewer(props: DiffViewerProps) {
       const removedByPosition = props.file.status === "deleted"
         ? new Map<number, RemovedLine[]>()
         : buildRemovedLinesByPosition(diffLines())
+      const scanConflict = createConflictScanner()
+      const isConflicted = props.file.status === "conflicted"
 
       for (let i = 0; i < lines.length; i++) {
         logicalStartRows.push(rows.length)
@@ -267,6 +310,7 @@ export function DiffViewer(props: DiffViewerProps) {
                 isHeader: false,
                 isAdded: false,
                 isRemoved: true,
+                conflictRole: "none",
                 oldLineNumber: removedLine.oldLineNumber,
               })
             }
@@ -277,6 +321,9 @@ export function DiffViewer(props: DiffViewerProps) {
         const wrapped = wrapTokens(tokens, width)
         const isAdded = !!change?.added.has(i)
         const isRemoved = !!change?.removed.has(i)
+        const conflictRole = isConflicted
+          ? scanConflict(tokens.map((token) => token.content).join(""))
+          : "none"
 
         for (let r = 0; r < wrapped.length; r++) {
           rows.push({
@@ -286,11 +333,14 @@ export function DiffViewer(props: DiffViewerProps) {
             isHeader: false,
             isAdded,
             isRemoved,
+            conflictRole,
           })
         }
       }
     } else {
       const lines = highlightedDiffLines()
+      const scanConflict = createConflictScanner()
+      const isConflicted = props.file.status === "conflicted"
 
       for (let i = 0; i < lines.length; i++) {
         logicalStartRows.push(rows.length)
@@ -299,6 +349,10 @@ export function DiffViewer(props: DiffViewerProps) {
         const isHeader = item.line.type === "header"
         const isAdded = item.line.type === "addition"
         const isRemoved = item.line.type === "deletion"
+        if (isHeader) scanConflict.reset()
+        const conflictRole = isConflicted && !isHeader
+          ? scanConflict(item.line.content)
+          : "none"
 
         for (let r = 0; r < wrapped.length; r++) {
           rows.push({
@@ -312,6 +366,7 @@ export function DiffViewer(props: DiffViewerProps) {
             isHeader,
             isAdded,
             isRemoved,
+            conflictRole,
           })
         }
       }
@@ -425,38 +480,50 @@ export function DiffViewer(props: DiffViewerProps) {
           <Index each={visibleRows()}>
             {(item) => {
               const lineBg = () => props.showLineBg !== false
+              const conflictBg = (): string | null => item().conflictRole !== "none"
+                ? conflictBackgrounds[item().conflictRole as Exclude<ConflictRole, "none">]
+                : null
+              const isConflictMarker = () => item().conflictRole === "marker"
 
-              const outerBg = () => item().isAdded && lineBg()
-                ? "#1a2f1a"
-                : item().isRemoved && lineBg()
-                  ? "#2f1a1a"
-                  : item().isHeader
-                    ? "#21262d"
-                    : "#0d1117"
+              const outerBg = () => {
+                const conflict = lineBg() ? conflictBg() : null
+                return conflict ?? (item().isAdded && lineBg()
+                  ? "#1a2f1a"
+                  : item().isRemoved && lineBg()
+                    ? "#2f1a1a"
+                    : item().isHeader
+                      ? "#21262d"
+                      : "#0d1117")
+              }
 
-              const gutterBg = () => item().isAdded
-                ? "#1a2f1a"
-                : item().isRemoved
-                  ? "#2f1a1a"
-                  : item().isHeader
-                    ? "#21262d"
-                    : "#161b22"
-
-              const lineNumberFg = () => item().isHeader
-                ? "#8b949e"
-                : item().isAdded
-                  ? "#3fb950"
+              const gutterBg = () => conflictBg()
+                ?? (item().isAdded
+                  ? "#1a2f1a"
                   : item().isRemoved
-                    ? "#f85149"
-                    : "#484f58"
+                    ? "#2f1a1a"
+                    : item().isHeader
+                      ? "#21262d"
+                      : "#161b22")
 
-              const indicatorFg = () => item().isHeader
-                ? "#d29922"
-                : item().isAdded
-                  ? "#3fb950"
-                  : item().isRemoved
-                    ? "#f85149"
-                    : "#0d1117"
+              const lineNumberFg = () => isConflictMarker()
+                ? "#d2a8ff"
+                : item().isHeader
+                  ? "#8b949e"
+                  : item().isAdded
+                    ? "#3fb950"
+                    : item().isRemoved
+                      ? "#f85149"
+                      : "#484f58"
+
+              const indicatorFg = () => isConflictMarker()
+                ? "#d2a8ff"
+                : item().isHeader
+                  ? "#d29922"
+                  : item().isAdded
+                    ? "#3fb950"
+                    : item().isRemoved
+                      ? "#f85149"
+                      : "#0d1117"
 
               const lineNumberText = () => {
                 const num = item().lineNumber
@@ -506,8 +573,8 @@ export function DiffViewer(props: DiffViewerProps) {
                       {(token) => (
                         <span
                           style={{
-                            fg: item().isHeader ? "#8b949e" : token().color,
-                            bold: token().bold,
+                            fg: isConflictMarker() ? "#d2a8ff" : item().isHeader ? "#8b949e" : token().color,
+                            bold: token().bold || isConflictMarker(),
                             italic: token().italic,
                             dim: token().dim,
                           }}

@@ -18,7 +18,7 @@ export interface BranchInfo {
 
 export interface FileChange {
   path: string
-  status: "added" | "modified" | "deleted" | "renamed" | "untracked"
+  status: "added" | "modified" | "deleted" | "renamed" | "untracked" | "conflicted"
   oldPath?: string // for renamed files
   additions: number
   deletions: number
@@ -199,6 +199,65 @@ function generateUnifiedDiff(filePath: string, content: string): string {
   return diffLines.join("\n")
 }
 
+// Unmerged porcelain status codes (both sides changed in conflicting ways)
+const unmergedStatusCodes = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"])
+
+// Generate a synthetic unified diff for a conflicted file so conflict blocks
+// are visible in diff mode. Lines inside a conflict block (markers and both
+// sides) are emitted as additions; surrounding lines are context. Unmerged
+// paths have no staged diff and `git diff` emits a combined diff (diff --cc)
+// that doesn't parse as a normal unified diff, hence the synthetic version.
+export function generateConflictDiff(content: string): string {
+  const lines = content.split("\n")
+  const conflict = new Array<boolean>(lines.length).fill(false)
+  let inBlock = false
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    if (line.startsWith("<<<<<<<")) inBlock = true
+    if (inBlock) conflict[i] = true
+    if (line.startsWith(">>>>>>>")) inBlock = false
+  }
+
+  const contextLines = 3
+  const diffLines: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    if (!conflict[i]) {
+      i++
+      continue
+    }
+
+    const hunkStart = Math.max(0, i - contextLines)
+    let lastConflict = i
+    let j = i + 1
+    while (j < lines.length) {
+      if (conflict[j]) {
+        lastConflict = j
+        j++
+      } else if (j - lastConflict <= contextLines * 2) {
+        j++
+      } else {
+        break
+      }
+    }
+    const hunkEnd = Math.min(lines.length - 1, lastConflict + contextLines)
+
+    let oldCount = 0
+    for (let k = hunkStart; k <= hunkEnd; k++) {
+      if (!conflict[k]) oldCount++
+    }
+    const newCount = hunkEnd - hunkStart + 1
+    diffLines.push(`@@ -${hunkStart + 1},${oldCount} +${hunkStart + 1},${newCount} @@`)
+    for (let k = hunkStart; k <= hunkEnd; k++) {
+      diffLines.push(`${conflict[k] ? "+" : " "}${lines[k]}`)
+    }
+
+    i = hunkEnd + 1
+  }
+
+  return diffLines.join("\n")
+}
+
 interface ParsedChanges {
   changedLines: number[]
   addedLines: number[]
@@ -281,7 +340,9 @@ export async function getGitChanges(): Promise<FileChange[]> {
     const staged = statusCode[0]
     const unstaged = statusCode[1]
     
-    if (staged === "A" || unstaged === "A") {
+    if (unmergedStatusCodes.has(statusCode)) {
+      status = "conflicted"
+    } else if (staged === "A" || unstaged === "A") {
       status = "added"
     } else if (staged === "D" || unstaged === "D") {
       status = "deleted"
@@ -331,12 +392,14 @@ export async function getGitChanges(): Promise<FileChange[]> {
           removedLines.add(i)
         }
       } else {
-        // For modified/added/renamed files - get current content
+        // For modified/added/renamed/conflicted files - get current content
         content = await readFileContent(filePath)
         
-        // For renamed files, include both old and new paths so git reports the
-        // rename metadata instead of showing the new path as a new file.
-        if (status === "renamed" && oldPath) {
+        if (status === "conflicted") {
+          // Conflicted files still contain the conflict markers in the working
+          // tree; build a synthetic diff around them.
+          diff = generateConflictDiff(content)
+        } else if (status === "renamed" && oldPath) {
           const stagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff --cached -- ${oldPath} ${filePath}`.quiet())
           const unstagedResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff -- ${oldPath} ${filePath}`.quiet())
           diff = stagedResult.stdout.toString() || unstagedResult.stdout.toString()

@@ -59,6 +59,22 @@ export function getRowBackground(line: CapturedFrame["lines"][0]): string {
   return firstSpan ? getSpanBackground(firstSpan) : "transparent"
 }
 
+// Background of the first span at or past the given column. Useful when the
+// frame is split into panels and only one side's background is relevant.
+export function getRowBackgroundFrom(
+  line: CapturedFrame["lines"][0],
+  column: number,
+): string {
+  let col = 0
+  for (const span of line.spans) {
+    if (col + span.width > column) {
+      return getSpanBackground(span)
+    }
+    col += span.width
+  }
+  return "transparent"
+}
+
 export interface FileListStats {
   status: string
   additions: number
@@ -77,7 +93,7 @@ export function extractFileListStats(
   if (!line) return null
 
   const text = lineTextUpTo(line, sidebarWidth)
-  const statusMatch = text.match(/^\s*([RAMD?])\s+/)
+  const statusMatch = text.match(/^\s*([RAMD?C])\s+/)
   const additionsMatch = text.match(/\+(\d+)\b/)
   const deletionsMatch = text.match(/-(\d+)\b/)
 
@@ -106,7 +122,8 @@ export function extractDiffHeaderStats(
       text.includes("[Modified]") ||
       text.includes("[Deleted]") ||
       text.includes("[Renamed]") ||
-      text.includes("[Untracked]")
+      text.includes("[Untracked]") ||
+      text.includes("[Conflicted]")
     )
   })
   if (!pathLine) return null
