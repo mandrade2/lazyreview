@@ -64,7 +64,7 @@ for (const item of targets) {
       outfile: `dist/${name}${ext}`,
       autoloadBunfig: false,
     },
-    entrypoints: ["./index.ts"],
+    entrypoints: ["./index.ts", "./src/workers/syntax-highlighter.ts"],
     define: {
       LAZYREVIEW_VERSION: `'${pkg.version}'`,
     },

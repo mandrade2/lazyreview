@@ -7,8 +7,7 @@ export { detectLanguage } from "./shiki"
 /**
  * Estimate how many display rows a raw line consumes when wrapped to the given
  * width. This mirrors the row count produced by `wrapTokens` for plain content.
- */
-export function estimateWrappedRows(lineLength: number, width: number): number {
+ */export function estimateWrappedRows(lineLength: number, width: number): number {
   if (width <= 0 || lineLength <= 0) return 1
   return Math.ceil(lineLength / width)
 }
@@ -103,13 +102,6 @@ interface HighlightResponse {
   result: HighlightedLine[]
 }
 
-// Compiled binaries bundle everything into a single executable and cannot spawn
-// the worker from its source path, so fall back to highlighting on the main thread.
-function isCompiledBinary(): boolean {
-  const url = import.meta.url
-  return url.includes("/$bunfs/") || url.startsWith("bun://")
-}
-
 function hashKey(content: string): string {
   return Bun.hash(content).toString(36)
 }
@@ -157,18 +149,23 @@ const pending = new Map<
   }
 >()
 
-function terminateWorker() {
+function terminateWorker(reason?: Error) {
   worker?.terminate()
   worker = null
   for (const { reject } of pending.values()) {
-    reject(new Error("Highlighter worker stopped"))
+    reject(reason ?? new Error("Highlighter worker stopped"))
   }
   pending.clear()
 }
 
+// Compiled binaries embed the worker as a separate entrypoint; inside $bunfs
+// the transpiled module carries a .js extension, and Bun resolves the .js
+// specifier to the .ts source when running from source.
+const workerUrl = new URL("../workers/syntax-highlighter.js", import.meta.url)
+
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(new URL("../workers/syntax-highlighter.ts", import.meta.url))
+    worker = new Worker(workerUrl)
     worker.unref()
 
     worker.onmessage = (event: MessageEvent<HighlightResponse>) => {
@@ -191,12 +188,12 @@ function getWorker(): Worker {
 
     worker.onmessageerror = (event) => {
       console.error("Syntax highlighter worker message error:", event)
-      terminateWorker()
+      terminateWorker(new Error("Highlighter worker crashed"))
     }
 
     worker.onerror = (event) => {
       console.error("Syntax highlighter worker error:", event)
-      terminateWorker()
+      terminateWorker(new Error("Highlighter worker crashed"))
     }
   }
   return worker
@@ -220,26 +217,13 @@ function runHighlightInWorker(
   })
 }
 
-// Files with at most this many lines are highlighted on the main thread in
-// compiled binaries. Compiled binaries cannot spawn workers, so any
-// main-thread highlighting blocks the UI. Keep this threshold low enough that
-// highlighting feels instant, and show plain text for larger files.
-const compiledBinaryThresholdLines = 500
-
-function plainTextLines(content: string): HighlightedLine[] {
-  return content.split("\n").map((line) => [{ content: line, color: "#e6edf3" }])
-}
-
 /**
  * Highlight a file's content. Returns cached results immediately when available.
  *
- * In source/dev mode all highlighting runs in a worker so the UI never blocks.
- * If the user navigates while a highlight is in flight, the worker is terminated
- * and restarted for the new selection.
- *
- * In compiled binaries workers cannot be spawned, so small files are highlighted
- * on the main thread and larger files fall back to plain text to keep the UI
- * responsive.
+ * All highlighting runs in a worker so the UI never blocks. If the user
+ * navigates while a highlight is in flight, the worker is terminated and
+ * restarted for the new selection. If the worker cannot run at all, highlighting
+ * falls back to the main thread.
  */
 export async function highlightFile(
   content: string,
@@ -263,15 +247,6 @@ export async function highlightFile(
   // mid-flight.
   if (pending.size > 0) {
     terminateWorker()
-  }
-
-  if (isCompiledBinary()) {
-    const lineCount = content.split("\n").length
-    const result = lineCount > compiledBinaryThresholdLines
-      ? plainTextLines(content)
-      : await highlightDirect(content, filePath)
-    setCached(key, result)
-    return result
   }
 
   try {
@@ -303,7 +278,7 @@ const eagerMaxLines = 2000
  * swallowed — eager loading is purely opportunistic.
  */
 export function preloadHighlight(content: string, filePath: string) {
-  if (!content || isCompiledBinary()) {
+  if (!content) {
     return
   }
 

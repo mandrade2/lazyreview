@@ -71,4 +71,18 @@ describe("highlightFile", () => {
     const colors = [...new Set(result.flat().map((token) => token.color))]
     expect(colors.length).toBeGreaterThan(1)
   })
+
+  test("returns colored tokens for large TSX files", async () => {
+    clearHighlightCache()
+    // Regression: highlighting must never gate on line count. A previous
+    // compiled-binary fallback showed plain text for files over 500 lines.
+    const lines = [`import { createSignal } from "solid-js"`, ""]
+    for (let i = 1; i <= 620; i++) {
+      lines.push(`export function bigFn${i}(a: number): number { return a + ${i} }`)
+    }
+    const result = await highlightFile(lines.join("\n"), "src/big.tsx")
+    expect(result.length).toBe(622)
+    const colors = [...new Set(result.flat().map((token) => token.color))]
+    expect(colors.length).toBeGreaterThan(1)
+  })
 })

@@ -47,6 +47,13 @@ export function lineTextFrom(
   return text
 }
 
+export function getSpanForeground(
+  span: CapturedFrame["lines"][0]["spans"][0],
+): string {
+  const [r, g, b] = span.fg.toInts()
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+}
+
 export function getSpanBackground(
   span: CapturedFrame["lines"][0]["spans"][0],
 ): string {

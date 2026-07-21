@@ -288,8 +288,65 @@ export function subtract(a: number, b: number): number {
   return fixture
 }
 
-export function buildGoldenFixture(): Promise<BuiltFixture> {
+export function buildSyntaxHighlightFixture(): Promise<BuiltFixture> {
+  const bigLines: string[] = [`import { createSignal } from "solid-js"`, ""]
+  for (let i = 1; i <= 620; i++) {
+    bigLines.push(`export function bigFn${i}(a: number): number { return a + ${i} }`)
+  }
+  const bigContent = bigLines.join("\n") + "\n"
+
   return buildFixture({
+    name: "syntax-highlight",
+    commits: [
+      {
+        message: "initial",
+        files: {
+          "src/component.tsx": `import { createSignal } from "solid-js"
+
+export function Counter() {
+  const [count, setCount] = createSignal(0)
+  return <button onClick={() => setCount((c) => c + 1)}>{count()}</button>
+}
+`,
+          "src/util.ts": `export function add(a: number, b: number): number {
+  return a + b
+}
+`,
+          "src/main.js": `export function mul(a, b) {
+  return a * b
+}
+`,
+          "src/big.tsx": bigContent,
+        },
+      },
+    ],
+    dirty: {
+      modified: {
+        "src/component.tsx": `import { createSignal } from "solid-js"
+
+export function Counter() {
+  const [count, setCount] = createSignal(1)
+  return <button onClick={() => setCount((c) => c + 2)}>{count()}</button>
+}
+`,
+        "src/util.ts": `export function add(a: number, b: number): number {
+  return a + b + 1
+}
+`,
+        "src/main.js": `export function mul(a, b) {
+  return a * b * 2
+}
+`,
+        "src/big.tsx": bigContent.replace(
+          "bigFn1(a: number): number { return a + 1 }",
+          "bigFn1(a: number): number { return a + 100 }",
+        ),
+      },
+    },
+  })
+}
+
+export function buildGoldenFixture(): Promise<BuiltFixture> {  return buildFixture({
     name: "golden",
     commits: [
       {
