@@ -6,12 +6,14 @@ export interface Settings {
   diffViewMode: "diff" | "full"
   showLineBg: boolean
   fileListViewMode: "flat" | "tree"
+  onScreenControls: boolean
 }
 
 const defaultSettings: Settings = {
   diffViewMode: "diff",
   showLineBg: true,
   fileListViewMode: "flat",
+  onScreenControls: false,
 }
 
 function getConfigPath(): string {
@@ -29,6 +31,7 @@ export async function loadSettings(): Promise<Settings> {
       diffViewMode: parsed.diffViewMode === "full" ? "full" : "diff",
       showLineBg: typeof parsed.showLineBg === "boolean" ? parsed.showLineBg : true,
       fileListViewMode: parsed.fileListViewMode === "tree" ? "tree" : "flat",
+      onScreenControls: typeof parsed.onScreenControls === "boolean" ? parsed.onScreenControls : false,
     }
   } catch {
     return defaultSettings

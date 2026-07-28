@@ -1,7 +1,14 @@
 import { For } from "solid-js"
+import { useKeyboard, useTerminalDimensions } from "@opentui/solid"
+import type { ScrollBoxRenderable } from "@opentui/core"
 
 interface HelpDialogProps {
   onClose: () => void
+  configIndex: number
+  onScreenControls: boolean
+  diffViewMode: "diff" | "full"
+  fileListViewMode: "flat" | "tree"
+  showLineBg: boolean
 }
 
 const sections = [
@@ -57,8 +64,29 @@ const sections = [
 ]
 
 export function HelpDialog(props: HelpDialogProps) {
-  const dialogWidth = 50
-  const dialogHeight = 32
+  const dimensions = useTerminalDimensions()
+  const dialogWidth = () => Math.min(64, Math.max(20, dimensions().width - 2))
+  const dialogHeight = () => Math.min(48, Math.max(10, dimensions().height - 2))
+
+  let scrollbox: ScrollBoxRenderable | undefined
+
+  const configs = () => [
+    { label: "On-screen controls", value: props.onScreenControls ? "On" : "Off" },
+    { label: "Diff view (f)", value: props.diffViewMode === "diff" ? "Diff" : "Full" },
+    { label: "File list (t)", value: props.fileListViewMode === "flat" ? "Flat" : "Tree" },
+    { label: "Line background (b)", value: props.showLineBg ? "On" : "Off" },
+  ]
+
+  // The app's keyboard handler blocks other keys while help is open, so this
+  // only needs to handle scrolling the dialog content.
+  useKeyboard((key) => {
+    if (!scrollbox) return
+    if (key.name === "j") {
+      scrollbox.scrollTop += 1
+    } else if (key.name === "k") {
+      scrollbox.scrollTop = Math.max(0, scrollbox.scrollTop - 1)
+    }
+  })
 
   return (
     <box
@@ -73,8 +101,8 @@ export function HelpDialog(props: HelpDialogProps) {
       {/* Dialog box */}
       <box
         style={{
-          width: dialogWidth,
-          height: dialogHeight,
+          width: dialogWidth(),
+          height: dialogHeight(),
           flexDirection: "column",
           backgroundColor: "#161b22",
           borderStyle: "rounded",
@@ -96,23 +124,48 @@ export function HelpDialog(props: HelpDialogProps) {
         </box>
 
         {/* Content */}
-        <box
+        <scrollbox
+          ref={(el: ScrollBoxRenderable) => { scrollbox = el }}
           style={{
             flexGrow: 1,
-            flexDirection: "column",
             paddingLeft: 2,
             paddingRight: 2,
             paddingTop: 1,
           }}
         >
-          <text style={{ fg: "#8b949e" }}>
-            A terminal UI for reviewing git changes with inline diffs.
-          </text>
-          <text> </text>
+          <box style={{ flexShrink: 0, flexDirection: "column" }}>
+            <text style={{ fg: "#8b949e" }}>
+              A terminal UI for reviewing git changes with inline diffs.
+            </text>
+            <text> </text>
+          </box>
+
+          <box style={{ flexDirection: "column", marginBottom: 1, flexShrink: 0 }}>
+            <text style={{ fg: "#58a6ff" }}>
+              <b>Configs</b>
+            </text>
+            <For each={configs()}>
+              {(config, index) => (
+                <box
+                  style={{
+                    flexDirection: "row",
+                    backgroundColor: index() === props.configIndex ? "#21262d" : undefined,
+                  }}
+                >
+                  <box style={{ width: 22, flexShrink: 0 }}>
+                    <text style={{ fg: index() === props.configIndex ? "#58a6ff" : "#e6edf3" }}>
+                      {config.label}
+                    </text>
+                  </box>
+                  <text style={{ fg: "#d29922" }}>{`< ${config.value} >`}</text>
+                </box>
+              )}
+            </For>
+          </box>
 
           <For each={sections}>
             {(section) => (
-              <box style={{ flexDirection: "column", marginBottom: 1 }}>
+              <box style={{ flexDirection: "column", marginBottom: 1, flexShrink: 0 }}>
                 <text style={{ fg: "#58a6ff" }}>
                   <b>{section.title}</b>
                 </text>
@@ -129,7 +182,7 @@ export function HelpDialog(props: HelpDialogProps) {
               </box>
             )}
           </For>
-        </box>
+        </scrollbox>
 
         {/* Footer */}
         <box
@@ -140,7 +193,7 @@ export function HelpDialog(props: HelpDialogProps) {
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#8b949e" }}>Press ? / Esc / q to close</text>
+          <text style={{ fg: "#8b949e" }}>j/k scroll · ↑/↓ select · ←/→ change · ? / Esc / q to close</text>
         </box>
       </box>
     </box>

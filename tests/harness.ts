@@ -25,6 +25,7 @@ export interface SnapshotOptions {
 
 export interface Harness {
   send(keys: KeyToken[]): Promise<void>
+  click(x: number, y: number): Promise<void>
   snapshot(name: string, options?: SnapshotOptions): Promise<SnapshotResult>
   waitForIdle(options?: TestVisualIdleOptions): Promise<void>
   waitForFrame(
@@ -142,6 +143,10 @@ export async function createHarness(options: HarnessOptions): Promise<Harness> {
 
   return {
     send,
+    click: async (x, y) => {
+      await setup.mockMouse.click(x, y)
+      await setup.flush()
+    },
     snapshot,
     waitForIdle: (options) => setup.waitForVisualIdle(options),
     waitForFrame,

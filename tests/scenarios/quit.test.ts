@@ -17,7 +17,7 @@ test("q key quits the app and is blocked by dialogs", async () => {
   const harness = await createHarness({
     fixture: fixture.path,
     width: 120,
-    height: 24,
+    height: 50,
   })
 
   try {

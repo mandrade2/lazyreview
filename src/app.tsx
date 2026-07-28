@@ -40,6 +40,7 @@ import { openFileInOpencode } from "./utils/opencode"
 import { preloadHighlight, computeWrappedMaxScroll } from "./utils/dataloading"
 import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
+import { OnScreenControls, controlPortraitHeight, controlLandscapeWidth, type ControlKeySpec } from "./components/on-screen-controls"
 
 function truncate(str: string, maxLength: number): string {
   if (maxLength <= 0) return ""
@@ -67,6 +68,59 @@ export function App() {
     })
   })
 
+  // On-screen controls (touch devices): show touch buttons and pick layout
+  // orientation from the physical pixel size measured once at startup.
+  const [onScreenControls, setOnScreenControls] = createSignal(false)
+  const [controlsOrientation, setControlsOrientation] = createSignal<"portrait" | "landscape" | null>(null)
+
+  onMount(() => {
+    const measure = (): boolean => {
+      const res = renderer.resolution
+      if (res && res.width > 0 && res.height > 0) {
+        setControlsOrientation(res.width >= res.height ? "landscape" : "portrait")
+        return true
+      }
+      return false
+    }
+    if (measure()) return
+    let attempts = 0
+    const timer = setInterval(() => {
+      attempts++
+      if (measure() || attempts >= 10) {
+        clearInterval(timer)
+        if (controlsOrientation() === null) {
+          // Fallback: terminal cells are roughly twice as tall as wide, so
+          // width > 2 * height in cells approximates physical landscape.
+          setControlsOrientation(dimensions().width >= dimensions().height * 2 ? "landscape" : "portrait")
+        }
+      }
+    }, 100)
+    onCleanup(() => clearInterval(timer))
+  })
+
+  const showControlsRow = createMemo(() => onScreenControls() && controlsOrientation() === "portrait")
+  const showControlsColumn = createMemo(() => onScreenControls() && controlsOrientation() === "landscape")
+  const controlsColumnWidth = controlLandscapeWidth
+  const controlsRowHeight = () => controlPortraitHeight
+  // Width available to the file/commit/branch lists and diff viewer once the
+  // landscape controls column takes its share.
+  const mainAreaWidth = createMemo(() => dimensions().width - (showControlsColumn() ? controlsColumnWidth : 0))
+
+  const injectKey = (spec: ControlKeySpec) => {
+    renderer.keyInput.processParsedKey({
+      name: spec.name,
+      ctrl: false,
+      meta: false,
+      shift: spec.shift ?? false,
+      option: false,
+      sequence: spec.sequence ?? "",
+      number: false,
+      raw: spec.sequence ?? spec.name,
+      eventType: "press",
+      source: "raw",
+    })
+  }
+
   // Mode and view state
   const [mode, setMode] = createSignal<AppMode>("dirty")
   const [viewState, setViewState] = createSignal<"list" | "files">("files")
@@ -83,22 +137,24 @@ export function App() {
   const isNarrowMode = createMemo(() => dimensions().width < narrowModeThreshold)
   const sidebarWidth = createMemo(() => {
     if (isNarrowMode()) {
-      return dimensions().width
+      return mainAreaWidth()
     }
 
     return Math.max(35, Math.min(48, Math.floor(dimensions().width * 0.32)))
   })
   const diffViewerWidth = createMemo(() => {
     if (isNarrowMode()) {
-      return dimensions().width
+      return mainAreaWidth()
     }
 
-    return Math.max(1, dimensions().width - sidebarWidth())
+    return Math.max(1, mainAreaWidth() - sidebarWidth())
   })
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
   const [showHelp, setShowHelp] = createSignal(false)
+  const [helpConfigIndex, setHelpConfigIndex] = createSignal(0)
+  const helpConfigCount = 4
 
   // Reviewed files state
   const [reviewedPaths, setReviewedPaths] = createSignal<Set<string>>(new Set())
@@ -207,7 +263,7 @@ export function App() {
   const [loadingFile, setLoadingFile] = createSignal(false)
   
   // Calculate visible height for diff viewer (terminal height - app header - panel header - file header - status bar)
-  const visibleHeight = createMemo(() => dimensions().height - 5)
+  const visibleHeight = createMemo(() => dimensions().height - 5 - (showControlsRow() ? controlsRowHeight() : 0))
 
   // Clear reviewed state when loading a new set of files
   createEffect(() => {
@@ -226,6 +282,7 @@ export function App() {
       diffViewMode: diffViewMode(),
       showLineBg: showLineBg(),
       fileListViewMode: fileListViewMode(),
+      onScreenControls: onScreenControls(),
     })
   })
 
@@ -457,6 +514,7 @@ export function App() {
     setDiffViewMode(settings.diffViewMode)
     setShowLineBg(settings.showLineBg)
     setFileListViewMode(settings.fileListViewMode)
+    setOnScreenControls(settings.onScreenControls)
     setSettingsLoaded(true)
     await loadDirtyChanges()
   })()
@@ -766,6 +824,7 @@ export function App() {
 
     // Toggle help with ?
     if (key.name === "?" || key.sequence === "?") {
+      if (!showHelp()) setHelpConfigIndex(0)
       setShowHelp((h) => !h)
       return
     }
@@ -776,8 +835,28 @@ export function App() {
       return
     }
 
-    // Block all other keys while help is open
+    // Help dialog configs: up/down selects a row, left/right changes its value
     if (showHelp()) {
+      if (key.name === "up") {
+        setHelpConfigIndex(i => Math.max(0, i - 1))
+        return
+      }
+      if (key.name === "down") {
+        setHelpConfigIndex(i => Math.min(helpConfigCount - 1, i + 1))
+        return
+      }
+      if (key.name === "left" || key.name === "right" || key.name === "return" || key.name === "space") {
+        const index = helpConfigIndex()
+        if (index === 0) {
+          setOnScreenControls(v => !v)
+        } else if (index === 1) {
+          setDiffViewMode(m => (m === "diff" ? "full" : "diff"))
+        } else if (index === 2) {
+          setFileListViewMode(m => (m === "flat" ? "tree" : "flat"))
+        } else if (index === 3) {
+          setShowLineBg(v => !v)
+        }
+      }
       return
     }
 
@@ -1268,7 +1347,7 @@ export function App() {
   }
 
   const filesHeaderWidth = () =>
-    Math.max(1, (isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()) - 1)
+    Math.max(1, (isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()) - 1)
   const filesHeaderText = () => truncate(leftPanelHeader(), filesHeaderWidth())
 
   const diffHeaderWidth = () => Math.max(1, diffViewerWidth() - 1)
@@ -1342,7 +1421,7 @@ export function App() {
           <box
             onMouseScroll={handleSidebarScroll}
             style={{
-              width: isNarrowMode() || viewState() === "list" ? "100%" : sidebarWidth(),
+              width: isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth(),
               flexShrink: 0,
               flexDirection: "column",
             }}
@@ -1403,7 +1482,7 @@ export function App() {
                       commits={commits()}
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
-                      width={isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()}
+                      width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
                     />
                   </Show>
                 </Show>
@@ -1422,7 +1501,7 @@ export function App() {
                       branches={branches()}
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
-                      width={isNarrowMode() || viewState() === "list" ? dimensions().width : sidebarWidth()}
+                      width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
                     />
                   </Show>
                 </Show>
@@ -1500,8 +1579,18 @@ export function App() {
             </Show>
           </box>
         </Show>
+
+        {/* On-screen controls - right column in landscape */}
+        <Show when={showControlsColumn()}>
+          <OnScreenControls orientation="landscape" onKey={injectKey} />
+        </Show>
       </box>
-      
+
+      {/* On-screen controls - bottom row in portrait */}
+      <Show when={showControlsRow()}>
+        <OnScreenControls orientation="portrait" onKey={injectKey} />
+      </Show>
+
       <StatusBar
         mode={mode()}
         viewState={viewState()}
@@ -1522,7 +1611,14 @@ export function App() {
       />
       
       <Show when={showHelp()}>
-        <HelpDialog onClose={() => setShowHelp(false)} />
+        <HelpDialog
+          onClose={() => setShowHelp(false)}
+          configIndex={helpConfigIndex()}
+          onScreenControls={onScreenControls()}
+          diffViewMode={diffViewMode()}
+          fileListViewMode={fileListViewMode()}
+          showLineBg={showLineBg()}
+        />
       </Show>
 
       <Show when={opencodeDialogOpen()}>
