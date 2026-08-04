@@ -26,7 +26,8 @@ const sections = [
       { key: "k / ↑", desc: "Move up / scroll up" },
       { key: "g", desc: "Go to first item / top" },
       { key: "G", desc: "Go to last item / bottom" },
-      { key: "Tab / h / l", desc: "Switch between panels" },
+      { key: "Tab / S-Tab", desc: "Cycle list sections (To Review / lists)" },
+      { key: "h / l", desc: "Switch between panels" },
       { key: "Enter", desc: "Select / open diff view / toggle folder" },
       { key: "t", desc: "Toggle flat / tree file list" },
     ],
@@ -53,7 +54,9 @@ const sections = [
   {
     title: "Actions",
     keybinds: [
-      { key: "Space", desc: "Mark/unmark file or folder as reviewed" },
+      { key: "Space", desc: "Send file or folder to list 1 / back" },
+      { key: "1-9", desc: "Send file or folder to change list n" },
+      { key: "c", desc: "Commit a change list (dirty mode)" },
       { key: "e", desc: "Open file in $EDITOR" },
       { key: "o", desc: "Open file in opencode" },
       { key: "r", desc: "Refresh current view" },

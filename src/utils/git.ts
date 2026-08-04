@@ -306,29 +306,30 @@ export async function getGitChanges(): Promise<FileChange[]> {
   const gitRoot = await getGitRoot()
   
   // Get staged and unstaged changes
-  // Use -uall to show all untracked files (not just directories)
-  const statusResult = await runGit(() => Bun.$`git -C ${gitRoot} status --porcelain -uall`.text())
-  
+  // Use -uall to show all untracked files (not just directories).
+  // Use -z so paths are NUL-separated and never C-quoted (the line format
+  // quotes paths containing spaces or special characters).
+  const statusResult = await runGit(() => Bun.$`git -C ${gitRoot} status --porcelain -z -uall`.text())
+
   if (!statusResult.trim()) {
     return []
   }
-  
-  const lines = statusResult.split("\n").filter(l => l.length > 0)
-  
-  for (const line of lines) {
-    if (!line.trim()) continue
-    
-    const statusCode = line.substring(0, 2)
-    let filePath = line.substring(3)
+
+  const entries = statusResult.split("\0").filter(e => e.length > 0)
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!
+
+    const statusCode = entry.substring(0, 2)
+    let filePath = entry.substring(3)
     let oldPath: string | undefined
-    
-    // Handle renamed files (R  old -> new)
-    if (filePath.includes(" -> ")) {
-      const parts = filePath.split(" -> ")
-      oldPath = parts[0]
-      filePath = parts[1] ?? filePath
+
+    // Renames/copies: in -z mode the new path comes first and the source
+    // path follows as the next NUL-separated field.
+    if (statusCode.includes("R") || statusCode.includes("C")) {
+      oldPath = entries[++i]
     }
-    
+
     // Skip directories (they end with /)
     if (filePath.endsWith("/")) {
       continue
@@ -477,6 +478,37 @@ export async function getGitChanges(): Promise<FileChange[]> {
   }
   
   return changes
+}
+
+// Stage the given files and create a commit containing only their changes.
+// Renamed files contribute both their old and new paths so the deletion is
+// committed too. The pathspec on commit keeps unrelated staged changes out
+// of the commit.
+export async function commitFiles(
+  files: Array<{ path: string; oldPath?: string; status?: FileChange["status"] }>,
+  message: string,
+): Promise<void> {
+  const gitRoot = await getGitRoot()
+  // Deleted files are staged via rm --cached: once a deletion is already
+  // staged (git rm), the path exists in neither the working tree nor the
+  // index, so a plain add fails to match it. Same for renamed-away paths.
+  const deletedPaths = files.filter(f => f.status === "deleted").map(f => f.path)
+  const addPaths = files.filter(f => f.status !== "deleted").map(f => f.path)
+  const oldPaths = files.map(f => f.oldPath).filter((p): p is string => !!p)
+  const removedPaths = [...new Set([...deletedPaths, ...oldPaths])]
+  try {
+    if (addPaths.length > 0) {
+      await runGit(() => Bun.$`git -C ${gitRoot} add -- ${addPaths}`.quiet())
+    }
+    if (removedPaths.length > 0) {
+      await runGit(() => Bun.$`git -C ${gitRoot} rm -q --cached --ignore-unmatch -- ${removedPaths}`.quiet())
+    }
+    await runGit(() => Bun.$`git -C ${gitRoot} commit -m ${message} -- ${[...addPaths, ...removedPaths]}`.quiet())
+  } catch (e) {
+    const stderr = (e as { stderr?: unknown })?.stderr
+    const detail = stderr ? new TextDecoder().decode(stderr as Uint8Array).trim() : ""
+    throw new Error(detail || (e instanceof Error ? e.message : "Commit failed"))
+  }
 }
 
 export function parseDiff(diff: string): DiffLine[] {

@@ -34,10 +34,10 @@ test("q key quits the app and is blocked by dialogs", async () => {
 
     const helpOpenText = getSnapshotText("help-open")
     expect(helpOpenText).toContain("Actions")
-    expect(helpOpenText).toContain("Mark/unmark file or folder")
+    expect(helpOpenText).toContain("Send file or folder to list 1 / back")
 
     const helpClosedText = getSnapshotText("help-closed")
-    expect(helpClosedText).not.toContain("Mark/unmark file or folder")
+    expect(helpClosedText).not.toContain("Send file or folder to list 1 / back")
     expect(helpClosedText).toContain("To Review")
 
     const opencodeOpenText = getSnapshotText("opencode-dialog-open")

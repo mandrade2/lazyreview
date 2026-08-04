@@ -2,9 +2,14 @@ import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import type { TreeItem, TreeFolder, TreeFile } from "../utils/file-tree"
 
+export interface FileListSection {
+  number: number
+  items: TreeItem[]
+}
+
 interface FileListProps {
   toReviewItems: TreeItem[]
-  reviewedItems: TreeItem[]
+  lists: FileListSection[]
   selectedIndex: number
   focused: boolean
   width: number
@@ -216,37 +221,28 @@ export function FileList(props: FileListProps) {
   const visibleHeight = createMemo(() => dimensions().height - 5)
 
   const toReviewFileCount = () => props.toReviewItems.filter((item) => item.type === "file").length
-  const reviewedFileCount = () => props.reviewedItems.filter((item) => item.type === "file").length
+  const listFileCount = (items: TreeItem[]) => items.filter((item) => item.type === "file").length
   const hasToReview = () => toReviewFileCount() > 0
-  const hasReviewed = () => reviewedFileCount() > 0
-  const hasAnyFiles = () => hasToReview() || hasReviewed()
+  const hasAnyFiles = () => hasToReview() || props.lists.some((list) => listFileCount(list.items) > 0)
 
-  const sectionHeight = createMemo(() => {
+  // The "To Review" section always keeps its half of the screen; the numbered
+  // lists split the remaining half evenly among themselves.
+  const toReviewHeight = createMemo(() => {
+    if (!hasAnyFiles()) return 0
     return Math.max(3, Math.floor(visibleHeight() / 2))
   })
 
-  const toReviewHeight = createMemo(() => {
-    if (!hasAnyFiles()) return 0
-    return sectionHeight()
-  })
-
-  const reviewedHeight = createMemo(() => {
-    if (!hasAnyFiles()) return 0
-    return visibleHeight() - sectionHeight()
+  const listHeights = createMemo(() => {
+    if (!hasAnyFiles() || props.lists.length === 0) return [] as number[]
+    const area = visibleHeight() - toReviewHeight()
+    const base = Math.max(1, Math.floor(area / props.lists.length))
+    const remainder = Math.max(0, area - base * props.lists.length)
+    return props.lists.map((_, i) => base + (i < remainder ? 1 : 0))
   })
 
   const toReviewScrollOffset = createMemo(() => {
     const height = toReviewHeight() - 1 // minus header
     const selected = props.selectedIndex < props.toReviewItems.length ? props.selectedIndex : -1
-    if (selected < 0 || height <= 0) return 0
-    if (selected < height) return 0
-    return Math.max(0, selected - height + 1)
-  })
-
-  const reviewedScrollOffset = createMemo(() => {
-    const height = reviewedHeight() - 1 // minus header
-    const reviewedSelected = props.selectedIndex - props.toReviewItems.length
-    const selected = reviewedSelected >= 0 ? reviewedSelected : -1
     if (selected < 0 || height <= 0) return 0
     if (selected < height) return 0
     return Math.max(0, selected - height + 1)
@@ -261,17 +257,39 @@ export function FileList(props: FileListProps) {
     }))
   })
 
-  const visibleReviewedItems = createMemo(() => {
-    const start = reviewedScrollOffset()
-    const end = start + Math.max(0, reviewedHeight() - 1)
-    return props.reviewedItems.slice(start, end).map((item, i) => ({
+  // Cumulative start index of each list within the global selection index
+  const listStartIndex = (listIndex: number) => {
+    let start = props.toReviewItems.length
+    for (let i = 0; i < listIndex; i++) {
+      start += props.lists[i]?.items.length ?? 0
+    }
+    return start
+  }
+
+  const listScrollOffset = (listIndex: number) => {
+    const height = (listHeights()[listIndex] ?? 1) - 1 // minus header
+    const list = props.lists[listIndex]
+    if (!list) return 0
+    const selected = props.selectedIndex - listStartIndex(listIndex)
+    if (selected < 0 || selected >= list.items.length || height <= 0) return 0
+    if (selected < height) return 0
+    return Math.max(0, selected - height + 1)
+  }
+
+  const visibleListItems = (listIndex: number) => {
+    const list = props.lists[listIndex]
+    if (!list) return [] as Array<{ item: TreeItem; actualIndex: number }>
+    const start = listScrollOffset(listIndex)
+    const end = start + Math.max(0, (listHeights()[listIndex] ?? 1) - 1)
+    return list.items.slice(start, end).map((item, i) => ({
       item,
       actualIndex: start + i,
     }))
-  })
+  }
 
   const isToReviewSelected = (index: number) => index === props.selectedIndex
-  const isReviewedSelected = (index: number) => props.toReviewItems.length + index === props.selectedIndex
+  const isListItemSelected = (listIndex: number, index: number) =>
+    listStartIndex(listIndex) + index === props.selectedIndex
 
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
@@ -327,51 +345,58 @@ export function FileList(props: FileListProps) {
         </box>
       </Show>
 
-      {/* Already Reviewed section */}
-      <Show when={hasAnyFiles()}>
-        <box
-          style={{
-            height: 1,
-            paddingLeft: 1,
-            paddingRight: 1,
-            backgroundColor: "#21262d",
-            flexShrink: 0,
-            flexDirection: "row",
-          }}
-        >
-          <text style={{ fg: "#f0883e" }}>
-            <b>Already Reviewed</b>
-          </text>
-          <text style={{ fg: "#8b949e" }}> ({reviewedFileCount()})</text>
-        </box>
-        <box
-          style={{
-            flexDirection: "column",
-            height: Math.max(0, reviewedHeight() - 1),
-            flexShrink: 0,
-          }}
-        >
-          <Show
-            when={hasReviewed()}
-            fallback={
-              <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
-                <text style={{ fg: "#8b949e" }}>None</text>
-              </box>
-            }
-          >
-            <For each={visibleReviewedItems()}>
-              {({ item, actualIndex }) => (
-                <FileListRow
-                  item={item}
-                  isSelected={isReviewedSelected(actualIndex)}
-                  focused={props.focused}
-                  width={props.width}
-                />
-              )}
-            </For>
-          </Show>
-        </box>
-      </Show>
+      {/* Numbered change lists */}
+      <For each={props.lists}>
+        {(list, listIndex) => (
+          <>
+            <box
+              style={{
+                height: 1,
+                paddingLeft: 1,
+                paddingRight: 1,
+                backgroundColor: "#21262d",
+                flexShrink: 0,
+                flexDirection: "row",
+              }}
+            >
+              <text style={{ fg: "#58a6ff" }}>
+                <b>{`[${list.number}]`}</b>
+              </text>
+              <text style={{ fg: "#f0883e" }}>
+                <b> Reviewed</b>
+              </text>
+              <text style={{ fg: "#8b949e" }}> ({listFileCount(list.items)})</text>
+            </box>
+            <box
+              style={{
+                flexDirection: "column",
+                height: Math.max(0, (listHeights()[listIndex()] ?? 1) - 1),
+                flexShrink: 0,
+              }}
+            >
+              <Show
+                when={list.items.length > 0}
+                fallback={
+                  <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
+                    <text style={{ fg: "#8b949e" }}>None</text>
+                  </box>
+                }
+              >
+                <For each={visibleListItems(listIndex())}>
+                  {({ item, actualIndex }) => (
+                    <FileListRow
+                      item={item}
+                      isSelected={isListItemSelected(listIndex(), actualIndex)}
+                      focused={props.focused}
+                      width={props.width}
+                    />
+                  )}
+                </For>
+              </Show>
+            </box>
+          </>
+        )}
+      </For>
     </box>
   )
 }

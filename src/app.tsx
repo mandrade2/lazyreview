@@ -7,6 +7,7 @@ import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
 import { OpencodeDialog } from "./components/opencode-dialog"
+import { CommitDialog } from "./components/commit-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
 import {
@@ -19,6 +20,7 @@ import {
   getCommitChanges,
   getBranchChanges,
   loadFileDetails,
+  commitFiles,
   type FileChange,
   type AppMode,
   type CommitInfo,
@@ -34,6 +36,7 @@ import {
   collectFolderPaths,
   type TreeFolder,
   type TreeFile,
+  type TreeItem,
 } from "./utils/file-tree"
 import { openFileInEditor } from "./utils/editor"
 import { openFileInOpencode } from "./utils/opencode"
@@ -156,9 +159,10 @@ export function App() {
   const [helpConfigIndex, setHelpConfigIndex] = createSignal(0)
   const helpConfigCount = 4
 
-  // Reviewed files state
-  const [reviewedPaths, setReviewedPaths] = createSignal<Set<string>>(new Set())
-  const [reviewedOrder, setReviewedOrder] = createSignal<string[]>([])
+  // Reviewed files state: numbered change lists mapping list number -> file
+  // paths (most recently added first). List 1 is the default list that the
+  // spacebar toggles; number keys 1-9 assign files to any list.
+  const [changeLists, setChangeLists] = createSignal<Map<number, string[]>>(new Map())
   const [filesGeneration, setFilesGeneration] = createSignal(0)
 
   // Diff display mode: show diff-only (unified diff) or full file with inline highlights
@@ -193,6 +197,13 @@ export function App() {
   const [opencodePrompt, setOpencodePrompt] = createSignal("")
   const [opencodeFile, setOpencodeFile] = createSignal<FileChange | null>(null)
 
+  // Commit dialog state
+  const [commitDialogOpen, setCommitDialogOpen] = createSignal(false)
+  const [commitListNumber, setCommitListNumber] = createSignal<number | null>(null)
+  const [commitMessage, setCommitMessage] = createSignal("")
+  const [commitError, setCommitError] = createSignal<string | null>(null)
+  const [committing, setCommitting] = createSignal(false)
+
   // Clear search state (defined early for use in effects)
   const clearSearch = () => {
     setSearchMode(false)
@@ -212,21 +223,54 @@ export function App() {
   const [selectedBranch, setSelectedBranch] = createSignal<BranchInfo | null>(null)
   const [currentBranch, setCurrentBranch] = createSignal<string | null>(null)
   
-  const toReviewFiles = createMemo(() => files().filter(f => !reviewedPaths().has(f.path)))
-  const reviewedFiles = createMemo(() => {
-    const order = reviewedOrder()
+  const toReviewFiles = createMemo(() => {
+    const assigned = new Set<string>()
+    for (const paths of changeLists().values()) {
+      for (const p of paths) assigned.add(p)
+    }
+    return files().filter(f => !assigned.has(f.path))
+  })
+
+  // Reverse lookup: file path -> list number
+  const pathToList = createMemo(() => {
+    const map = new Map<string, number>()
+    for (const [num, paths] of changeLists()) {
+      for (const p of paths) map.set(p, num)
+    }
+    return map
+  })
+
+  // List numbers that currently hold at least one file, ascending
+  const activeListNumbers = createMemo(() =>
+    [...changeLists().keys()]
+      .filter(n => (changeLists().get(n)?.length ?? 0) > 0)
+      .sort((a, b) => a - b),
+  )
+
+  const listFilesMap = createMemo(() => {
     const fileMap = new Map(files().map(f => [f.path, f]))
-    return order.map(path => fileMap.get(path)).filter((f): f is FileChange => f !== undefined)
+    const result = new Map<number, FileChange[]>()
+    for (const num of activeListNumbers()) {
+      const paths = changeLists().get(num) ?? []
+      result.set(
+        num,
+        paths.map(p => fileMap.get(p)).filter((f): f is FileChange => f !== undefined),
+      )
+    }
+    return result
   })
 
   const toReviewTree = createMemo(() => buildFileTree(toReviewFiles()))
-  const reviewedTree = createMemo(() => buildFileTree(reviewedFiles()))
+  const listTrees = createMemo(() => {
+    const result = new Map<number, ReturnType<typeof buildFileTree>>()
+    for (const num of activeListNumbers()) {
+      result.set(num, buildFileTree(listFilesMap().get(num) ?? []))
+    }
+    return result
+  })
 
   const flatToReviewItems = createMemo(() =>
     toReviewFiles().map(f => ({ type: "file" as const, file: f, depth: 0 })),
-  )
-  const flatReviewedItems = createMemo(() =>
-    reviewedFiles().map(f => ({ type: "file" as const, file: f, depth: 0 })),
   )
 
   const toReviewVisibleItems = createMemo(() =>
@@ -234,13 +278,53 @@ export function App() {
       ? flattenTree(toReviewTree(), expandedFolders())
       : flatToReviewItems(),
   )
-  const reviewedVisibleItems = createMemo(() =>
-    fileListViewMode() === "tree"
-      ? flattenTree(reviewedTree(), expandedFolders())
-      : flatReviewedItems(),
-  )
 
-  const allVisibleItems = createMemo(() => [...toReviewVisibleItems(), ...reviewedVisibleItems()])
+  const listsVisibleItems = createMemo(() => {
+    const result = new Map<number, TreeItem[]>()
+    for (const num of activeListNumbers()) {
+      if (fileListViewMode() === "tree") {
+        result.set(num, flattenTree(listTrees().get(num)!, expandedFolders()))
+      } else {
+        result.set(
+          num,
+          (listFilesMap().get(num) ?? []).map(f => ({ type: "file" as const, file: f, depth: 0 })),
+        )
+      }
+    }
+    return result
+  })
+
+  // Sections passed to the FileList: list 1 is always shown (the spacebar
+  // default), higher lists appear once they hold files.
+  const fileListSections = createMemo(() => {
+    const sections: Array<{ number: number; items: TreeItem[] }> = [
+      { number: 1, items: listsVisibleItems().get(1) ?? [] },
+    ]
+    for (const num of activeListNumbers()) {
+      if (num === 1) continue
+      sections.push({ number: num, items: listsVisibleItems().get(num) ?? [] })
+    }
+    return sections
+  })
+
+  // Start index of each numbered list within the global selection index
+  const listSectionStarts = createMemo(() => {
+    const sections: Array<{ num: number; start: number; length: number }> = []
+    let offset = toReviewVisibleItems().length
+    for (const section of fileListSections()) {
+      sections.push({ num: section.number, start: offset, length: section.items.length })
+      offset += section.items.length
+    }
+    return sections
+  })
+
+  const allVisibleItems = createMemo(() => {
+    const items = [...toReviewVisibleItems()]
+    for (const section of fileListSections()) {
+      items.push(...section.items)
+    }
+    return items
+  })
   const selectedItem = createMemo(() => allVisibleItems()[selectedIndex()] ?? null)
   const selectedFile = createMemo(() => {
     const item = selectedItem()
@@ -268,8 +352,7 @@ export function App() {
   // Clear reviewed state when loading a new set of files
   createEffect(() => {
     filesGeneration() // track dependency
-    setReviewedPaths(new Set<string>())
-    setReviewedOrder([])
+    setChangeLists(new Map())
     setSelectedIndex(0)
     setScrollOffset(0)
     lastSelectedFilePath = null
@@ -741,6 +824,165 @@ export function App() {
     })
   }
 
+  // Move file paths to a change list (target null = back to "To Review").
+  // Paths are removed from every list first so a file lives in one list only.
+  const applyMove = (paths: string[], target: number | null) => {
+    setChangeLists(prev => {
+      const next = new Map<number, string[]>()
+      for (const [num, list] of prev) {
+        const filtered = list.filter(p => !paths.includes(p))
+        if (filtered.length > 0) next.set(num, filtered)
+      }
+      if (target !== null) {
+        const existing = next.get(target) ?? []
+        next.set(target, [...paths.filter(p => !existing.includes(p)), ...existing])
+      }
+      return next
+    })
+  }
+
+  // Resolve the paths affected by the current selection: the file itself, or
+  // every file under the selected folder within its own section's tree.
+  const getSelectedPaths = (): string[] => {
+    const item = selectedItem()
+    if (!item) return []
+    if (item.type === "file") return [item.file.path]
+
+    const index = selectedIndex()
+    let tree: ReturnType<typeof buildFileTree> | undefined
+    if (index < toReviewVisibleItems().length) {
+      tree = toReviewTree()
+    } else {
+      const section = listSectionStarts().find(s => index >= s.start && index < s.start + s.length)
+      tree = section ? listTrees().get(section.num) : undefined
+    }
+    if (!tree) return []
+    return getFilesInFolder(tree, item.path).map(f => f.path)
+  }
+
+  // Assign the given paths to list n. If they are already in list n, move
+  // them back to "To Review" (toggle). Keeps the selection on the next
+  // logical entry, mirroring the original spacebar behavior.
+  const handleAssignToList = (paths: string[], n: number) => {
+    if (paths.length === 0) return
+    const index = selectedIndex()
+    const toReviewLength = toReviewVisibleItems().length
+
+    if (index < toReviewLength) {
+      // From "To Review" into list n.
+      // Remember the next file by path before mutating: removing the marked
+      // paths can also remove now-empty folder rows above the next file,
+      // shifting the list by more than one row.
+      const previousItems = toReviewVisibleItems()
+      let nextFilePath: string | null = null
+      for (let i = index + 1; i < previousItems.length; i++) {
+        const nextItem = previousItems[i]
+        if (nextItem?.type === "file") {
+          nextFilePath = nextItem.file.path
+          break
+        }
+      }
+      applyMove(paths, n)
+      const nextToReviewItems = toReviewVisibleItems()
+      const nextIndex = nextFilePath === null
+        ? -1
+        : nextToReviewItems.findIndex(
+            item => item.type === "file" && item.file.path === nextFilePath,
+          )
+      if (nextIndex >= 0) {
+        setSelectedIndex(nextIndex)
+      } else if (nextToReviewItems.length > 0) {
+        // Marked the last file: select the new last file.
+        setSelectedIndex(findNearestFileIndex(nextToReviewItems, nextToReviewItems.length - 1))
+      } else {
+        setSelectedIndex(findNearestFileIndex(allVisibleItems(), 0))
+      }
+      return
+    }
+
+    // Inside a numbered list: toggle back to "To Review" if already in list
+    // n, otherwise move to list n. Selection stays within the source list.
+    const section = listSectionStarts().find(s => index >= s.start && index < s.start + s.length)
+    if (!section) return
+    const source = section.num
+    const target = source === n ? null : n
+    const indexInList = index - section.start
+    applyMove(paths, target)
+    const sourceItems = fileListSections().find(s => s.number === source)?.items ?? []
+    if (sourceItems.length > 0) {
+      const start = listSectionStarts().find(s => s.num === source)?.start ?? 0
+      setSelectedIndex(start + Math.min(indexInList, sourceItems.length - 1))
+    } else {
+      const total = allVisibleItems().length
+      setSelectedIndex(total > 0 ? Math.min(index, total - 1) : 0)
+    }
+  }
+
+  // Create a commit from the files of a change list, then clear that list.
+  const executeCommit = async () => {
+    const num = commitListNumber()
+    const message = commitMessage().trim()
+    if (num === null) return
+    if (!message) {
+      setCommitError("Commit message cannot be empty")
+      return
+    }
+    const listFiles = listFilesMap().get(num) ?? []
+    if (listFiles.length === 0) {
+      setCommitDialogOpen(false)
+      return
+    }
+    setCommitting(true)
+    setCommitError(null)
+    try {
+      await commitFiles(
+        listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status })),
+        message,
+      )
+      setChangeLists(prev => {
+        const next = new Map(prev)
+        next.delete(num)
+        return next
+      })
+      // Reload changes but keep the remaining lists intact. Await this
+      // before closing the dialog so a fast follow-up commit cannot overlap
+      // its git commands with the reload's index-refreshing status call.
+      await loadDirtyChanges(true)
+      setCommitDialogOpen(false)
+      setCommitMessage("")
+      setCommitListNumber(null)
+    } catch (e) {
+      setCommitError(e instanceof Error ? e.message : "Commit failed")
+    } finally {
+      setCommitting(false)
+    }
+  }
+
+  // Move the selection to the first file of the next/previous file list
+  // section ("To Review" and each non-empty change list), wrapping around.
+  // In tree mode the first row of a section may be a folder, so the jump
+  // targets the first available file in the hierarchy instead.
+  const cycleSection = (direction: 1 | -1) => {
+    const sections = [
+      { start: 0, length: toReviewVisibleItems().length },
+      ...listSectionStarts().map(s => ({ start: s.start, length: s.length })),
+    ].filter(s => s.length > 0)
+    if (sections.length <= 1) return
+    const index = selectedIndex()
+    const current = sections.findIndex(s => index >= s.start && index < s.start + s.length)
+    const next = sections[(Math.max(0, current) + direction + sections.length) % sections.length]
+    if (!next) return
+    const items = allVisibleItems()
+    let target = next.start
+    for (let i = next.start; i < next.start + next.length; i++) {
+      if (items[i]?.type === "file") {
+        target = i
+        break
+      }
+    }
+    setSelectedIndex(target)
+  }
+
   useKeyboard(async (key) => {
     // Quit with q or Ctrl+c. q is blocked while a dialog or search input has
     // keyboard precedence so it does not accidentally exit the app.
@@ -749,13 +991,38 @@ export function App() {
       return
     }
 
-    if (key.name === "q" && !searchMode() && !opencodeDialogOpen()) {
+    if (key.name === "q" && !searchMode() && !opencodeDialogOpen() && !commitDialogOpen()) {
       // When the help dialog is shown, q closes it instead of quitting.
       if (showHelp()) {
         setShowHelp(false)
         return
       }
       renderer.destroy()
+      return
+    }
+
+    // Commit dialog input handling
+    if (commitDialogOpen()) {
+      if (committing()) return
+      if (key.name === "escape") {
+        setCommitDialogOpen(false)
+        setCommitMessage("")
+        setCommitError(null)
+        setCommitListNumber(null)
+        return
+      }
+      if (key.name === "return") {
+        await executeCommit()
+        return
+      }
+      if (key.name === "backspace") {
+        setCommitMessage((m) => m.slice(0, -1))
+        return
+      }
+      if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+        setCommitMessage((m) => m + key.sequence)
+        return
+      }
       return
     }
 
@@ -860,96 +1127,33 @@ export function App() {
       return
     }
 
-    // Space to mark/unmark file as reviewed (only in files view)
+    // Space to move file(s) to the default change list 1 / back (only in files view)
     if (key.name === "space" && viewState() === "files" && selectedItem()) {
-      const item = selectedItem()!
+      handleAssignToList(getSelectedPaths(), 1)
+      return
+    }
 
-      if (item.type === "file") {
-        const path = item.file.path
-        const currentlyReviewed = reviewedPaths().has(path)
+    // Number keys 1-9 assign file(s) to that change list (toggles if already there)
+    const assignDigit = (() => {
+      const seq = key.sequence ?? key.name
+      return seq && /^[1-9]$/.test(seq) && !key.ctrl && !key.meta ? Number(seq) : null
+    })()
+    if (assignDigit !== null && viewState() === "files" && selectedItem()) {
+      handleAssignToList(getSelectedPaths(), assignDigit)
+      return
+    }
 
-        if (currentlyReviewed) {
-          const previousIndex = selectedIndex()
-          const previousToReviewLength = toReviewVisibleItems().length
-          setReviewedPaths(prev => {
-            const next = new Set(prev)
-            next.delete(path)
-            return next
-          })
-          setReviewedOrder(prev => prev.filter(p => p !== path))
-          const nextToReviewItems = toReviewVisibleItems()
-          const nextReviewedItems = reviewedVisibleItems()
-          const previousIndexInReviewed = previousIndex - previousToReviewLength
-          const nextReviewedIndex = Math.min(previousIndexInReviewed, nextReviewedItems.length - 1)
-          setSelectedIndex(nextReviewedItems.length > 0 ? nextToReviewItems.length + nextReviewedIndex : 0)
-        } else {
-          // Remember the next file by path before mutating: removing the
-          // marked file can also remove now-empty folder rows above the next
-          // file, shifting the list by more than one row.
-          const previousItems = toReviewVisibleItems()
-          let nextFilePath: string | null = null
-          for (let i = selectedIndex() + 1; i < previousItems.length; i++) {
-            const nextItem = previousItems[i]
-            if (nextItem?.type === "file") {
-              nextFilePath = nextItem.file.path
-              break
-            }
-          }
-          setReviewedPaths(prev => {
-            const next = new Set(prev)
-            next.add(path)
-            return next
-          })
-          setReviewedOrder(prev => [path, ...prev.filter(p => p !== path)])
-          const nextToReviewItems = toReviewVisibleItems()
-          const nextIndex = nextFilePath === null
-            ? -1
-            : nextToReviewItems.findIndex(
-                item => item.type === "file" && item.file.path === nextFilePath,
-              )
-          if (nextIndex >= 0) {
-            setSelectedIndex(nextIndex)
-          } else if (nextToReviewItems.length > 0) {
-            // Marked the last file: select the new last file.
-            setSelectedIndex(findNearestFileIndex(nextToReviewItems, nextToReviewItems.length - 1))
-          } else {
-            setSelectedIndex(findNearestFileIndex(allVisibleItems(), 0))
-          }
-        }
-      } else {
-        // Folder: mark/unmark all files under it in the current section
-        const toReviewLength = toReviewVisibleItems().length
-        const isToReview = selectedIndex() < toReviewLength
-        const tree = isToReview ? toReviewTree() : reviewedTree()
-        const paths = getFilesInFolder(tree, item.path).map(f => f.path)
-
-        if (isToReview) {
-          setReviewedPaths(prev => new Set([...prev, ...paths]))
-          setReviewedOrder(prev => [
-            ...paths.filter(p => !prev.includes(p)),
-            ...prev.filter(p => !paths.includes(p)),
-          ])
-          const previousIndex = selectedIndex()
-          const nextToReviewItems = toReviewVisibleItems()
-          const nextIndex = Math.min(previousIndex, nextToReviewItems.length - 1)
-          setSelectedIndex(nextToReviewItems.length > 0 ? nextIndex : 0)
-        } else {
-          const previousIndex = selectedIndex()
-          const previousToReviewLength = toReviewVisibleItems().length
-          setReviewedPaths(prev => {
-            const next = new Set(prev)
-            for (const path of paths) {
-              next.delete(path)
-            }
-            return next
-          })
-          setReviewedOrder(prev => prev.filter(p => !paths.includes(p)))
-          const nextToReviewItems = toReviewVisibleItems()
-          const nextReviewedItems = reviewedVisibleItems()
-          const previousIndexInReviewed = previousIndex - previousToReviewLength
-          const nextReviewedIndex = Math.min(previousIndexInReviewed, nextReviewedItems.length - 1)
-          setSelectedIndex(nextReviewedItems.length > 0 ? nextToReviewItems.length + nextReviewedIndex : 0)
-        }
+    // c - commit a change list (dirty mode only)
+    if (key.name === "c" && viewState() === "files" && mode() === "dirty") {
+      const index = selectedIndex()
+      const section = listSectionStarts().find(s => index >= s.start && index < s.start + s.length)
+      // Fall back to the only active list when the selection is in "To Review"
+      const num = section?.num ?? (activeListNumbers().length === 1 ? activeListNumbers()[0]! : null)
+      if (num !== null) {
+        setCommitListNumber(num)
+        setCommitMessage("")
+        setCommitError(null)
+        setCommitDialogOpen(true)
       }
       return
     }
@@ -1006,9 +1210,10 @@ export function App() {
       return
     }
     
-    // Tab to switch panels (only in files view)
+    // Tab cycles through the file list sections (To Review / change lists).
+    // h / l / Enter still move focus between the list and the diff panel.
     if (key.name === "tab" && viewState() === "files") {
-      setFocusedPanel(p => p === "files" ? "diff" : "files")
+      cycleSection(key.shift ? -1 : 1)
       return
     }
     
@@ -1461,7 +1666,7 @@ export function App() {
                 <Show when={mode() === "dirty" || viewState() === "files"}>
                   <FileList
                     toReviewItems={toReviewVisibleItems()}
-                    reviewedItems={reviewedVisibleItems()}
+                    lists={fileListSections()}
                     selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
                     width={sidebarWidth()}
@@ -1572,7 +1777,7 @@ export function App() {
                   totalChunks={chunkCount()}
                   viewMode={diffViewMode()}
                   showLineBg={showLineBg()}
-                  isReviewed={selectedFile() ? reviewedPaths().has(selectedFile()!.path) : false}
+                  isReviewed={selectedFile() ? pathToList().has(selectedFile()!.path) : false}
                   width={diffViewerWidth()}
                 />
               </Show>
@@ -1623,6 +1828,16 @@ export function App() {
 
       <Show when={opencodeDialogOpen()}>
         <OpencodeDialog prompt={opencodePrompt()} />
+      </Show>
+
+      <Show when={commitDialogOpen()}>
+        <CommitDialog
+          listNumber={commitListNumber() ?? 1}
+          fileCount={(commitListNumber() !== null ? changeLists().get(commitListNumber()!)?.length : 0) ?? 0}
+          message={commitMessage()}
+          error={commitError()}
+          committing={committing()}
+        />
       </Show>
     </box>
   )

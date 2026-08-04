@@ -11,51 +11,51 @@ interface OnScreenControlsProps {
   onKey: (spec: ControlKeySpec) => void
 }
 
-export const controlButtonWidth = 8
+export const controlButtonWidth = 10
 export const controlButtonHeight = 2
-// Portrait: two full-width rows (actions/paging, chunks/movement).
-// Landscape: two columns (actions/paging, chunks/movement).
-export const controlPortraitHeight = 2 * controlButtonHeight
-export const controlLandscapeWidth = 2 * controlButtonWidth + 1
+// Portrait: three full-width rows (actions, paging/chunks/movement, lists).
+// Landscape: two columns (actions, paging/chunks/movement/lists).
+export const controlPortraitHeight = 3 * controlButtonHeight
+export const controlLandscapeWidth = 2 * controlButtonWidth
 
 interface ControlButton {
   label: string
   spec: ControlKeySpec
-  group: number
 }
 
 const actions: ControlButton[] = [
-  { label: "esc", spec: { name: "escape", sequence: "\u001b" }, group: 0 },
-  { label: "m", spec: { name: "m", sequence: "m" }, group: 0 },
-  { label: "r", spec: { name: "r", sequence: "r" }, group: 0 },
-  { label: "space", spec: { name: "space", sequence: " " }, group: 0 },
-  { label: "enter", spec: { name: "return", sequence: "\r" }, group: 0 },
-  { label: "tab", spec: { name: "tab", sequence: "\t" }, group: 0 },
+  { label: "esc", spec: { name: "escape", sequence: "\u001b" } },
+  { label: "m", spec: { name: "m", sequence: "m" } },
+  { label: "r", spec: { name: "r", sequence: "r" } },
+  { label: "space", spec: { name: "space", sequence: " " } },
+  { label: "enter", spec: { name: "return", sequence: "\r" } },
+  { label: "tab", spec: { name: "tab", sequence: "\t" } },
 ]
 
 const paging: ControlButton[] = [
-  { label: "pgup", spec: { name: "pageup" }, group: 1 },
-  { label: "pgdn", spec: { name: "pagedown" }, group: 1 },
+  { label: "pgup", spec: { name: "pageup" } },
+  { label: "pgdn", spec: { name: "pagedown" } },
 ]
 
 const chunks: ControlButton[] = [
-  { label: "N", spec: { name: "n", sequence: "N", shift: true }, group: 2 },
-  { label: "n", spec: { name: "n", sequence: "n" }, group: 2 },
+  { label: "N", spec: { name: "n", sequence: "N", shift: true } },
+  { label: "n", spec: { name: "n", sequence: "n" } },
 ]
 
 const movement: ControlButton[] = [
-  { label: "↑", spec: { name: "up" }, group: 3 },
-  { label: "↓", spec: { name: "down" }, group: 3 },
+  { label: "↑", spec: { name: "up" } },
+  { label: "↓", spec: { name: "down" } },
 ]
 
-// Same grouping for both orientations: rendered as rows in portrait and as
-// columns in landscape.
-const lines: ControlButton[][] = [
-  actions,
-  [...paging, ...chunks, ...movement],
-]
+// Numbered change lists: inject the digit key so the selected file(s) get
+// assigned to that list, like the 1-9 keyboard shortcuts.
+const listButtons = (count: number): ControlButton[] =>
+  Array.from({ length: count }, (_, i) => {
+    const digit = String(i + 1)
+    return { label: digit, spec: { name: digit, sequence: digit } }
+  })
 
-function ControlButton(props: { button: ControlButton; stretch: boolean; onKey: (spec: ControlKeySpec) => void }) {
+function ControlButton(props: { button: ControlButton; shade: number; stretch: boolean; onKey: (spec: ControlKeySpec) => void }) {
   return (
     <box
       onMouseDown={() => props.onKey(props.button.spec)}
@@ -65,7 +65,7 @@ function ControlButton(props: { button: ControlButton; stretch: boolean; onKey: 
         flexBasis: props.stretch ? 1 : undefined,
         height: controlButtonHeight,
         flexShrink: 0,
-        backgroundColor: props.button.group % 2 === 0 ? "#21262d" : "#161b22",
+        backgroundColor: props.shade % 2 === 0 ? "#21262d" : "#30363d",
         justifyContent: "center",
         alignItems: "center",
       }}
@@ -77,30 +77,59 @@ function ControlButton(props: { button: ControlButton; stretch: boolean; onKey: 
 
 export function OnScreenControls(props: OnScreenControlsProps) {
   const isRow = () => props.orientation === "portrait"
+  // Both orientations stack rows: actions on top, navigation in the middle,
+  // list numbers at the bottom. Portrait rows stretch full width in three
+  // rows of five; landscape rows hold two fixed-width buttons inside the
+  // right-side column.
+  const lines = () => {
+    if (isRow()) {
+      return [
+        [actions[0]!, actions[1]!, actions[2]!, chunks[0]!, chunks[1]!],
+        [actions[5]!, actions[3]!, actions[4]!, paging[0]!, paging[1]!],
+        [movement[0]!, movement[1]!, ...listButtons(3)],
+      ]
+    }
+    return [
+      [actions[0]!, actions[1]!],
+      [actions[2]!, actions[3]!],
+      [actions[4]!, actions[5]!],
+      [paging[0]!, paging[1]!],
+      [chunks[0]!, chunks[1]!],
+      [movement[0]!, movement[1]!],
+      [listButtons(4)[0]!, listButtons(4)[1]!],
+      [listButtons(4)[2]!, listButtons(4)[3]!],
+    ]
+  }
 
   return (
     <box
       style={{
-        flexDirection: isRow() ? "column" : "row",
+        flexDirection: "column",
         flexShrink: 0,
         width: isRow() ? "100%" : controlLandscapeWidth,
         height: isRow() ? controlPortraitHeight : "100%",
         overflow: "hidden",
         backgroundColor: "#0d1117",
-        justifyContent: isRow() ? undefined : "flex-end",
       }}
     >
-      <For each={lines}>
-        {(line) => (
+      <For each={lines()}>
+        {(line, lineIndex) => (
           <box
             style={{
-              flexDirection: isRow() ? "row" : "column",
+              flexDirection: "row",
               flexShrink: 0,
               width: isRow() ? "100%" : undefined,
             }}
           >
             <For each={line}>
-              {(button) => <ControlButton button={button} stretch={isRow()} onKey={props.onKey} />}
+              {(button, buttonIndex) => (
+                <ControlButton
+                  button={button}
+                  shade={lineIndex() + buttonIndex()}
+                  stretch={isRow()}
+                  onKey={props.onKey}
+                />
+              )}
             </For>
           </box>
         )}
