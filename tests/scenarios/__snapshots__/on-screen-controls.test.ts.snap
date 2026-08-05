@@ -1,0 +1,7509 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`on-screen controls toggle from help and click buttons (landscape): controls-column-spans 1`] = `
+{
+  "cols": 120,
+  "cursor": [
+    1,
+    1,
+  ],
+  "lines": [
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "LazyReview",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                     ",
+          "width": 37,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[Dirty]",
+          "width": 7,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              110,
+              118,
+              129,
+              255,
+            ],
+          },
+          "text": " Commit Branch",
+          "width": 14,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                     ",
+          "width": 37,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "m:mode ?:help",
+          "width": 13,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "FILES (7)",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                            ",
+          "width": 28,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "DIFF",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                            ",
+          "width": 60,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "esc",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "m",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              240,
+              136,
+              62,
+              255,
+            ],
+          },
+          "text": "To Review",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": " (7)",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                         ",
+          "width": 25,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "src/app.config.ts",
+          "width": 17,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                  ",
+          "width": 18,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              163,
+              113,
+              247,
+              255,
+            ],
+          },
+          "text": " [Renamed]",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              240,
+              136,
+              62,
+              255,
+            ],
+          },
+          "text": " [Not Reviewed]",
+          "width": 15,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "           ",
+          "width": 11,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              163,
+              113,
+              247,
+              255,
+            ],
+          },
+          "text": "R ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "app.config.ts",
+          "width": 13,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                  ",
+          "width": 18,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": "+0",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -0",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": " | Full 1/5",
+          "width": 11,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                             ",
+          "width": 45,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "r",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "space",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": "A ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/components/",
+          "width": 15,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "counter.tsx",
+          "width": 11,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +11",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              72,
+              79,
+              88,
+              255,
+            ],
+          },
+          "text": "  1",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              249,
+              117,
+              131,
+              255,
+            ],
+          },
+          "text": "export",
+          "width": 6,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              249,
+              117,
+              131,
+              255,
+            ],
+          },
+          "text": "const",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              121,
+              184,
+              255,
+              255,
+            ],
+          },
+          "text": "config",
+          "width": 6,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              249,
+              117,
+              131,
+              255,
+            ],
+          },
+          "text": "=",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": " {",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                  ",
+          "width": 34,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "index.ts",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                ",
+          "width": 16,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +7",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -2",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              72,
+              79,
+              88,
+              255,
+            ],
+          },
+          "text": "  2",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": "  name: ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              158,
+              203,
+              255,
+              255,
+            ],
+          },
+          "text": ""world"",
+          "width": 7,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": ",",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                         ",
+          "width": 41,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "enter",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "tab",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": "D ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "legacy.ts",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                  ",
+          "width": 18,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -3",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              72,
+              79,
+              88,
+              255,
+            ],
+          },
+          "text": "  3",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": "  debug: ",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              121,
+              184,
+              255,
+              255,
+            ],
+          },
+          "text": "false",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": ",",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                          ",
+          "width": 42,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "spinner.ts",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                 ",
+          "width": 17,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -4",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              72,
+              79,
+              88,
+              255,
+            ],
+          },
+          "text": "  4",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              225,
+              228,
+              232,
+              255,
+            ],
+          },
+          "text": "}",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                        ",
+          "width": 56,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "pgup",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "pgdn",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "utils.ts",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                   ",
+          "width": 19,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +8",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              72,
+              79,
+              88,
+              255,
+            ],
+          },
+          "text": "  5",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                         ",
+          "width": 57,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "? docs/",
+          "width": 7,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "guide.md",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                  ",
+          "width": 18,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +4",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                               ",
+          "width": 63,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "N",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "n",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                    ",
+          "width": 100,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[1]",
+          "width": 3,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              240,
+              136,
+              62,
+              255,
+            ],
+          },
+          "text": " Reviewed",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": " (0)",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                     ",
+          "width": 21,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                              ",
+          "width": 62,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "↑",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "↓",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                    ",
+          "width": 100,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "None",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                               ",
+          "width": 95,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "1",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "2",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                    ",
+          "width": 100,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                    ",
+          "width": 100,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "3",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "4",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                    ",
+          "width": 100,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "          ",
+          "width": 10,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                                                                                                        ",
+          "width": 120,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[Files] Diff",
+          "width": 12,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "1/7",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "...n/N:chunk f:diff t:tree b:bg- /:search enter:view e:edit o:opencode r:refresh m:mode ?:help q:quit",
+          "width": 101,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+  ],
+  "rows": 24,
+}
+`;
+
+exports[`on-screen controls render as a bottom row in portrait: controls-row-spans 1`] = `
+{
+  "cols": 40,
+  "cursor": [
+    1,
+    1,
+  ],
+  "lines": [
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "LazyRevi",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[Dirty",
+          "width": 6,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              110,
+              118,
+              129,
+              255,
+            ],
+          },
+          "text": "CommitBranc",
+          "width": 11,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "help",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "         ",
+          "width": 9,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "FILES (7)",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                              ",
+          "width": 30,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              240,
+              136,
+              62,
+              255,
+            ],
+          },
+          "text": "To Review",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": " (7)",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                          ",
+          "width": 26,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              163,
+              113,
+              247,
+              255,
+            ],
+          },
+          "text": "R ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "app.config.ts",
+          "width": 13,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              28,
+              58,
+              101,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                    ",
+          "width": 20,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": "A ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/components/",
+          "width": 15,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "counter.tsx",
+          "width": 11,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "      ",
+          "width": 6,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +11",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "index.ts",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                  ",
+          "width": 18,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +7",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -2",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": "D ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "legacy.ts",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                    ",
+          "width": 20,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -3",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "spinner.ts",
+          "width": 10,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                   ",
+          "width": 19,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              248,
+              81,
+              73,
+              255,
+            ],
+          },
+          "text": " -4",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              210,
+              153,
+              34,
+              255,
+            ],
+          },
+          "text": "M ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "src/",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "utils.ts",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                     ",
+          "width": 21,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +8",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "? docs/",
+          "width": 7,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "guide.md",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                    ",
+          "width": 20,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              63,
+              185,
+              80,
+              255,
+            ],
+          },
+          "text": " +4",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[1]",
+          "width": 3,
+        },
+        {
+          "attributes": 1,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              240,
+              136,
+              62,
+              255,
+            ],
+          },
+          "text": " Reviewed",
+          "width": 9,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": " (0)",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                       ",
+          "width": 23,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "None",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                   ",
+          "width": 35,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "esc",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "m",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "r",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "N",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "n",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "tab",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "space",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "enter",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "pgup",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "pgdn",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "  ",
+          "width": 2,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "↑",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "↓",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "1",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "2",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "   ",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "3",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "        ",
+          "width": 8,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              88,
+              166,
+              255,
+              255,
+            ],
+          },
+          "text": "[Files] Diff",
+          "width": 12,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "1/7",
+          "width": 3,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              139,
+              148,
+              158,
+              255,
+            ],
+          },
+          "text": "...mode ?:help q:quit",
+          "width": 21,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              22,
+              27,
+              34,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": " ",
+          "width": 1,
+        },
+      ],
+    },
+  ],
+  "rows": 30,
+}
+`;

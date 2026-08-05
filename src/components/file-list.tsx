@@ -225,15 +225,12 @@ export function FileList(props: FileListProps) {
   const hasToReview = () => toReviewFileCount() > 0
   const hasAnyFiles = () => hasToReview() || props.lists.some((list) => listFileCount(list.items) > 0)
 
-  // The "To Review" section always keeps its half of the screen; the numbered
-  // lists split the remaining half evenly among themselves.
-  const toReviewHeight = createMemo(() => {
-    if (!hasAnyFiles()) return 0
-    return Math.max(3, Math.floor(visibleHeight() / 2))
-  })
+  // The "To Review" section always keeps its half of the screen, even when
+  // empty; the numbered lists split the remaining half evenly among themselves.
+  const toReviewHeight = createMemo(() => Math.max(3, Math.floor(visibleHeight() / 2)))
 
   const listHeights = createMemo(() => {
-    if (!hasAnyFiles() || props.lists.length === 0) return [] as number[]
+    if (props.lists.length === 0) return [] as number[]
     const area = visibleHeight() - toReviewHeight()
     const base = Math.max(1, Math.floor(area / props.lists.length))
     const remainder = Math.max(0, area - base * props.lists.length)
@@ -293,57 +290,49 @@ export function FileList(props: FileListProps) {
 
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
-      <Show when={!hasAnyFiles()}>
-        <box style={{ padding: 1 }}>
-          <text style={{ fg: "#8b949e" }}>No changes</text>
-        </box>
-      </Show>
-
       {/* To Review section */}
-      <Show when={hasAnyFiles()}>
-        <box
-          style={{
-            height: 1,
-            paddingLeft: 1,
-            paddingRight: 1,
-            backgroundColor: "#21262d",
-            flexShrink: 0,
-            flexDirection: "row",
-          }}
+      <box
+        style={{
+          height: 1,
+          paddingLeft: 1,
+          paddingRight: 1,
+          backgroundColor: "#21262d",
+          flexShrink: 0,
+          flexDirection: "row",
+        }}
+      >
+        <text style={{ fg: "#f0883e" }}>
+          <b>To Review</b>
+        </text>
+        <text style={{ fg: "#8b949e" }}> ({toReviewFileCount()})</text>
+      </box>
+      <box
+        style={{
+          flexDirection: "column",
+          height: Math.max(0, toReviewHeight() - 1),
+          flexShrink: 0,
+        }}
+      >
+        <Show
+          when={hasToReview()}
+          fallback={
+            <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
+              <text style={{ fg: "#8b949e" }}>{hasAnyFiles() ? "None" : "No changes"}</text>
+            </box>
+          }
         >
-          <text style={{ fg: "#f0883e" }}>
-            <b>To Review</b>
-          </text>
-          <text style={{ fg: "#8b949e" }}> ({toReviewFileCount()})</text>
-        </box>
-        <box
-          style={{
-            flexDirection: "column",
-            height: Math.max(0, toReviewHeight() - 1),
-            flexShrink: 0,
-          }}
-        >
-          <Show
-            when={hasToReview()}
-            fallback={
-              <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
-                <text style={{ fg: "#8b949e" }}>None</text>
-              </box>
-            }
-          >
-            <For each={visibleToReviewItems()}>
-              {({ item, actualIndex }) => (
-                <FileListRow
-                  item={item}
-                  isSelected={isToReviewSelected(actualIndex)}
-                  focused={props.focused}
-                  width={props.width}
-                />
-              )}
-            </For>
-          </Show>
-        </box>
-      </Show>
+          <For each={visibleToReviewItems()}>
+            {({ item, actualIndex }) => (
+              <FileListRow
+                item={item}
+                isSelected={isToReviewSelected(actualIndex)}
+                focused={props.focused}
+                width={props.width}
+              />
+            )}
+          </For>
+        </Show>
+      </box>
 
       {/* Numbered change lists */}
       <For each={props.lists}>
