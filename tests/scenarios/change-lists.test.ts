@@ -66,6 +66,64 @@ test("tab cycling in tree mode lands on the first file, not a folder", async () 
   }
 })
 
+test("assigning a folder keeps the selection on the next logical item", async () => {
+  const configDir = join(tmpdir(), `lazyreview-folder-assign-config-${Date.now()}`)
+  await mkdir(configDir, { recursive: true })
+  const originalXdg = process.env.XDG_CONFIG_HOME
+  process.env.XDG_CONFIG_HOME = configDir
+
+  const fixture = await buildFixture({
+    name: "folder-assign",
+    commits: [
+      {
+        message: "initial",
+        files: {
+          "src/a.ts": "export const a = 1\n",
+          "src/b.ts": "export const b = 1\n",
+          "x.ts": "export const x = 1\n",
+          "y.ts": "export const y = 1\n",
+        },
+      },
+    ],
+    dirty: {
+      modified: {
+        "src/a.ts": "export const a = 2\n",
+        "src/b.ts": "export const b = 2\n",
+        "x.ts": "export const x = 2\n",
+        "y.ts": "export const y = 2\n",
+      },
+    },
+  })
+  const harness = await createHarness({
+    fixture: fixture.path,
+    width: 80,
+    height: 24,
+  })
+
+  try {
+    await harness.waitForFrame((frame) => frame.includes("To Review (4)"))
+
+    // Tree mode, jump to the top: the src folder is selected (1/5 rows).
+    await harness.send(["t"])
+    await harness.waitForFrame((frame) => frame.includes("- src"))
+    await harness.send(["g"])
+    await harness.waitForFrame((frame) => frame.includes("1/5"))
+
+    // Assign the whole folder to list 1. The selection must move to x.ts
+    // (the next row after the folder), not to the last row in the list.
+    await harness.send([" "])
+    await harness.waitForFrame((frame) => frame.includes("[1] Reviewed (2)"))
+    await harness.waitForFrame(
+      (frame) => frame.includes("1/5") && frame.includes("export const x = 2"),
+    )
+  } finally {
+    await harness.destroy()
+    await fixture.cleanup()
+    await rm(configDir, { recursive: true, force: true })
+    process.env.XDG_CONFIG_HOME = originalXdg
+  }
+})
+
 test("numbered change lists and commit flow", async () => {
   const configDir = join(tmpdir(), `lazyreview-change-lists-config-${Date.now()}`)
   await mkdir(configDir, { recursive: true })

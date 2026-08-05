@@ -4,6 +4,12 @@ import { type FileChange } from "../utils/git"
 import { highlightFile, type HighlightedLine, wrapTokens } from "../utils/dataloading"
 import { parseDiff, getLineNumberWidth, type DiffLine as ParsedDiffLine } from "../utils/git"
 
+export interface DiffLayoutInfo {
+  logicalStartRows: number[]
+  totalRows: number
+  viewportHeight: number
+}
+
 interface DiffViewerProps {
   file: FileChange
   focused: boolean
@@ -15,6 +21,8 @@ interface DiffViewerProps {
   showLineBg?: boolean
   isReviewed?: boolean
   width: number
+  subRowOffset?: number // display rows scrolled past within the top logical line
+  onLayoutChange?: (layout: DiffLayoutInfo) => void
 }
 
 interface DisplayRow {
@@ -376,6 +384,18 @@ export function DiffViewer(props: DiffViewerProps) {
     return { rows, logicalStartRows }
   })
 
+  // Report the wrapped layout so the parent can scroll by display rows,
+  // which keeps content reachable when a single logical line wraps taller
+  // than the viewport in narrow panes.
+  createEffect(() => {
+    const { logicalStartRows } = wrapData()
+    props.onLayoutChange?.({
+      logicalStartRows,
+      totalRows: logicalStartRows[logicalStartRows.length - 1] ?? 0,
+      viewportHeight: visibleHeight(),
+    })
+  })
+
   // Determine which display rows are visible based on the logical scroll offset.
   const visibleRows = createMemo(() => {
     const { rows, logicalStartRows } = wrapData()
@@ -393,7 +413,10 @@ export function DiffViewer(props: DiffViewerProps) {
     for (let i = startLine; i < totalLogical && rowCount < height; i++) {
       const lineStart = logicalStartRows[i]!
       const lineEnd = logicalStartRows[i + 1]!
-      const lineRows = rows.slice(lineStart, lineEnd)
+      const skip = i === startLine
+        ? Math.min(Math.max(0, props.subRowOffset ?? 0), Math.max(0, lineEnd - lineStart - 1))
+        : 0
+      const lineRows = rows.slice(lineStart + skip, lineEnd)
 
       if (rowCount + lineRows.length <= height) {
         result.push(...lineRows)

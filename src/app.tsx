@@ -1,8 +1,8 @@
-import { createSignal, createMemo, createEffect, Show, onMount, onCleanup } from "solid-js"
+import { createSignal, createMemo, createEffect, Show, onMount, onCleanup, untrack } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import type { MouseEvent } from "@opentui/core"
 import { FileList } from "./components/file-list"
-import { DiffViewer } from "./components/diff-viewer"
+import { DiffViewer, type DiffLayoutInfo } from "./components/diff-viewer"
 import { Header } from "./components/header"
 import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
@@ -155,6 +155,10 @@ export function App() {
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [scrollOffset, setScrollOffset] = createSignal(0)
+  // Display rows scrolled past within the top logical line (for lines that
+  // wrap taller than the viewport) and the last layout reported by the viewer
+  const [subRowOffset, setSubRowOffset] = createSignal(0)
+  const [diffLayout, setDiffLayout] = createSignal<DiffLayoutInfo | null>(null)
   const [showHelp, setShowHelp] = createSignal(false)
   const [helpConfigIndex, setHelpConfigIndex] = createSignal(0)
   const helpConfigCount = 4
@@ -354,7 +358,7 @@ export function App() {
     filesGeneration() // track dependency
     setChangeLists(new Map())
     setSelectedIndex(0)
-    setScrollOffset(0)
+    scrollDiffTo(0)
     lastSelectedFilePath = null
   })
 
@@ -403,10 +407,10 @@ export function App() {
     const applyScrollOffset = (fallbackTarget: number) => {
       const pending = pendingScrollOffset()
       if (pending !== null) {
-        setScrollOffset(pending)
+        scrollDiffTo(pending)
         setPendingScrollOffset(null)
       } else {
-        setScrollOffset(fallbackTarget)
+        scrollDiffTo(fallbackTarget)
       }
     }
 
@@ -621,6 +625,57 @@ export function App() {
     const contentWidth = Math.max(1, diffViewerWidth() - lineNumberWidth - 1)
     return computeWrappedMaxScroll(parsedDiff, contentWidth, viewportHeight)
   }
+
+  // Absolute display-row position within the wrapped diff content
+  const getAbsRowPosition = (): number => {
+    const layout = diffLayout()
+    if (!layout) return scrollOffset()
+    const starts = layout.logicalStartRows
+    const line = Math.max(0, Math.min(scrollOffset(), starts.length - 2))
+    const span = starts[line + 1]! - starts[line]!
+    return starts[line]! + Math.min(subRowOffset(), Math.max(0, span - 1))
+  }
+
+  const getMaxAbsRow = (): number => {
+    const layout = diffLayout()
+    if (!layout) return getMaxScroll()
+    return Math.max(0, layout.totalRows - layout.viewportHeight)
+  }
+
+  // Set scroll position from an absolute display-row index
+  const setAbsRowPosition = (abs: number) => {
+    const layout = diffLayout()
+    if (!layout) {
+      setSubRowOffset(0)
+      setScrollOffset(Math.max(0, Math.min(abs, untrack(getMaxScroll))))
+      return
+    }
+    const clamped = Math.max(0, Math.min(abs, getMaxAbsRow()))
+    const starts = layout.logicalStartRows
+    let line = Math.max(0, starts.length - 2)
+    while (line > 0 && starts[line]! > clamped) line--
+    setSubRowOffset(clamped - starts[line]!)
+    setScrollOffset(line)
+  }
+
+  // Scroll by display rows so content inside logical lines taller than the
+  // viewport (heavy wrapping in narrow panes) remains reachable
+  const scrollDiffBy = (delta: number) => {
+    if (!diffLayout()) {
+      setSubRowOffset(0)
+      setScrollOffset(o => Math.max(0, Math.min(o + delta, untrack(getMaxScroll))))
+      return
+    }
+    setAbsRowPosition(getAbsRowPosition() + delta)
+  }
+
+  // Jump to the top of a logical line
+  // Reads are untracked so effects calling this (e.g. the files-generation
+  // reset) don't subscribe to selectedFile/selectedIndex through getMaxScroll
+  const scrollDiffTo = (line: number) => {
+    setSubRowOffset(0)
+    setScrollOffset(Math.max(0, Math.min(line, untrack(getMaxScroll))))
+  }
   
   const getDiffChunkPositions = (): number[] => {
     const file = selectedFile()
@@ -706,7 +761,7 @@ export function App() {
     const contextLines = 5
     const chunkStart = chunks[index]!
     const targetLine = Math.max(0, chunkStart - contextLines)
-    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+    scrollDiffTo(targetLine)
   }
   
   // Jump to next chunk (n key)
@@ -762,7 +817,7 @@ export function App() {
       const firstMatch = matches[0]!
       const contextLines = 5
       const targetLine = Math.max(0, firstMatch.line - contextLines)
-      setScrollOffset(Math.min(targetLine, getMaxScroll()))
+      scrollDiffTo(targetLine)
     }
   }
 
@@ -777,7 +832,7 @@ export function App() {
     const match = matches[nextIdx]!
     const contextLines = 5
     const targetLine = Math.max(0, match.line - contextLines)
-    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+    scrollDiffTo(targetLine)
   }
 
   // Jump to previous search match
@@ -791,7 +846,7 @@ export function App() {
     const match = matches[prevIdx]!
     const contextLines = 5
     const targetLine = Math.max(0, match.line - contextLines)
-    setScrollOffset(Math.min(targetLine, getMaxScroll()))
+    scrollDiffTo(targetLine)
   }
 
   // Mouse scroll handler for left sidebar (file/commit/branch lists)
@@ -818,10 +873,7 @@ export function App() {
     if (event.type !== "scroll" || !event.scroll) return
 
     const delta = event.scroll.direction === "up" ? -6 : 6
-    setScrollOffset(o => {
-      const maxScroll = getMaxScroll()
-      return Math.max(0, Math.min(o + delta, maxScroll))
-    })
+    scrollDiffBy(delta)
   }
 
   // Move file paths to a change list (target null = back to "To Review").
@@ -872,12 +924,13 @@ export function App() {
       // From "To Review" into list n.
       // Remember the next file by path before mutating: removing the marked
       // paths can also remove now-empty folder rows above the next file,
-      // shifting the list by more than one row.
+      // shifting the list by more than one row. Skip the files being moved:
+      // on a folder selection the next rows are inside that folder.
       const previousItems = toReviewVisibleItems()
       let nextFilePath: string | null = null
       for (let i = index + 1; i < previousItems.length; i++) {
         const nextItem = previousItems[i]
-        if (nextItem?.type === "file") {
+        if (nextItem?.type === "file" && !paths.includes(nextItem.file.path)) {
           nextFilePath = nextItem.file.path
           break
         }
@@ -1168,7 +1221,7 @@ export function App() {
       setFocusedPanel("files")
       setListSelectedIndex(0)
       setSelectedIndex(0)
-      setScrollOffset(0)
+      scrollDiffTo(0)
       setSelectedCommit(null)
       setSelectedBranch(null)
       setFiles([])
@@ -1201,7 +1254,7 @@ export function App() {
       setSelectedBranch(null)
       setFiles([])
       setSelectedIndex(0)
-      setScrollOffset(0)
+      scrollDiffTo(0)
       setLoading(false)
       // Don't reset listSelectedIndex - keep the previous selection
       return
@@ -1228,7 +1281,7 @@ export function App() {
             setViewState("files")
             setFocusedPanel("files")
             setSelectedIndex(0)
-            setScrollOffset(0)
+            scrollDiffTo(0)
             loadCommitChanges(commit)
           }
         } else if (mode() === "branch") {
@@ -1238,7 +1291,7 @@ export function App() {
             setViewState("files")
             setFocusedPanel("files")
             setSelectedIndex(0)
-            setScrollOffset(0)
+            scrollDiffTo(0)
             loadBranchChanges(branch)
           }
         }
@@ -1290,8 +1343,7 @@ export function App() {
         setSelectedIndex(i => Math.min(i + 1, allVisibleItems().length - 1))
       } else if (focusedPanel() === "diff") {
         // Diff scroll
-        const maxScroll = getMaxScroll()
-        setScrollOffset(o => Math.min(o + 1, maxScroll))
+        scrollDiffBy(1)
       }
       return
     }
@@ -1305,7 +1357,7 @@ export function App() {
         setSelectedIndex(i => Math.max(i - 1, 0))
       } else if (focusedPanel() === "diff") {
         // Diff scroll
-        setScrollOffset(o => Math.max(o - 1, 0))
+        scrollDiffBy(-1)
       }
       return
     }
@@ -1317,7 +1369,7 @@ export function App() {
       } else if (focusedPanel() === "files") {
         setSelectedIndex(0)
       } else if (focusedPanel() === "diff") {
-        setScrollOffset(0)
+        scrollDiffTo(0)
       }
       return
     }
@@ -1332,7 +1384,7 @@ export function App() {
       } else if (focusedPanel() === "files") {
         setSelectedIndex(allVisibleItems().length - 1)
       } else if (focusedPanel() === "diff") {
-        setScrollOffset(getMaxScroll())
+        setAbsRowPosition(getMaxAbsRow())
       }
       return
     }
@@ -1360,7 +1412,6 @@ export function App() {
     if (viewState() === "files" && selectedFile()) {
       const halfPage = Math.floor(visibleHeight() / 2)
       const fullPage = visibleHeight()
-      const maxScroll = getMaxScroll()
 
       // / - start search mode
       if (key.sequence === "/") {
@@ -1372,7 +1423,7 @@ export function App() {
           const parsed = parseDiff(file.diff ?? "")
           const current = parsed[Math.min(scrollOffset(), Math.max(0, parsed.length - 1))]
           const candidateLine = (current?.newLineNumber ?? current?.oldLineNumber ?? 1) - 1
-          setScrollOffset(Math.max(0, Math.min(candidateLine, getMaxScroll())))
+          scrollDiffTo(candidateLine)
         }
         setSearchMode(true)
         setSearchQuery("")
@@ -1420,7 +1471,7 @@ export function App() {
           const parsed = parseDiff(file.diff ?? "")
           const current = parsed[Math.min(scrollOffset(), Math.max(0, parsed.length - 1))]
           const candidateLine = (current?.newLineNumber ?? current?.oldLineNumber ?? 1) - 1
-          setScrollOffset(Math.max(0, Math.min(candidateLine, getMaxScroll())))
+          scrollDiffTo(candidateLine)
         } else {
           const parsed = parseDiff(file.diff ?? "")
           const currentFileLine = scrollOffset()
@@ -1436,7 +1487,7 @@ export function App() {
             }
           }
 
-          setScrollOffset(Math.max(0, Math.min(target, getMaxScroll())))
+          scrollDiffTo(target)
         }
 
         return
@@ -1450,41 +1501,41 @@ export function App() {
 
       // Ctrl+d - half page down
       if (key.ctrl && key.name === "d") {
-        setScrollOffset(o => Math.min(o + halfPage, maxScroll))
+        scrollDiffBy(halfPage)
         return
       }
       // Ctrl+u - half page up
       if (key.ctrl && key.name === "u") {
-        setScrollOffset(o => Math.max(o - halfPage, 0))
+        scrollDiffBy(-halfPage)
         return
       }
       // Ctrl+f - full page down
       if (key.ctrl && key.name === "f") {
-        setScrollOffset(o => Math.min(o + fullPage, maxScroll))
+        scrollDiffBy(fullPage)
         return
       }
       // Ctrl+b - full page up
       if (key.ctrl && key.name === "b") {
-        setScrollOffset(o => Math.max(o - fullPage, 0))
+        scrollDiffBy(-fullPage)
         return
       }
       // PageUp / PageDown - full page scroll (work from any panel)
       if (key.name === "pageup") {
-        setScrollOffset(o => Math.max(o - fullPage, 0))
+        scrollDiffBy(-fullPage)
         return
       }
       if (key.name === "pagedown") {
-        setScrollOffset(o => Math.min(o + fullPage, maxScroll))
+        scrollDiffBy(fullPage)
         return
       }
       // Ctrl+up - single line up
       if (key.ctrl && key.name === "up") {
-        setScrollOffset(o => Math.max(o - 1, 0))
+        scrollDiffBy(-1)
         return
       }
       // Ctrl+down - single line down
       if (key.ctrl && key.name === "down") {
-        setScrollOffset(o => Math.min(o + 1, maxScroll))
+        scrollDiffBy(1)
         return
       }
     }
@@ -1773,6 +1824,8 @@ export function App() {
                   focused={focusedPanel() === "diff"}
                   scrollOffset={scrollOffset()}
                   onScroll={setScrollOffset}
+                  subRowOffset={subRowOffset()}
+                  onLayoutChange={setDiffLayout}
                   currentChunk={currentChunkIndex()}
                   totalChunks={chunkCount()}
                   viewMode={diffViewMode()}
