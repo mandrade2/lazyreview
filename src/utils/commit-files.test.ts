@@ -33,11 +33,12 @@ const writeFiles = async (files: Record<string, string>) => {
 const status = () => Bun.$`git -C ${repoDir} status --porcelain`.text()
 const lastCommitMessage = () => Bun.$`git -C ${repoDir} log -1 --format=%s`.text()
 
-const pathsOf = (changes: Array<{ path: string; oldPath?: string; status?: string }>) =>
+const pathsOf = (changes: Array<{ path: string; oldPath?: string; status?: string; fingerprint?: string }>) =>
   changes.map((f) => ({
     path: f.path,
     oldPath: f.oldPath,
     status: f.status as Parameters<typeof commitFiles>[0][number]["status"],
+    fingerprint: f.fingerprint,
   }))
 
 beforeEach(() => {
@@ -300,5 +301,122 @@ describe("commitFiles", () => {
     )
     // The failed commit must not have happened.
     expect((await lastCommitMessage()).trim()).toBe("initial")
+  })
+
+  describe("staleness guard", () => {
+    test("commits exactly the content shown in the review", async () => {
+      await initRepo({ "a.ts": "a1\n", "b.ts": "b1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a2\nline added\n", "b.ts": "b2\n" })
+
+      const changes = await getGitChanges()
+      const shown = changes.find((f) => f.path === "a.ts")
+      expect(shown?.content).toBe("a2\nline added\n")
+
+      await commitFiles(pathsOf([shown!]), "commit a")
+
+      const committed = await Bun.$`git -C ${repoDir} show HEAD:a.ts`.text()
+      expect(committed).toBe(shown!.content)
+      // No more files than what was listed.
+      const committedFiles = await Bun.$`git -C ${repoDir} show --name-only --format= HEAD`.text()
+      expect(committedFiles.trim()).toBe("a.ts")
+    })
+
+    test("rejects when a listed file gained lines after the review snapshot", async () => {
+      await initRepo({ "a.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a2\n" })
+
+      const changes = await getGitChanges()
+      // File changes on disk after the review was loaded (no refresh pressed).
+      await writeFiles({ "a.ts": "a2\nextra line\n" })
+
+      await expect(commitFiles(pathsOf(changes), "commit a")).rejects.toThrow(/changed since the review/)
+
+      // Nothing was committed and the working tree is untouched.
+      expect((await lastCommitMessage()).trim()).toBe("initial")
+      expect(await Bun.file(join(repoDir, "a.ts")).text()).toBe("a2\nextra line\n")
+      expect(await status()).toBe(" M a.ts\n")
+    })
+
+    test("rejects when a listed file lost lines after the review snapshot", async () => {
+      await initRepo({ "a.ts": "a1\na2\na3\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a1\na2\na3\na4\n" })
+
+      const changes = await getGitChanges()
+      await writeFiles({ "a.ts": "a1\n" })
+
+      await expect(commitFiles(pathsOf(changes), "commit a")).rejects.toThrow(/changed since the review/)
+      expect((await lastCommitMessage()).trim()).toBe("initial")
+    })
+
+    test("rejects when a listed file is no longer dirty", async () => {
+      await initRepo({ "a.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a2\n" })
+
+      const changes = await getGitChanges()
+      await Bun.$`git -C ${repoDir} checkout -- a.ts`.quiet()
+
+      await expect(commitFiles(pathsOf(changes), "commit a")).rejects.toThrow(/changed since the review/)
+      expect((await lastCommitMessage()).trim()).toBe("initial")
+    })
+
+    test("rejects when an untracked file changed after the review snapshot", async () => {
+      await initRepo({ "a.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "new.ts": "shown content\n" })
+
+      const changes = await getGitChanges()
+      expect(changes.find((f) => f.path === "new.ts")?.status).toBe("untracked")
+      await writeFiles({ "new.ts": "shown content\nmore\n" })
+
+      await expect(commitFiles(pathsOf(changes), "add new")).rejects.toThrow(/changed since the review/)
+      expect((await lastCommitMessage()).trim()).toBe("initial")
+    })
+
+    test("rejects when a renamed file's content changed after the review snapshot", async () => {
+      await initRepo({ "old.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await Bun.$`git -C ${repoDir} mv old.ts new.ts`.quiet()
+
+      const changes = await getGitChanges()
+      await writeFiles({ "new.ts": "a1\nsneaky\n" })
+
+      await expect(commitFiles(pathsOf(changes), "rename")).rejects.toThrow(/changed since the review/)
+      expect((await lastCommitMessage()).trim()).toBe("initial")
+    })
+
+    test("does not commit new files that appeared after the review snapshot", async () => {
+      await initRepo({ "a.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a2\n" })
+
+      const changes = await getGitChanges()
+      // A brand new file appears after the review was loaded.
+      await writeFiles({ "extra.ts": "not reviewed\n" })
+
+      await commitFiles(pathsOf(changes), "commit a")
+
+      const committedFiles = await Bun.$`git -C ${repoDir} show --name-only --format= HEAD`.text()
+      expect(committedFiles.trim()).toBe("a.ts")
+      expect(await status()).toBe("?? extra.ts\n")
+    })
+
+    test("succeeds after refreshing when the file changed back to the shown state", async () => {
+      await initRepo({ "a.ts": "a1\n" })
+      setTargetDir(repoDir)
+      await writeFiles({ "a.ts": "a2\n" })
+
+      const changes = await getGitChanges()
+      await writeFiles({ "a.ts": "a2\ntemporary\n" })
+      await writeFiles({ "a.ts": "a2\n" })
+
+      await commitFiles(pathsOf(changes), "commit a")
+
+      const committed = await Bun.$`git -C ${repoDir} show HEAD:a.ts`.text()
+      expect(committed).toBe("a2\n")
+    })
   })
 })

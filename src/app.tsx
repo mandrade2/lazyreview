@@ -989,7 +989,7 @@ export function App() {
     setCommitError(null)
     try {
       await commitFiles(
-        listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status })),
+        listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status, fingerprint: f.fingerprint })),
         message,
       )
       setChangeLists(prev => {

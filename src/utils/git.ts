@@ -30,6 +30,7 @@ export interface FileChange {
   addedLines: Set<number> // Set of added line numbers (0-indexed)
   removedLines: Set<number> // Set of removed line numbers (0-indexed)
   isBinary: boolean // Whether the file is binary and should not be rendered as text
+  fingerprint: string // Hash of everything shown in the review view for this file
 }
 
 // Target directory for git operations
@@ -300,6 +301,25 @@ export function parseChangedLines(diff: string): ParsedChanges {
   return { changedLines, addedLines, removedLines }
 }
 
+// Hash of everything the review view shows for a file: its status, path(s),
+// the diff that determines the highlighted changes, and the full content
+// rendered inline. Used to detect that the repo state changed after the view
+// was loaded (see commitFiles).
+export function computeFileFingerprint(file: {
+  path: string
+  oldPath?: string
+  status: FileChange["status"]
+  diff: string
+  content: string
+  isBinary: boolean
+}): string {
+  return String(
+    Bun.hash(
+      [file.status, file.oldPath ?? "", file.path, file.diff, file.content, file.isBinary ? "1" : "0"].join("\0"),
+    ),
+  )
+}
+
 export async function getGitChanges(): Promise<FileChange[]> {
   const changes: FileChange[] = []
   
@@ -474,6 +494,7 @@ export async function getGitChanges(): Promise<FileChange[]> {
       addedLines,
       removedLines,
       isBinary,
+      fingerprint: computeFileFingerprint({ path: filePath, oldPath, status, diff, content, isBinary }),
     })
   }
   
@@ -484,11 +505,29 @@ export async function getGitChanges(): Promise<FileChange[]> {
 // Renamed files contribute both their old and new paths so the deletion is
 // committed too. The pathspec on commit keeps unrelated staged changes out
 // of the commit.
+//
+// Files carrying a fingerprint (taken from the FileChange shown in the
+// review view) are re-verified against the current repo state first: if a
+// file changed since the view was loaded, the commit is aborted so it can
+// never contain more or fewer changes than what was reviewed. Re-running
+// getGitChanges guarantees the comparison uses the exact same computation
+// that produced the shown state.
 export async function commitFiles(
-  files: Array<{ path: string; oldPath?: string; status?: FileChange["status"] }>,
+  files: Array<{ path: string; oldPath?: string; status?: FileChange["status"]; fingerprint?: string }>,
   message: string,
 ): Promise<void> {
   const gitRoot = await getGitRoot()
+  const fingerprinted = files.filter(f => f.fingerprint !== undefined)
+  if (fingerprinted.length > 0) {
+    const current = await getGitChanges()
+    const currentByPath = new Map(current.map(c => [c.path, c.fingerprint]))
+    const stale = fingerprinted.filter(f => currentByPath.get(f.path) !== f.fingerprint)
+    if (stale.length > 0) {
+      throw new Error(
+        `${stale.map(f => f.path).join(", ")} changed since the review was loaded. Refresh and try again.`,
+      )
+    }
+  }
   // Deleted files are staged via rm --cached: once a deletion is already
   // staged (git rm), the path exists in neither the working tree nor the
   // index, so a plain add fails to match it. Same for renamed-away paths.
@@ -678,6 +717,7 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
         isBinary: false,
+        fingerprint: "",
       })
     }
 
@@ -743,6 +783,7 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
         isBinary: false,
+        fingerprint: "",
       })
     }
 
@@ -869,14 +910,14 @@ export async function loadFileDetails(
     }
     
     const isBinary = detectBinaryFile(file.path, content, diff)
-    
+
     // For binary files, don't store raw content/diff to avoid leaking
     // binary data into the terminal renderer
     if (isBinary) {
       diff = ""
       content = ""
     }
-     
+
     return {
       ...file,
       diff,
@@ -889,6 +930,7 @@ export async function loadFileDetails(
       addedLines,
       removedLines,
       isBinary,
+      fingerprint: computeFileFingerprint({ path: file.path, oldPath: file.oldPath, status: file.status, diff, content, isBinary }),
     }
   } catch {
     return file

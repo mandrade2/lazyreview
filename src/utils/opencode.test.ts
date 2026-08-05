@@ -18,6 +18,7 @@ function createFileChange(overrides: Partial<FileChange> = {}): FileChange {
     removedLines: new Set(),
     ...overrides,
     isBinary: overrides.isBinary ?? false,
+    fingerprint: "",
   }
 }
 
