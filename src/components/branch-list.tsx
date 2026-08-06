@@ -7,6 +7,7 @@ interface BranchListProps {
   selectedIndex: number  // Index into selectable (non-current) branches
   focused: boolean
   width: number
+  reservedBottom?: number
 }
 
 const hashColumnWidth = 8
@@ -16,7 +17,7 @@ export function BranchList(props: BranchListProps) {
   const dimensions = useTerminalDimensions()
 
   // Calculate visible height (terminal height - header - panel header - status bar)
-  const visibleHeight = createMemo(() => dimensions().height - 4)
+  const visibleHeight = createMemo(() => dimensions().height - 4 - (props.reservedBottom ?? 0))
 
   // Create a mapping of which selectable index each branch corresponds to
   // Current branch gets -1 (not selectable)

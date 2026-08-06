@@ -23,6 +23,7 @@ interface DiffViewerProps {
   width: number
   subRowOffset?: number // display rows scrolled past within the top logical line
   onLayoutChange?: (layout: DiffLayoutInfo) => void
+  reservedBottom?: number // rows taken by bottom UI (portrait on-screen controls)
 }
 
 interface DisplayRow {
@@ -257,8 +258,9 @@ export function DiffViewer(props: DiffViewerProps) {
   })
 
   // Calculate visible rows based on terminal height (minus headers and status bar)
+  // 1 app header, 1 panel header, 2 file header, 1 status bar, plus any bottom overlay
   const visibleHeight = createMemo(() => {
-    return dimensions().height - 5 // 1 for app header, 1 for panel header, 2 for file header, 1 for status bar
+    return dimensions().height - 5 - (props.reservedBottom ?? 0)
   })
 
   // Line number width based on the largest line number displayed, so

@@ -1721,6 +1721,7 @@ export function App() {
                     selectedIndex={selectedIndex()}
                     focused={focusedPanel() === "files"}
                     width={sidebarWidth()}
+                    reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
                   />
                 </Show>
                 
@@ -1739,6 +1740,7 @@ export function App() {
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
                       width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
+                      reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
                     />
                   </Show>
                 </Show>
@@ -1758,6 +1760,7 @@ export function App() {
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
                       width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
+                      reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
                     />
                   </Show>
                 </Show>
@@ -1832,6 +1835,7 @@ export function App() {
                   showLineBg={showLineBg()}
                   isReviewed={selectedFile() ? pathToList().has(selectedFile()!.path) : false}
                   width={diffViewerWidth()}
+                  reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
                 />
               </Show>
             </Show>

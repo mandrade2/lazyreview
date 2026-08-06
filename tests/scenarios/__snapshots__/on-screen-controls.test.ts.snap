@@ -5648,81 +5648,6 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
           "attributes": 0,
           "bg": RGBA {
             "buffer": Uint16Array [
-              13,
-              17,
-              23,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "                                        ",
-          "width": 40,
-        },
-      ],
-    },
-    {
-      "spans": [
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              13,
-              17,
-              23,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "                                        ",
-          "width": 40,
-        },
-      ],
-    },
-    {
-      "spans": [
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              13,
-              17,
-              23,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "                                        ",
-          "width": 40,
-        },
-      ],
-    },
-    {
-      "spans": [
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
               33,
               38,
               45,
@@ -5915,6 +5840,81 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
           },
           "text": "                                   ",
           "width": 35,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
+        },
+      ],
+    },
+    {
+      "spans": [
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              13,
+              17,
+              23,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "                                        ",
+          "width": 40,
         },
       ],
     },

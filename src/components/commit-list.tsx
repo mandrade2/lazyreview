@@ -7,6 +7,7 @@ interface CommitListProps {
   selectedIndex: number
   focused: boolean
   width: number
+  reservedBottom?: number
 }
 
 const dateColumnWidth = 13
@@ -15,7 +16,7 @@ export function CommitList(props: CommitListProps) {
   const dimensions = useTerminalDimensions()
   
   // Calculate visible height (terminal height - header - panel header - status bar)
-  const visibleHeight = createMemo(() => dimensions().height - 4)
+  const visibleHeight = createMemo(() => dimensions().height - 4 - (props.reservedBottom ?? 0))
   
   // Calculate scroll offset to keep selected item visible
   const scrollOffset = createMemo(() => {

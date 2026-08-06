@@ -13,6 +13,7 @@ interface FileListProps {
   selectedIndex: number
   focused: boolean
   width: number
+  reservedBottom?: number
 }
 
 function getStatusIcon(status: TreeFile["file"]["status"]): string {
@@ -218,7 +219,7 @@ export function FileList(props: FileListProps) {
   const dimensions = useTerminalDimensions()
 
   // Calculate visible height (terminal height - app header - panel header - status bar)
-  const visibleHeight = createMemo(() => dimensions().height - 5)
+  const visibleHeight = createMemo(() => dimensions().height - 5 - (props.reservedBottom ?? 0))
 
   const toReviewFileCount = () => props.toReviewItems.filter((item) => item.type === "file").length
   const listFileCount = (items: TreeItem[]) => items.filter((item) => item.type === "file").length
