@@ -496,7 +496,11 @@ export function DiffViewer(props: DiffViewerProps) {
             }}
           >
             <text style={{ fg: "#8b949e" }}>
-              {props.file.isBinary ? "Binary file - cannot display diff" : "No diff available for this file"}
+              {props.file.isBinary
+                ? "Binary file - cannot display diff"
+                : props.file.hasLongLines
+                  ? "File contains very long lines - cannot display diff"
+                  : "No diff available for this file"}
             </text>
           </box>
         }

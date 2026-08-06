@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parseDiff, parseChangedLines, getLineNumberWidth, runGit, generateConflictDiff } from "./git"
+import { parseDiff, parseChangedLines, getLineNumberWidth, runGit, generateConflictDiff, hasExtremelyLongLines } from "./git"
 
 describe("parseDiff", () => {
   test("returns empty array for empty diff", () => {
@@ -303,6 +303,32 @@ describe("getLineNumberWidth", () => {
 
   test("accounts for file line count", () => {
     expect(getLineNumberWidth([], 12345)).toBe(6)
+  })
+})
+
+describe("hasExtremelyLongLines", () => {
+  test("returns false for empty and short content", () => {
+    expect(hasExtremelyLongLines("")).toBe(false)
+    expect(hasExtremelyLongLines("short\nlines\n")).toBe(false)
+  })
+
+  test("returns false for many long-but-renderable lines", () => {
+    const line = "x".repeat(8000)
+    expect(hasExtremelyLongLines(Array(100).fill(line).join("\n"))).toBe(false)
+  })
+
+  test("detects a single pathologically long line", () => {
+    expect(hasExtremelyLongLines("x".repeat(8193))).toBe(true)
+  })
+
+  test("detects a long line surrounded by short lines", () => {
+    const content = `before\n${"y".repeat(75000)}\nafter`
+    expect(hasExtremelyLongLines(content)).toBe(true)
+  })
+
+  test("detects a long line at the end without trailing newline", () => {
+    const content = `short\n${"z".repeat(10000)}`
+    expect(hasExtremelyLongLines(content)).toBe(true)
   })
 })
 

@@ -30,6 +30,7 @@ export interface FileChange {
   addedLines: Set<number> // Set of added line numbers (0-indexed)
   removedLines: Set<number> // Set of removed line numbers (0-indexed)
   isBinary: boolean // Whether the file is binary and should not be rendered as text
+  hasLongLines: boolean // Whether the file has pathologically long lines (minified bundles) and should not be rendered
   fingerprint: string // Hash of everything shown in the review view for this file
 }
 
@@ -187,6 +188,26 @@ export function detectBinaryFile(filePath: string, content: string, diff: string
   return false
 }
 
+// Lines beyond this length are pathological to render (minified bundles,
+// generated files): wrapping, highlighting, and terminal rendering all
+// degrade, and such files have triggered native crashes in the renderer.
+const maxRenderableLineLength = 8192
+
+// Scan for any line exceeding the renderable length limit without splitting
+// the whole text into an array.
+export function hasExtremelyLongLines(text: string): boolean {
+  if (text.length <= maxRenderableLineLength) return false
+  let start = 0
+  while (start < text.length) {
+    const newline = text.indexOf("\n", start)
+    const end = newline === -1 ? text.length : newline
+    if (end - start > maxRenderableLineLength) return true
+    if (newline === -1) return false
+    start = newline + 1
+  }
+  return false
+}
+
 function generateUnifiedDiff(filePath: string, content: string): string {
   const lines = content.split("\n")
   const diffLines: string[] = [
@@ -312,10 +333,11 @@ export function computeFileFingerprint(file: {
   diff: string
   content: string
   isBinary: boolean
+  hasLongLines: boolean
 }): string {
   return String(
     Bun.hash(
-      [file.status, file.oldPath ?? "", file.path, file.diff, file.content, file.isBinary ? "1" : "0"].join("\0"),
+      [file.status, file.oldPath ?? "", file.path, file.diff, file.content, file.isBinary ? "1" : "0", file.hasLongLines ? "1" : "0"].join("\0"),
     ),
   )
 }
@@ -472,14 +494,15 @@ export async function getGitChanges(): Promise<FileChange[]> {
     }
     
     const isBinary = detectBinaryFile(filePath, content, diff)
-    
-    // For binary files, don't store raw content/diff to avoid leaking
-    // binary data into the terminal renderer
-    if (isBinary) {
+    const hasLongLines = !isBinary && (hasExtremelyLongLines(content) || hasExtremelyLongLines(diff))
+
+    // For binary or unrenderable files, don't store raw content/diff to
+    // avoid leaking pathological data into the terminal renderer
+    if (isBinary || hasLongLines) {
       diff = ""
       content = ""
     }
-    
+
     changes.push({
       path: filePath,
       status,
@@ -494,7 +517,8 @@ export async function getGitChanges(): Promise<FileChange[]> {
       addedLines,
       removedLines,
       isBinary,
-      fingerprint: computeFileFingerprint({ path: filePath, oldPath, status, diff, content, isBinary }),
+      hasLongLines,
+      fingerprint: computeFileFingerprint({ path: filePath, oldPath, status, diff, content, isBinary, hasLongLines }),
     })
   }
   
@@ -717,6 +741,7 @@ export async function getCommitChanges(commitHash: string): Promise<FileChange[]
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
         isBinary: false,
+        hasLongLines: false,
         fingerprint: "",
       })
     }
@@ -783,6 +808,7 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
         addedLines: new Set<number>(),
         removedLines: new Set<number>(),
         isBinary: false,
+        hasLongLines: false,
         fingerprint: "",
       })
     }
@@ -910,10 +936,11 @@ export async function loadFileDetails(
     }
     
     const isBinary = detectBinaryFile(file.path, content, diff)
+    const hasLongLines = !isBinary && (hasExtremelyLongLines(content) || hasExtremelyLongLines(diff))
 
-    // For binary files, don't store raw content/diff to avoid leaking
-    // binary data into the terminal renderer
-    if (isBinary) {
+    // For binary or unrenderable files, don't store raw content/diff to
+    // avoid leaking pathological data into the terminal renderer
+    if (isBinary || hasLongLines) {
       diff = ""
       content = ""
     }
@@ -930,7 +957,8 @@ export async function loadFileDetails(
       addedLines,
       removedLines,
       isBinary,
-      fingerprint: computeFileFingerprint({ path: file.path, oldPath: file.oldPath, status: file.status, diff, content, isBinary }),
+      hasLongLines,
+      fingerprint: computeFileFingerprint({ path: file.path, oldPath: file.oldPath, status: file.status, diff, content, isBinary, hasLongLines }),
     }
   } catch {
     return file

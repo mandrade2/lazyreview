@@ -22,6 +22,7 @@ function makeFile(path: string): FileChange {
     addedLines: new Set(),
     removedLines: new Set(),
     isBinary: false,
+    hasLongLines: false,
     fingerprint: "",
   }
 }
