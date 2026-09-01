@@ -1,3 +1,4 @@
+import { th } from "./theme"
 import type { HighlightedLine, HighlightedToken } from "./shiki"
 
 /**
@@ -128,7 +129,7 @@ function formatMarkdownTables(lines: HighlightedLine[]): HighlightedLine[] {
 }
 
 // Default text color matching the app theme
-const DEFAULT_COLOR = "#e6edf3"
+const DEFAULT_COLOR = th("#e6edf3")
 
 /**
  * Format a table block with proper column alignment

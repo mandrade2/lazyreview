@@ -69,18 +69,23 @@ test("on-screen controls toggle from help and click buttons (landscape)", async 
       const controlsSnapshot = await harness.snapshot("controls-column")
       expect(controlsSnapshot.spans).toMatchSnapshot("controls-column-spans")
 
-      // Click the ↓ button (right button of the sixth control row) and
+      // Click the ↓ button (right button of the fourth control row) and
       // confirm it acts like the down arrow key.
       const before = harness.spans().lines.map(lineText).join("\n")
       expect(before).toContain("1/7")
-      await harness.click(114, 11)
+      await harness.click(114, 7)
       const after = harness.spans().lines.map(lineText).join("\n")
       expect(after).toContain("2/7")
 
-      // Click the "1" list button (left button of the seventh control row)
+      // Click the "1" list button (left button of the fifth control row)
       // to send the selected file to change list 1.
-      await harness.click(104, 13)
+      await harness.click(104, 9)
       await harness.waitForFrame((frame) => frame.includes("[1] Reviewed (1)"))
+
+      // Click the "c" button (final control row) to open the commit dialog
+      // for the active change list.
+      await harness.click(104, 13)
+      await harness.waitForFrame((frame) => frame.includes("Commit list [1]"))
     } finally {
       await harness.destroy()
       await fixture.cleanup()
@@ -109,19 +114,13 @@ test("on-screen controls render as a bottom row in portrait", async () => {
       const snapshot = await harness.snapshot("controls-row")
       expect(snapshot.spans).toMatchSnapshot("controls-row-spans")
 
-      // Bottom rows: three full-width rows of five buttons sit above the
-      // status bar. Row 3 holds ↑ ↓ 1 2 3 -> "↓" is the 2nd button.
+      // Bottom rows: three full-width rows of three buttons sit above the
+      // status bar. Row 3 holds ↑ ↓ c -> "↓" is the 2nd button.
       const before = harness.spans().lines.map(lineText).join("\n")
       expect(before).toContain("1/7")
-      await harness.click(11, 27)
+      await harness.click(20, 27)
       const after = harness.spans().lines.map(lineText).join("\n")
       expect(after).toContain("2/7")
-
-      // Click the "2" list button (4th button of the third row) to send the
-      // selected file to change list 2. The list 2 section doesn't fit in
-      // this short viewport, so check the "To Review" count instead.
-      await harness.click(27, 27)
-      await harness.waitForFrame((frame) => frame.includes("To Review (6)"))
     } finally {
       await harness.destroy()
       await fixture.cleanup()

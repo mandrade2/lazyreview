@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { For } from "solid-js"
 
 export interface ControlKeySpec {
@@ -65,12 +66,12 @@ function ControlButton(props: { button: ControlButton; shade: number; stretch: b
         flexBasis: props.stretch ? 1 : undefined,
         height: controlButtonHeight,
         flexShrink: 0,
-        backgroundColor: props.shade % 2 === 0 ? "#21262d" : "#30363d",
+        backgroundColor: props.shade % 2 === 0 ? th("#21262d") : th("#30363d"),
         justifyContent: "center",
         alignItems: "center",
       }}
     >
-      <text style={{ fg: "#e6edf3" }}>{props.button.label}</text>
+      <text style={{ fg: th("#e6edf3") }}>{props.button.label}</text>
     </box>
   )
 }
@@ -109,7 +110,7 @@ export function OnScreenControls(props: OnScreenControlsProps) {
         width: isRow() ? "100%" : controlLandscapeWidth,
         height: isRow() ? controlPortraitHeight : "100%",
         overflow: "hidden",
-        backgroundColor: "#0d1117",
+        backgroundColor: th("#0d1117"),
       }}
     >
       <For each={lines()}>

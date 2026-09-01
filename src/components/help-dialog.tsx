@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { For } from "solid-js"
 import { useKeyboard, useTerminalDimensions } from "@opentui/solid"
 import type { ScrollBoxRenderable } from "@opentui/core"
@@ -107,9 +108,9 @@ export function HelpDialog(props: HelpDialogProps) {
           width: dialogWidth(),
           height: dialogHeight(),
           flexDirection: "column",
-          backgroundColor: "#161b22",
+          backgroundColor: th("#161b22"),
           borderStyle: "rounded",
-          borderColor: "#58a6ff",
+          borderColor: th("#58a6ff"),
         }}
       >
         {/* Header */}
@@ -117,11 +118,11 @@ export function HelpDialog(props: HelpDialogProps) {
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#58a6ff",
+            backgroundColor: th("#58a6ff"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#ffffff" }}>
+          <text style={{ fg: th("#ffffff") }}>
             <b>LazyReview Help</b>
           </text>
         </box>
@@ -137,14 +138,14 @@ export function HelpDialog(props: HelpDialogProps) {
           }}
         >
           <box style={{ flexShrink: 0, flexDirection: "column" }}>
-            <text style={{ fg: "#8b949e" }}>
+            <text style={{ fg: th("#8b949e") }}>
               A terminal UI for reviewing git changes with inline diffs.
             </text>
             <text> </text>
           </box>
 
           <box style={{ flexDirection: "column", marginBottom: 1, flexShrink: 0 }}>
-            <text style={{ fg: "#58a6ff" }}>
+            <text style={{ fg: th("#58a6ff") }}>
               <b>Configs</b>
             </text>
             <For each={configs()}>
@@ -152,15 +153,15 @@ export function HelpDialog(props: HelpDialogProps) {
                 <box
                   style={{
                     flexDirection: "row",
-                    backgroundColor: index() === props.configIndex ? "#21262d" : undefined,
+                    backgroundColor: index() === props.configIndex ? th("#21262d") : undefined,
                   }}
                 >
                   <box style={{ width: 22, flexShrink: 0 }}>
-                    <text style={{ fg: index() === props.configIndex ? "#58a6ff" : "#e6edf3" }}>
+                    <text style={{ fg: index() === props.configIndex ? th("#58a6ff") : th("#e6edf3") }}>
                       {config.label}
                     </text>
                   </box>
-                  <text style={{ fg: "#d29922" }}>{`< ${config.value} >`}</text>
+                  <text style={{ fg: th("#d29922") }}>{`< ${config.value} >`}</text>
                 </box>
               )}
             </For>
@@ -169,16 +170,16 @@ export function HelpDialog(props: HelpDialogProps) {
           <For each={sections}>
             {(section) => (
               <box style={{ flexDirection: "column", marginBottom: 1, flexShrink: 0 }}>
-                <text style={{ fg: "#58a6ff" }}>
+                <text style={{ fg: th("#58a6ff") }}>
                   <b>{section.title}</b>
                 </text>
                 <For each={section.keybinds}>
                   {(kb) => (
                     <box style={{ flexDirection: "row" }}>
                       <box style={{ width: 16, flexShrink: 0 }}>
-                        <text style={{ fg: "#d29922" }}>{kb.key}</text>
+                        <text style={{ fg: th("#d29922") }}>{kb.key}</text>
                       </box>
-                      <text style={{ fg: "#e6edf3" }}>{kb.desc}</text>
+                      <text style={{ fg: th("#e6edf3") }}>{kb.desc}</text>
                     </box>
                   )}
                 </For>
@@ -192,11 +193,11 @@ export function HelpDialog(props: HelpDialogProps) {
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#21262d",
+            backgroundColor: th("#21262d"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#8b949e" }}>j/k scroll · ↑/↓ select · ←/→ change · ? / Esc / q to close</text>
+          <text style={{ fg: th("#8b949e") }}>j/k scroll · ↑/↓ select · ←/→ change · ? / Esc / q to close</text>
         </box>
       </box>
     </box>

@@ -2471,8 +2471,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "    ",
+          "width": 4,
         },
         {
           "attributes": 0,
@@ -2492,8 +2492,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "pgup",
-          "width": 4,
+          "text": "↑",
+          "width": 1,
         },
         {
           "attributes": 0,
@@ -2513,8 +2513,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "     ",
+          "width": 5,
         },
         {
           "attributes": 0,
@@ -2534,8 +2534,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "    ",
+          "width": 4,
         },
         {
           "attributes": 0,
@@ -2555,8 +2555,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "pgdn",
-          "width": 4,
+          "text": "↓",
+          "width": 1,
         },
         {
           "attributes": 0,
@@ -2576,8 +2576,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "     ",
+          "width": 5,
         },
       ],
     },
@@ -3025,7 +3025,7 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "N",
+          "text": "1",
           "width": 1,
         },
         {
@@ -3088,7 +3088,7 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "n",
+          "text": "2",
           "width": 1,
         },
         {
@@ -3348,7 +3348,7 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "↑",
+          "text": "3",
           "width": 1,
         },
         {
@@ -3411,7 +3411,7 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "↓",
+          "text": "4",
           "width": 1,
         },
         {
@@ -3608,7 +3608,7 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "1",
+          "text": "c",
           "width": 1,
         },
         {
@@ -3636,9 +3636,9 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
           "attributes": 0,
           "bg": RGBA {
             "buffer": Uint16Array [
-              48,
-              54,
-              61,
+              13,
+              17,
+              23,
               255,
             ],
           },
@@ -3650,50 +3650,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "2",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "     ",
-          "width": 5,
+          "text": "          ",
+          "width": 10,
         },
       ],
     },
@@ -3745,9 +3703,9 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
           "attributes": 0,
           "bg": RGBA {
             "buffer": Uint16Array [
-              48,
-              54,
-              61,
+              13,
+              17,
+              23,
               255,
             ],
           },
@@ -3784,134 +3742,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "                                                                                                    ",
-          "width": 100,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "3",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "     ",
-          "width": 5,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "4",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "     ",
-          "width": 5,
+          "text": "                                                                                                                        ",
+          "width": 120,
         },
       ],
     },
@@ -3935,50 +3767,8 @@ exports[`on-screen controls toggle from help and click buttons (landscape): cont
               255,
             ],
           },
-          "text": "                                                                                                    ",
-          "width": 100,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "          ",
-          "width": 10,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "          ",
-          "width": 10,
+          "text": "                                                                                                                        ",
+          "width": 120,
         },
       ],
     },
@@ -6088,8 +5878,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "  ",
-          "width": 2,
+          "text": "     ",
+          "width": 5,
         },
         {
           "attributes": 0,
@@ -6130,8 +5920,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "     ",
+          "width": 5,
         },
         {
           "attributes": 0,
@@ -6151,8 +5941,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -6193,8 +5983,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
+          "text": "       ",
+          "width": 7,
         },
         {
           "attributes": 0,
@@ -6214,8 +6004,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -6256,134 +6046,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "   ",
-          "width": 3,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "N",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "   ",
-          "width": 3,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "n",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
+          "text": "      ",
+          "width": 6,
         },
       ],
     },
@@ -6407,8 +6071,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
         {
           "attributes": 0,
@@ -6428,8 +6092,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "              ",
+          "width": 14,
         },
         {
           "attributes": 0,
@@ -6449,50 +6113,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
       ],
     },
@@ -6516,8 +6138,134 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "  ",
-          "width": 2,
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "space",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "    ",
+          "width": 4,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              230,
+              237,
+              243,
+              255,
+            ],
+          },
+          "text": "enter",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              33,
+              38,
+              45,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
+        },
+        {
+          "attributes": 0,
+          "bg": RGBA {
+            "buffer": Uint16Array [
+              48,
+              54,
+              61,
+              255,
+            ],
+          },
+          "fg": RGBA {
+            "buffer": Uint16Array [
+              255,
+              255,
+              255,
+              255,
+            ],
+          },
+          "text": "     ",
+          "width": 5,
         },
         {
           "attributes": 0,
@@ -6558,260 +6306,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": " ",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "space",
+          "text": "     ",
           "width": 5,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": " ",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "enter",
-          "width": 5,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "pgup",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "pgdn",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "  ",
-          "width": 2,
         },
       ],
     },
@@ -6835,8 +6331,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
         {
           "attributes": 0,
@@ -6856,8 +6352,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "              ",
+          "width": 14,
         },
         {
           "attributes": 0,
@@ -6877,50 +6373,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
       ],
     },
@@ -6944,8 +6398,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -6986,8 +6440,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -7007,8 +6461,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -7049,8 +6503,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
+          "text": "       ",
+          "width": 7,
         },
         {
           "attributes": 0,
@@ -7070,8 +6524,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "   ",
-          "width": 3,
+          "text": "      ",
+          "width": 6,
         },
         {
           "attributes": 0,
@@ -7091,7 +6545,7 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "1",
+          "text": "c",
           "width": 1,
         },
         {
@@ -7112,134 +6566,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "   ",
-          "width": 3,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "2",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "   ",
-          "width": 3,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              230,
-              237,
-              243,
-              255,
-            ],
-          },
-          "text": "3",
-          "width": 1,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "    ",
-          "width": 4,
+          "text": "      ",
+          "width": 6,
         },
       ],
     },
@@ -7263,8 +6591,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
         {
           "attributes": 0,
@@ -7284,8 +6612,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
+          "text": "              ",
+          "width": 14,
         },
         {
           "attributes": 0,
@@ -7305,50 +6633,8 @@ exports[`on-screen controls render as a bottom row in portrait: controls-row-spa
               255,
             ],
           },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              48,
-              54,
-              61,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
-        },
-        {
-          "attributes": 0,
-          "bg": RGBA {
-            "buffer": Uint16Array [
-              33,
-              38,
-              45,
-              255,
-            ],
-          },
-          "fg": RGBA {
-            "buffer": Uint16Array [
-              255,
-              255,
-              255,
-              255,
-            ],
-          },
-          "text": "        ",
-          "width": 8,
+          "text": "             ",
+          "width": 13,
         },
       ],
     },

@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import type { BranchInfo } from "../utils/git"
@@ -67,8 +68,8 @@ export function BranchList(props: BranchListProps) {
         {({ branch, actualIndex }) => {
           const selectableIdx = () => selectableIndexMap()[actualIndex]
           const isSelected = () => selectableIdx() === props.selectedIndex
-          const metaColor = isSelected() ? "#8b949e" : "#6e7681"
-          const hashColor = "#58a6ff"
+          const metaColor = isSelected() ? th("#8b949e") : th("#6e7681")
+          const hashColor = th("#58a6ff")
 
           return (
             <box
@@ -77,7 +78,7 @@ export function BranchList(props: BranchListProps) {
                 paddingLeft: 1,
                 paddingRight: 1,
                 backgroundColor: isSelected()
-                  ? props.focused ? "#388bfd26" : "#30363d"
+                  ? props.focused ? th("#388bfd26") : th("#30363d")
                   : "transparent",
                 flexDirection: "row",
               }}
@@ -86,7 +87,7 @@ export function BranchList(props: BranchListProps) {
                 <Show when={branch.isCurrent}>
                   <text style={{ fg: metaColor }}>(c) </text>
                 </Show>
-                <text style={{ fg: "#e6edf3" }}>
+                <text style={{ fg: th("#e6edf3") }}>
                   {truncateBranchName(branch.name, Math.max(0, Math.floor(props.width * 0.33) - 2))}
                 </text>
               </box>

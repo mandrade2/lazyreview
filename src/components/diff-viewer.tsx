@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { type FileChange } from "../utils/git"
@@ -69,10 +70,10 @@ function createConflictScanner() {
 }
 
 const conflictBackgrounds: Record<Exclude<ConflictRole, "none">, string> = {
-  marker: "#3b2d5c",
-  ours: "#12261c",
-  base: "#1c2128",
-  theirs: "#2a1a3f",
+  marker: th("#3b2d5c"),
+  ours: th("#12261c"),
+  base: th("#1c2128"),
+  theirs: th("#2a1a3f"),
 }
 
 interface RemovedLine {
@@ -152,12 +153,12 @@ function getStatusLabel(status: FileChange["status"]): string {
 
 function getStatusColor(status: FileChange["status"]): string {
   switch (status) {
-    case "added": return "#3fb950"
-    case "modified": return "#d29922"
-    case "deleted": return "#f85149"
-    case "renamed": return "#a371f7"
-    case "untracked": return "#8b949e"
-    case "conflicted": return "#f0883e"
+    case "added": return th("#3fb950")
+    case "modified": return th("#d29922")
+    case "deleted": return th("#f85149")
+    case "renamed": return th("#a371f7")
+    case "untracked": return th("#8b949e")
+    case "conflicted": return th("#f0883e")
   }
 }
 
@@ -168,7 +169,7 @@ function truncate(str: string, maxLength: number): string {
 }
 
 // Default text color
-const DEFAULT_COLOR = "#e6edf3"
+const DEFAULT_COLOR = th("#e6edf3")
 
 export function DiffViewer(props: DiffViewerProps) {
   const dimensions = useTerminalDimensions()
@@ -461,24 +462,24 @@ export function DiffViewer(props: DiffViewerProps) {
           height: 2,
           paddingLeft: 1,
           paddingRight: 1,
-          backgroundColor: "#21262d",
+          backgroundColor: th("#21262d"),
           flexDirection: "column",
           justifyContent: "center",
         }}
       >
         <box style={{ flexDirection: "row", width: headerWidth() }}>
-          <text style={{ fg: "#e6edf3", width: pathMaxWidth(), wrapMode: "none" }}>
+          <text style={{ fg: th("#e6edf3"), width: pathMaxWidth(), wrapMode: "none" }}>
             <b>{truncate(props.file.path, pathMaxWidth())}</b>
           </text>
           <text style={{ fg: getStatusColor(props.file.status), wrapMode: "none" }}>{statusText()}</text>
-          <text style={{ fg: "#f0883e", wrapMode: "none" }}>{reviewedText()}</text>
+          <text style={{ fg: th("#f0883e"), wrapMode: "none" }}>{reviewedText()}</text>
         </box>
         <box style={{ flexDirection: "row", width: headerWidth() }}>
-          <text style={{ fg: "#3fb950", wrapMode: "none" }}>+{props.file.additions}</text>
-          <text style={{ fg: "#f85149", wrapMode: "none" }}> -{props.file.deletions}</text>
-          <text style={{ fg: "#8b949e", wrapMode: "none" }}>{lineInfoText()}</text>
+          <text style={{ fg: th("#3fb950"), wrapMode: "none" }}>+{props.file.additions}</text>
+          <text style={{ fg: th("#f85149"), wrapMode: "none" }}> -{props.file.deletions}</text>
+          <text style={{ fg: th("#8b949e"), wrapMode: "none" }}>{lineInfoText()}</text>
           <Show when={chunkInfoText()}>
-            <text style={{ fg: "#d29922", wrapMode: "none" }}>{chunkInfoText()}</text>
+            <text style={{ fg: th("#d29922"), wrapMode: "none" }}>{chunkInfoText()}</text>
           </Show>
         </box>
       </box>
@@ -492,10 +493,10 @@ export function DiffViewer(props: DiffViewerProps) {
               flexGrow: 1,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "#0d1117",
+              backgroundColor: th("#0d1117"),
             }}
           >
-            <text style={{ fg: "#8b949e" }}>
+            <text style={{ fg: th("#8b949e") }}>
               {props.file.isBinary
                 ? "Binary file - cannot display diff"
                 : props.file.hasLongLines
@@ -505,7 +506,7 @@ export function DiffViewer(props: DiffViewerProps) {
           </box>
         }
       >
-        <box style={{ flexDirection: "column", flexGrow: 1, backgroundColor: "#0d1117" }}>
+        <box style={{ flexDirection: "column", flexGrow: 1, backgroundColor: th("#0d1117") }}>
           <Index each={visibleRows()}>
             {(item) => {
               const lineBg = () => props.showLineBg !== false
@@ -517,42 +518,42 @@ export function DiffViewer(props: DiffViewerProps) {
               const outerBg = () => {
                 const conflict = lineBg() ? conflictBg() : null
                 return conflict ?? (item().isAdded && lineBg()
-                  ? "#1a2f1a"
+                  ? th("#1a2f1a")
                   : item().isRemoved && lineBg()
-                    ? "#2f1a1a"
+                    ? th("#2f1a1a")
                     : item().isHeader
-                      ? "#21262d"
-                      : "#0d1117")
+                      ? th("#21262d")
+                      : th("#0d1117"))
               }
 
               const gutterBg = () => conflictBg()
                 ?? (item().isAdded
-                  ? "#1a2f1a"
+                  ? th("#1a2f1a")
                   : item().isRemoved
-                    ? "#2f1a1a"
+                    ? th("#2f1a1a")
                     : item().isHeader
-                      ? "#21262d"
-                      : "#161b22")
+                      ? th("#21262d")
+                      : th("#161b22"))
 
               const lineNumberFg = () => isConflictMarker()
-                ? "#d2a8ff"
+                ? th("#d2a8ff")
                 : item().isHeader
-                  ? "#8b949e"
+                  ? th("#8b949e")
                   : item().isAdded
-                    ? "#3fb950"
+                    ? th("#3fb950")
                     : item().isRemoved
-                      ? "#f85149"
-                      : "#484f58"
+                      ? th("#f85149")
+                      : th("#484f58")
 
               const indicatorFg = () => isConflictMarker()
-                ? "#d2a8ff"
+                ? th("#d2a8ff")
                 : item().isHeader
-                  ? "#d29922"
+                  ? th("#d29922")
                   : item().isAdded
-                    ? "#3fb950"
+                    ? th("#3fb950")
                     : item().isRemoved
-                      ? "#f85149"
-                      : "#0d1117"
+                      ? th("#f85149")
+                      : th("#0d1117")
 
               const lineNumberText = () => {
                 const num = item().lineNumber
@@ -602,7 +603,7 @@ export function DiffViewer(props: DiffViewerProps) {
                       {(token) => (
                         <span
                           style={{
-                            fg: isConflictMarker() ? "#d2a8ff" : item().isHeader ? "#8b949e" : token().color,
+                            fg: isConflictMarker() ? th("#d2a8ff") : item().isHeader ? th("#8b949e") : token().color,
                             bold: token().bold || isConflictMarker(),
                             italic: token().italic,
                             dim: token().dim,

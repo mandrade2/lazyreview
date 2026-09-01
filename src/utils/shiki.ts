@@ -1,3 +1,4 @@
+import { th, SHIKI_THEME } from "./theme"
 import { createHighlighter, type Highlighter, type BundledLanguage } from "shiki"
 import { applyMarkdownStyles } from "./markdown-styles"
 
@@ -12,7 +13,7 @@ export interface HighlightedToken {
 export type HighlightedLine = HighlightedToken[]
 
 // Default text color matching the app theme
-const DEFAULT_COLOR = "#e6edf3"
+const DEFAULT_COLOR = th("#e6edf3")
 
 let highlighterPromise: Promise<Highlighter> | null = null
 
@@ -20,7 +21,7 @@ let highlighterPromise: Promise<Highlighter> | null = null
 async function getHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
-      themes: ["github-dark"],
+      themes: [SHIKI_THEME],
       langs: [], // Languages loaded on demand
     })
   }
@@ -261,7 +262,7 @@ export async function highlightCode(
 
     const { tokens } = highlighter.codeToTokens(content, {
       lang: lang as BundledLanguage,
-      theme: "github-dark",
+      theme: SHIKI_THEME,
     })
 
     // Transform shiki tokens to our format

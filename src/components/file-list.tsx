@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import type { TreeItem, TreeFolder, TreeFile } from "../utils/file-tree"
@@ -36,17 +37,17 @@ function getStatusIcon(status: TreeFile["file"]["status"]): string {
 function getStatusColor(status: TreeFile["file"]["status"]): string {
   switch (status) {
     case "added":
-      return "#3fb950"
+      return th("#3fb950")
     case "modified":
-      return "#d29922"
+      return th("#d29922")
     case "deleted":
-      return "#f85149"
+      return th("#f85149")
     case "renamed":
-      return "#a371f7"
+      return th("#a371f7")
     case "untracked":
-      return "#8b949e"
+      return th("#8b949e")
     case "conflicted":
-      return "#f0883e"
+      return th("#f0883e")
   }
 }
 
@@ -111,7 +112,7 @@ function formatPath(path: string, maxLength: number): { directory: string; fileN
 
 function getRowBackgroundColor(isSelected: boolean, focused: boolean): string {
   if (isSelected) {
-    return focused ? "#388bfd56" : "#30363d"
+    return focused ? th("#388bfd56") : th("#30363d")
   }
   return "transparent"
 }
@@ -153,19 +154,19 @@ function FileRow(props: {
       }}
     >
       <Show when={indent > 0}>
-        <text style={{ fg: "#8b949e" }}>{" ".repeat(indent)}</text>
+        <text style={{ fg: th("#8b949e") }}>{" ".repeat(indent)}</text>
       </Show>
       <text style={{ fg: statusColor }}>{statusIcon} </text>
       <Show when={directory}>
-        <text style={{ fg: "#8b949e" }}>{directory}</text>
+        <text style={{ fg: th("#8b949e") }}>{directory}</text>
       </Show>
-      <text style={{ fg: props.isSelected ? "#58a6ff" : "#e6edf3" }}>{fileName}</text>
+      <text style={{ fg: props.isSelected ? th("#58a6ff") : th("#e6edf3") }}>{fileName}</text>
       <box style={{ flexGrow: 1 }} />
       <Show when={file.additions > 0}>
-        <text style={{ fg: "#3fb950" }}>{additionsText}</text>
+        <text style={{ fg: th("#3fb950") }}>{additionsText}</text>
       </Show>
       <Show when={file.deletions > 0}>
-        <text style={{ fg: "#f85149" }}>{deletionsText}</text>
+        <text style={{ fg: th("#f85149") }}>{deletionsText}</text>
       </Show>
     </box>
   )
@@ -195,10 +196,10 @@ function FolderRow(props: {
       }}
     >
       <Show when={indent > 0}>
-        <text style={{ fg: "#8b949e" }}>{" ".repeat(indent)}</text>
+        <text style={{ fg: th("#8b949e") }}>{" ".repeat(indent)}</text>
       </Show>
-      <text style={{ fg: "#d29922" }}>{prefix}</text>
-      <text style={{ fg: props.isSelected ? "#58a6ff" : "#e6edf3" }}>{name}</text>
+      <text style={{ fg: th("#d29922") }}>{prefix}</text>
+      <text style={{ fg: props.isSelected ? th("#58a6ff") : th("#e6edf3") }}>{name}</text>
     </box>
   )
 }
@@ -297,15 +298,15 @@ export function FileList(props: FileListProps) {
           height: 1,
           paddingLeft: 1,
           paddingRight: 1,
-          backgroundColor: "#21262d",
+          backgroundColor: th("#21262d"),
           flexShrink: 0,
           flexDirection: "row",
         }}
       >
-        <text style={{ fg: "#f0883e" }}>
+        <text style={{ fg: th("#f0883e") }}>
           <b>To Review</b>
         </text>
-        <text style={{ fg: "#8b949e" }}> ({toReviewFileCount()})</text>
+        <text style={{ fg: th("#8b949e") }}> ({toReviewFileCount()})</text>
       </box>
       <box
         style={{
@@ -318,7 +319,7 @@ export function FileList(props: FileListProps) {
           when={hasToReview()}
           fallback={
             <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
-              <text style={{ fg: "#8b949e" }}>{hasAnyFiles() ? "None" : "No changes"}</text>
+              <text style={{ fg: th("#8b949e") }}>{hasAnyFiles() ? "None" : "No changes"}</text>
             </box>
           }
         >
@@ -344,18 +345,18 @@ export function FileList(props: FileListProps) {
                 height: 1,
                 paddingLeft: 1,
                 paddingRight: 1,
-                backgroundColor: "#21262d",
+                backgroundColor: th("#21262d"),
                 flexShrink: 0,
                 flexDirection: "row",
               }}
             >
-              <text style={{ fg: "#58a6ff" }}>
+              <text style={{ fg: th("#58a6ff") }}>
                 <b>{`[${list.number}]`}</b>
               </text>
-              <text style={{ fg: "#f0883e" }}>
+              <text style={{ fg: th("#f0883e") }}>
                 <b> Reviewed</b>
               </text>
-              <text style={{ fg: "#8b949e" }}> ({listFileCount(list.items)})</text>
+              <text style={{ fg: th("#8b949e") }}> ({listFileCount(list.items)})</text>
             </box>
             <box
               style={{
@@ -368,7 +369,7 @@ export function FileList(props: FileListProps) {
                 when={list.items.length > 0}
                 fallback={
                   <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1 }}>
-                    <text style={{ fg: "#8b949e" }}>None</text>
+                    <text style={{ fg: th("#8b949e") }}>None</text>
                   </box>
                 }
               >

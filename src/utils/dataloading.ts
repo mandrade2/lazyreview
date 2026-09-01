@@ -1,5 +1,6 @@
 import type { HighlightedLine, HighlightedToken } from "./shiki"
 import { highlightCode as highlightDirect } from "./shiki"
+import { th } from "./theme"
 
 export type { HighlightedLine, HighlightedToken } from "./shiki"
 export { detectLanguage } from "./shiki"
@@ -83,7 +84,7 @@ export function wrapTokens(tokens: HighlightedLine, width: number): HighlightedL
   }
 
   if (rows.length === 0) {
-    rows.push([{ content: "", color: "#e6edf3" }])
+    rows.push([{ content: "", color: th("#e6edf3") }])
   }
 
   return rows

@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 
@@ -29,9 +30,9 @@ export function CommitDialog(props: CommitDialogProps) {
           width: dialogWidth(),
           height: 10,
           flexDirection: "column",
-          backgroundColor: "#161b22",
+          backgroundColor: th("#161b22"),
           borderStyle: "rounded",
-          borderColor: "#58a6ff",
+          borderColor: th("#58a6ff"),
           paddingLeft: 1,
           paddingRight: 1,
         }}
@@ -40,29 +41,29 @@ export function CommitDialog(props: CommitDialogProps) {
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#58a6ff",
+            backgroundColor: th("#58a6ff"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#ffffff" }}>
+          <text style={{ fg: th("#ffffff") }}>
             <b>{`Commit list [${props.listNumber}] (${props.fileCount} files)`}</b>
           </text>
         </box>
         <box style={{ flexDirection: "column", paddingTop: 1, flexGrow: 1 }}>
-          <text style={{ fg: "#e6edf3", wrapMode: "word" }}>{promptText()}</text>
+          <text style={{ fg: th("#e6edf3"), wrapMode: "word" }}>{promptText()}</text>
           <Show when={props.error}>
-            <text style={{ fg: "#f85149", wrapMode: "word" }}>{props.error}</text>
+            <text style={{ fg: th("#f85149"), wrapMode: "word" }}>{props.error}</text>
           </Show>
         </box>
         <box
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#21262d",
+            backgroundColor: th("#21262d"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#8b949e" }}>
+          <text style={{ fg: th("#8b949e") }}>
             {props.committing ? "Committing..." : "Enter: commit · Esc: cancel"}
           </text>
         </box>

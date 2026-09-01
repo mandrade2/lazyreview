@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import type { AppMode } from "../utils/git"
 
 interface HeaderProps {
@@ -10,7 +11,7 @@ export function Header(props: HeaderProps) {
       style={{
         height: 1,
         flexShrink: 0,
-        backgroundColor: "#161b22",
+        backgroundColor: th("#161b22"),
         paddingLeft: 1,
         paddingRight: 1,
         flexDirection: "row",
@@ -19,22 +20,22 @@ export function Header(props: HeaderProps) {
       }}
     >
       <box style={{ flexDirection: "row" }}>
-        <text style={{ fg: "#58a6ff" }}><b>LazyReview</b></text>
+        <text style={{ fg: th("#58a6ff") }}><b>LazyReview</b></text>
       </box>
       <box style={{ flexDirection: "row" }}>
-        <text style={{ fg: props.mode === "dirty" ? "#58a6ff" : "#6e7681" }}>
+        <text style={{ fg: props.mode === "dirty" ? th("#58a6ff") : th("#6e7681") }}>
           {props.mode === "dirty" ? "[Dirty]" : "Dirty"}
         </text>
-        <text style={{ fg: "#6e7681" }}> </text>
-        <text style={{ fg: props.mode === "commit" ? "#58a6ff" : "#6e7681" }}>
+        <text style={{ fg: th("#6e7681") }}> </text>
+        <text style={{ fg: props.mode === "commit" ? th("#58a6ff") : th("#6e7681") }}>
           {props.mode === "commit" ? "[Commit]" : "Commit"}
         </text>
-        <text style={{ fg: "#6e7681" }}> </text>
-        <text style={{ fg: props.mode === "branch" ? "#58a6ff" : "#6e7681" }}>
+        <text style={{ fg: th("#6e7681") }}> </text>
+        <text style={{ fg: props.mode === "branch" ? th("#58a6ff") : th("#6e7681") }}>
           {props.mode === "branch" ? "[Branch]" : "Branch"}
         </text>
       </box>
-      <text style={{ fg: "#8b949e" }}>m:mode ?:help</text>
+      <text style={{ fg: th("#8b949e") }}>m:mode ?:help</text>
     </box>
   )
 }

@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 interface OpencodeDialogProps {
   prompt: string
 }
@@ -21,9 +22,9 @@ export function OpencodeDialog(props: OpencodeDialogProps) {
           width: dialogWidth,
           height: 10,
           flexDirection: "column",
-          backgroundColor: "#161b22",
+          backgroundColor: th("#161b22"),
           borderStyle: "rounded",
-          borderColor: "#58a6ff",
+          borderColor: th("#58a6ff"),
           paddingLeft: 1,
           paddingRight: 1,
         }}
@@ -32,26 +33,26 @@ export function OpencodeDialog(props: OpencodeDialogProps) {
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#58a6ff",
+            backgroundColor: th("#58a6ff"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#ffffff" }}>
+          <text style={{ fg: th("#ffffff") }}>
             <b>OpenCode prompt</b>
           </text>
         </box>
         <box style={{ flexDirection: "column", paddingTop: 1, flexGrow: 1 }}>
-          <text style={{ fg: "#e6edf3", wrapMode: "word" }}>{promptText()}</text>
+          <text style={{ fg: th("#e6edf3"), wrapMode: "word" }}>{promptText()}</text>
         </box>
         <box
           style={{
             height: 1,
             flexShrink: 0,
-            backgroundColor: "#21262d",
+            backgroundColor: th("#21262d"),
             justifyContent: "center",
           }}
         >
-          <text style={{ fg: "#8b949e" }}>Enter: send · Esc: cancel</text>
+          <text style={{ fg: th("#8b949e") }}>Enter: send · Esc: cancel</text>
         </box>
       </box>
     </box>

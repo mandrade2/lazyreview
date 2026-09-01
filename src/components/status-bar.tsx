@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { useTerminalDimensions } from "@opentui/solid"
 import { Show, createMemo } from "solid-js"
 import type { AppMode } from "../utils/git"
@@ -156,7 +157,7 @@ export function StatusBar(props: StatusBarProps) {
       style={{
         height: 1,
         flexShrink: 0,
-        backgroundColor: "#161b22",
+        backgroundColor: th("#161b22"),
         paddingLeft: 1,
         paddingRight: 1,
         flexDirection: "row",
@@ -166,15 +167,15 @@ export function StatusBar(props: StatusBarProps) {
     >
       <box style={{ flexDirection: "row", width: Math.max(0, dimensions().width - 2) }}>
         <Show when={layout().primary.length > 0}>
-          <text style={{ fg: layout().isSearchMode ? "#d29922" : "#58a6ff" }}>{layout().primary}</text>
+          <text style={{ fg: layout().isSearchMode ? th("#d29922") : th("#58a6ff") }}>{layout().primary}</text>
         </Show>
         <Show when={layout().secondary.length > 0}>
-          <text style={{ fg: "#8b949e" }}>{layout().secondary}</text>
+          <text style={{ fg: th("#8b949e") }}>{layout().secondary}</text>
         </Show>
         <Show when={layout().leftGap > 0}>
           <text> </text>
         </Show>
-        <text style={{ fg: props.searchActive && (props.searchMatchCount ?? 0) === 0 ? "#f85149" : "#e6edf3" }}>
+        <text style={{ fg: props.searchActive && (props.searchMatchCount ?? 0) === 0 ? th("#f85149") : th("#e6edf3") }}>
           {layout().center}
         </text>
         <Show when={layout().spacer.length > 0}>
@@ -184,7 +185,7 @@ export function StatusBar(props: StatusBarProps) {
           <text> </text>
         </Show>
         <Show when={layout().right.length > 0}>
-          <text style={{ fg: "#8b949e" }}>{layout().right}</text>
+          <text style={{ fg: th("#8b949e") }}>{layout().right}</text>
         </Show>
       </box>
     </box>

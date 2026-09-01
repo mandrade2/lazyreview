@@ -1,3 +1,4 @@
+import { th } from "../utils/theme"
 import { For, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import type { CommitInfo } from "../utils/git"
@@ -71,20 +72,20 @@ export function CommitList(props: CommitListProps) {
                 paddingLeft: 1,
                 paddingRight: 1,
                 backgroundColor: isSelected()
-                  ? props.focused ? "#388bfd26" : "#30363d"
+                  ? props.focused ? th("#388bfd26") : th("#30363d")
                   : "transparent",
                 flexDirection: "row",
               }}
             >
               <box style={{ width: maxHashLength() + 1 }}>
-                <text style={{ fg: "#58a6ff" }}>{commit.shortHash}</text>
+                <text style={{ fg: th("#58a6ff") }}>{commit.shortHash}</text>
               </box>
-              <text style={{ fg: isSelected() ? "#e6edf3" : "#8b949e" }}>
+              <text style={{ fg: isSelected() ? th("#e6edf3") : th("#8b949e") }}>
                 {truncateMessage(commit.message, messageMaxWidth())}
               </text>
               <box style={{ flexGrow: 1 }} />
               <box style={{ width: dateColumnWidth }}>
-                <text style={{ fg: "#6e7681" }}>{formatDate(commit.date, dateColumnWidth)}</text>
+                <text style={{ fg: th("#6e7681") }}>{formatDate(commit.date, dateColumnWidth)}</text>
               </box>
             </box>
           )

@@ -1,3 +1,4 @@
+import { th } from "./utils/theme"
 import { createSignal, createMemo, createEffect, Show, onMount, onCleanup, untrack } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import type { MouseEvent } from "@opentui/core"
@@ -1660,7 +1661,7 @@ export function App() {
         width: dimensions().width,
         height: dimensions().height,
         flexDirection: "column",
-        backgroundColor: "#0d1117",
+        backgroundColor: th("#0d1117"),
       }}
     >
       <Header mode={mode()} />
@@ -1687,11 +1688,11 @@ export function App() {
               style={{
                 height: 1,
                 flexShrink: 0,
-                backgroundColor: focusedPanel() === "files" ? "#58a6ff" : "#21262d",
+                backgroundColor: focusedPanel() === "files" ? th("#58a6ff") : th("#21262d"),
                 paddingLeft: 1,
               }}
             >
-              <text style={{ fg: focusedPanel() === "files" ? "#ffffff" : "#8b949e", width: filesHeaderWidth(), wrapMode: "none" }}>
+              <text style={{ fg: focusedPanel() === "files" ? th("#ffffff") : th("#8b949e"), width: filesHeaderWidth(), wrapMode: "none" }}>
                 <b>{filesHeaderText()}</b>
               </text>
             </box>
@@ -1699,7 +1700,7 @@ export function App() {
               when={!loading()}
               fallback={
                 <box style={{ padding: 1 }}>
-                  <text style={{ fg: "#8b949e" }}>
+                  <text style={{ fg: th("#8b949e") }}>
                     {files().length === 0 && viewState() === "files" ? "No changes" : "Loading..."}
                   </text>
                 </box>
@@ -1709,7 +1710,7 @@ export function App() {
                 when={!error()}
                 fallback={
                   <box style={{ padding: 1 }}>
-                    <text style={{ fg: "#f85149" }}>Error: {error()}</text>
+                    <text style={{ fg: th("#f85149") }}>Error: {error()}</text>
                   </box>
                 }
               >
@@ -1731,7 +1732,7 @@ export function App() {
                     when={commits().length > 0}
                     fallback={
                       <box style={{ padding: 1 }}>
-                        <text style={{ fg: "#8b949e" }}>No commits found</text>
+                        <text style={{ fg: th("#8b949e") }}>No commits found</text>
                       </box>
                     }
                   >
@@ -1751,7 +1752,7 @@ export function App() {
                     when={branches().length > 0}
                     fallback={
                       <box style={{ padding: 1 }}>
-                        <text style={{ fg: "#8b949e" }}>No branches found</text>
+                        <text style={{ fg: th("#8b949e") }}>No branches found</text>
                       </box>
                     }
                   >
@@ -1783,11 +1784,11 @@ export function App() {
               style={{
                 height: 1,
                 flexShrink: 0,
-                backgroundColor: focusedPanel() === "diff" ? "#58a6ff" : "#21262d",
+                backgroundColor: focusedPanel() === "diff" ? th("#58a6ff") : th("#21262d"),
                 paddingLeft: 1,
               }}
             >
-              <text style={{ fg: focusedPanel() === "diff" ? "#ffffff" : "#8b949e", width: diffHeaderWidth(), wrapMode: "none" }}>
+              <text style={{ fg: focusedPanel() === "diff" ? th("#ffffff") : th("#8b949e"), width: diffHeaderWidth(), wrapMode: "none" }}>
                 <b>DIFF</b>
                 {diffHeaderSuffix()}
               </text>
@@ -1802,7 +1803,7 @@ export function App() {
                     alignItems: "center",
                   }}
                 >
-                  <text style={{ fg: "#8b949e" }}>
+                  <text style={{ fg: th("#8b949e") }}>
                     {diffPlaceholderMessage()}
                   </text>
                 </box>
@@ -1818,7 +1819,7 @@ export function App() {
                       alignItems: "center",
                     }}
                   >
-                    <text style={{ fg: "#8b949e" }}>Loading file...</text>
+                    <text style={{ fg: th("#8b949e") }}>Loading file...</text>
                   </box>
                 }
               >
