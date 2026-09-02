@@ -8,12 +8,24 @@ interface CommitDialogProps {
   message: string
   error: string | null
   committing: boolean
+  branch: string
+}
+
+function truncate(str: string, maxLength: number): string {
+  if (maxLength <= 0) return ""
+  if (str.length <= maxLength) return str
+  return str.slice(0, Math.max(0, maxLength - 3)) + "..."
 }
 
 export function CommitDialog(props: CommitDialogProps) {
   const dimensions = useTerminalDimensions()
   const dialogWidth = () => Math.min(90, Math.max(20, dimensions().width - 4))
   const promptText = () => `${props.message}_`
+  const title = () =>
+    truncate(
+      `Commit to ${props.branch} · list [${props.listNumber}] (${props.fileCount} files)`,
+      dialogWidth() - 2,
+    )
 
   return (
     <box
@@ -46,7 +58,7 @@ export function CommitDialog(props: CommitDialogProps) {
           }}
         >
           <text style={{ fg: th("#ffffff") }}>
-            <b>{`Commit list [${props.listNumber}] (${props.fileCount} files)`}</b>
+            <b>{title()}</b>
           </text>
         </box>
         <box style={{ flexDirection: "column", paddingTop: 1, flexGrow: 1 }}>
