@@ -626,11 +626,12 @@ export function parseDiff(diff: string): DiffLine[] {
   return lines
 }
 
-// Get list of recent commits
-export async function getCommitList(limit = 50): Promise<CommitInfo[]> {
+// Get list of commits, paginated via limit/skip so callers can fetch history
+// beyond the initial page without loading the entire log up front.
+export async function getCommitList(limit = 100, skip = 0): Promise<CommitInfo[]> {
   try {
     const format = "%H|%h|%an|%ar|%s"
-    const result = await runGit(() => Bun.$`git -C ${targetDir} log --format=${format} -n ${limit}`.quiet())
+    const result = await runGit(() => Bun.$`git -C ${targetDir} log --format=${format} --skip=${skip} -n ${limit}`.quiet())
     const output = result.stdout.toString().trim()
     
     if (!output) {

@@ -74,7 +74,8 @@ export function StatusBar(props: StatusBarProps) {
   const keybinds = () => {
     // List view (commits or branches)
     if (props.viewState === "list") {
-      return "j/k:nav enter:select r:refresh m:mode ?:help q:quit"
+      const search = props.mode === "commit" ? "/:search " : ""
+      return `${search}j/k:nav enter:select r:refresh m:mode ?:help q:quit`
     }
     
     // File view - different keybinds based on mode and panel
@@ -115,6 +116,9 @@ export function StatusBar(props: StatusBarProps) {
       return "enter:search esc:cancel"
     }
     if (props.searchActive) {
+      if (props.viewState === "list" && props.mode === "commit") {
+        return "j/k:nav enter:select esc:clear /:search"
+      }
       return "n/N:match esc:clear /:search"
     }
     return keybinds()

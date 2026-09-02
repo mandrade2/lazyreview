@@ -9,9 +9,55 @@ interface CommitListProps {
   focused: boolean
   width: number
   reservedBottom?: number
+  searchQuery?: string
 }
 
 const dateColumnWidth = 13
+
+// Renders text with case-insensitive matches of `query` highlighted.
+function HighlightedText(props: {
+  text: string
+  query: string | undefined
+  baseFg: string
+  highlightFg: string
+}) {
+  const segments = createMemo(() => {
+    const query = (props.query ?? "").trim()
+    const text = props.text
+
+    if (!query) {
+      return [{ text, match: false }]
+    }
+
+    const result: Array<{ text: string; match: boolean }> = []
+    const lower = text.toLowerCase()
+    const queryLower = query.toLowerCase()
+    let i = 0
+    while (i < text.length) {
+      const idx = lower.indexOf(queryLower, i)
+      if (idx === -1) {
+        result.push({ text: text.slice(i), match: false })
+        break
+      }
+      if (idx > i) {
+        result.push({ text: text.slice(i, idx), match: false })
+      }
+      result.push({ text: text.slice(idx, idx + query.length), match: true })
+      i = idx + query.length
+    }
+    return result
+  })
+
+  return (
+    <>
+      <For each={segments()}>
+        {(segment) => (
+          <text style={{ fg: segment.match ? props.highlightFg : props.baseFg }}>{segment.text}</text>
+        )}
+      </For>
+    </>
+  )
+}
 
 export function CommitList(props: CommitListProps) {
   const dimensions = useTerminalDimensions()
@@ -77,12 +123,20 @@ export function CommitList(props: CommitListProps) {
                 flexDirection: "row",
               }}
             >
-              <box style={{ width: maxHashLength() + 1 }}>
-                <text style={{ fg: th("#58a6ff") }}>{commit.shortHash}</text>
+              <box style={{ width: maxHashLength() + 1, flexDirection: "row" }}>
+                <HighlightedText
+                  text={commit.shortHash}
+                  query={props.searchQuery}
+                  baseFg={th("#58a6ff")}
+                  highlightFg={th("#d29922")}
+                />
               </box>
-              <text style={{ fg: isSelected() ? th("#e6edf3") : th("#8b949e") }}>
-                {truncateMessage(commit.message, messageMaxWidth())}
-              </text>
+              <HighlightedText
+                text={truncateMessage(commit.message, messageMaxWidth())}
+                query={props.searchQuery}
+                baseFg={isSelected() ? th("#e6edf3") : th("#8b949e")}
+                highlightFg={th("#d29922")}
+              />
               <box style={{ flexGrow: 1 }} />
               <box style={{ width: dateColumnWidth }}>
                 <text style={{ fg: th("#6e7681") }}>{formatDate(commit.date, dateColumnWidth)}</text>

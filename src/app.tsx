@@ -11,6 +11,7 @@ import { OpencodeDialog } from "./components/opencode-dialog"
 import { CommitDialog } from "./components/commit-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
+import { LoadingOverlay } from "./components/loading-overlay"
 import {
   parseDiff,
   getGitChanges,
@@ -192,6 +193,11 @@ export function App() {
   const [searchMatches, setSearchMatches] = createSignal<Array<{ line: number; start: number; length: number }>>([])
   const [currentMatchIndex, setCurrentMatchIndex] = createSignal(0)
 
+  // Commit list search state (vim-style / search over the commit list)
+  const [commitSearchMode, setCommitSearchMode] = createSignal(false) // true when typing query
+  const [commitSearchQuery, setCommitSearchQuery] = createSignal("") // current input
+  const [commitSearchActive, setCommitSearchActive] = createSignal(false) // true when filter is applied
+
   // Scroll offset to restore after an external edit/opencode session.
   // When not null, the file-detail effect will use this instead of jumping to
   // the first change.
@@ -222,6 +228,32 @@ export function App() {
   const [commits, setCommits] = createSignal<CommitInfo[]>([])
   const [listSelectedIndex, setListSelectedIndex] = createSignal(0)
   const [selectedCommit, setSelectedCommit] = createSignal<CommitInfo | null>(null)
+  // Pagination for the commit list: commits load in pages and append as the
+  // selection approaches the end, so the list is not limited to 50 entries.
+  const commitPageSize = 100
+  const [commitsExhausted, setCommitsExhausted] = createSignal(false)
+  const [commitsLoadingMore, setCommitsLoadingMore] = createSignal(false)
+
+  // Commit list actually shown: full list, or a case-insensitive filter over
+  // hash/short hash/author/message when commit search is active.
+  const visibleCommits = createMemo(() => {
+    if (!commitSearchActive()) return commits()
+    const query = commitSearchQuery().trim().toLowerCase()
+    if (!query) return commits()
+    return commits().filter((c) =>
+      c.message.toLowerCase().includes(query) ||
+      c.hash.toLowerCase().includes(query) ||
+      c.shortHash.toLowerCase().includes(query) ||
+      c.author.toLowerCase().includes(query),
+    )
+  })
+
+  // Clear commit search without moving the selection (callers set the index).
+  const clearCommitSearch = () => {
+    setCommitSearchMode(false)
+    setCommitSearchQuery("")
+    setCommitSearchActive(false)
+  }
   
   // Branch mode state
   const [branches, setBranches] = createSignal<BranchInfo[]>([])
@@ -496,15 +528,39 @@ export function App() {
     const epoch = nextLoadEpoch()
     setLoading(true)
     setError(null)
+    setCommitsExhausted(false)
+    setCommitsLoadingMore(false)
     try {
-      const commitList = await getCommitList()
+      const commitList = await getCommitList(commitPageSize, 0)
       if (!isCurrentLoad(epoch)) return
       setCommits(commitList)
+      setCommitsExhausted(commitList.length < commitPageSize)
     } catch (e) {
       if (!isCurrentLoad(epoch)) return
       setError(e instanceof Error ? e.message : "Failed to load commits")
     } finally {
       if (isCurrentLoad(epoch)) setLoading(false)
+    }
+  }
+
+  // Append the next page of commits without blanking the visible list.
+  const loadMoreCommits = async () => {
+    if (commitsLoadingMore() || commitsExhausted()) return
+    const epoch = loadEpoch
+    setCommitsLoadingMore(true)
+    try {
+      const more = await getCommitList(commitPageSize, commits().length)
+      if (!isCurrentLoad(epoch)) return
+      const existing = new Set(commits().map((c) => c.hash))
+      const fresh = more.filter((c) => !existing.has(c.hash))
+      if (fresh.length > 0) {
+        setCommits((prev) => [...prev, ...fresh])
+      }
+      if (more.length < commitPageSize) setCommitsExhausted(true)
+    } catch {
+      // Non-critical: keep whatever is already loaded.
+    } finally {
+      setCommitsLoadingMore(false)
     }
   }
   
@@ -564,6 +620,28 @@ export function App() {
     }
   }
 
+  // Keep the list selection within bounds when the commit filter changes.
+  createEffect(() => {
+    if (viewState() !== "list") return
+    const count = mode() === "commit" ? visibleCommits().length : selectableBranches().length
+    if (listSelectedIndex() >= count) {
+      setListSelectedIndex(Math.max(0, count - 1))
+    }
+  })
+
+  // Load another page of commits when the selection nears the end of the
+  // loaded list. Triggering on the raw list (not the filtered list) avoids
+  // paging through the entire history just because a search has few matches.
+  createEffect(() => {
+    if (mode() !== "commit" || viewState() !== "list") return
+    if (commitsExhausted() || commitsLoadingMore()) return
+    const count = commits().length
+    if (count === 0) return
+    if (listSelectedIndex() >= count - 10) {
+      loadMoreCommits()
+    }
+  })
+
   // Run an external session (editor or opencode) and keep the review state
   // intact when control returns to lazyreview.
   const handleExternalSession = async (openSession: () => Promise<unknown>) => {
@@ -605,6 +683,9 @@ export function App() {
     setOnScreenControls(settings.onScreenControls)
     setSettingsLoaded(true)
     await loadDirtyChanges()
+    // Resolve the current branch up front so the commit dialog can show where
+    // the commit will land without waiting on a later git call.
+    getCurrentBranch().then(setCurrentBranch)
   })()
   
   // Helper to get max scroll for current file, accounting for line wrapping in narrow panes
@@ -859,7 +940,7 @@ export function App() {
     if (viewState() === "list") {
       // Commit or branch list
       if (mode() === "commit") {
-        setListSelectedIndex(i => Math.max(0, Math.min(i + delta, commits().length - 1)))
+        setListSelectedIndex(i => Math.max(0, Math.min(i + delta, visibleCommits().length - 1)))
       } else if (mode() === "branch") {
         setListSelectedIndex(i => Math.max(0, Math.min(i + delta, selectableBranches().length - 1)))
       }
@@ -1045,7 +1126,7 @@ export function App() {
       return
     }
 
-    if (key.name === "q" && !searchMode() && !opencodeDialogOpen() && !commitDialogOpen()) {
+    if (key.name === "q" && !searchMode() && !commitSearchMode() && !opencodeDialogOpen() && !commitDialogOpen()) {
       // When the help dialog is shown, q closes it instead of quitting.
       if (showHelp()) {
         setShowHelp(false)
@@ -1143,6 +1224,42 @@ export function App() {
       return
     }
 
+    // Commit list search input handling (only reachable in commit list view)
+    if (commitSearchMode()) {
+      // Escape cancels the search without applying the filter
+      if (key.name === "escape") {
+        clearCommitSearch()
+        return
+      }
+      // Enter applies the filter and jumps to the first match
+      if (key.name === "return") {
+        setCommitSearchMode(false)
+        setCommitSearchActive(commitSearchQuery().trim().length > 0)
+        setListSelectedIndex(0)
+        return
+      }
+      // Backspace removes last character
+      if (key.name === "backspace") {
+        setCommitSearchQuery((q) => q.slice(0, -1))
+        return
+      }
+      // Add printable characters to the query
+      if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+        setCommitSearchQuery((q) => q + key.sequence)
+        return
+      }
+      // Ignore other keys while typing
+      return
+    }
+
+    // / - start commit search in the commit list
+    if (key.sequence === "/" && mode() === "commit" && viewState() === "list") {
+      setCommitSearchMode(true)
+      setCommitSearchQuery("")
+      setCommitSearchActive(false)
+      return
+    }
+
     // Toggle help with ?
     if (key.name === "?" || key.sequence === "?") {
       if (!showHelp()) setHelpConfigIndex(0)
@@ -1208,6 +1325,8 @@ export function App() {
         setCommitMessage("")
         setCommitError(null)
         setCommitDialogOpen(true)
+        // Refresh the branch in case it changed since startup.
+        getCurrentBranch().then(setCurrentBranch)
       }
       return
     }
@@ -1226,6 +1345,7 @@ export function App() {
       setSelectedCommit(null)
       setSelectedBranch(null)
       setFiles([])
+      clearCommitSearch()
       
       // Load data for new mode
       if (nextMode === "dirty") {
@@ -1238,6 +1358,13 @@ export function App() {
       return
     }
     
+    // Escape clears an active commit search and returns to the full list
+    if (key.name === "escape" && mode() === "commit" && viewState() === "list" && commitSearchActive()) {
+      clearCommitSearch()
+      setListSelectedIndex(0)
+      return
+    }
+
     // Escape - hierarchical back navigation
     if (key.name === "escape") {
       if (focusedPanel() === "diff") {
@@ -1276,8 +1403,13 @@ export function App() {
       if (viewState() === "list") {
         // In list view: select commit/branch and load changes
         if (mode() === "commit") {
-          const commit = commits()[listSelectedIndex()]
+          const commit = visibleCommits()[listSelectedIndex()]
           if (commit) {
+            // Clear any active commit filter and restore the cursor to the
+            // selected commit's position in the full list.
+            const fullIndex = commits().findIndex(c => c.hash === commit.hash)
+            clearCommitSearch()
+            if (fullIndex >= 0) setListSelectedIndex(fullIndex)
             setSelectedCommit(commit)
             setViewState("files")
             setFocusedPanel("files")
@@ -1334,7 +1466,7 @@ export function App() {
       if (viewState() === "list") {
         // List navigation
         if (mode() === "commit") {
-          setListSelectedIndex(i => Math.min(i + 1, commits().length - 1))
+          setListSelectedIndex(i => Math.min(i + 1, visibleCommits().length - 1))
         } else if (mode() === "branch") {
           setListSelectedIndex(i => Math.min(i + 1, selectableBranches().length - 1))
         }
@@ -1378,7 +1510,7 @@ export function App() {
     if (key.name === "g" && key.shift) {
       if (viewState() === "list") {
         if (mode() === "commit") {
-          setListSelectedIndex(commits().length - 1)
+          setListSelectedIndex(visibleCommits().length - 1)
         } else if (mode() === "branch") {
           setListSelectedIndex(selectableBranches().length - 1)
         }
@@ -1588,7 +1720,9 @@ export function App() {
       return `FILES (${files().length})`
     } else if (mode() === "commit") {
       if (viewState() === "list") {
-        return `COMMITS (${commits().length})`
+        const total = commits().length
+        const shown = visibleCommits().length
+        return shown !== total ? `COMMITS (${shown}/${total})` : `COMMITS (${total})`
       } else {
         return `FILES (${files().length}) · ${selectedCommit()?.shortHash ?? ""}`
       }
@@ -1700,9 +1834,7 @@ export function App() {
               when={!loading()}
               fallback={
                 <box style={{ padding: 1 }}>
-                  <text style={{ fg: th("#8b949e") }}>
-                    {files().length === 0 && viewState() === "files" ? "No changes" : "Loading..."}
-                  </text>
+                  <text style={{ fg: th("#8b949e") }}>Loading...</text>
                 </box>
               }
             >
@@ -1729,19 +1861,22 @@ export function App() {
                 {/* Commit mode list view: show commits */}
                 <Show when={mode() === "commit" && viewState() === "list"}>
                   <Show
-                    when={commits().length > 0}
+                    when={visibleCommits().length > 0}
                     fallback={
                       <box style={{ padding: 1 }}>
-                        <text style={{ fg: th("#8b949e") }}>No commits found</text>
+                        <text style={{ fg: th("#8b949e") }}>
+                          {commitSearchActive() ? "No matching commits" : "No commits found"}
+                        </text>
                       </box>
                     }
                   >
                     <CommitList
-                      commits={commits()}
+                      commits={visibleCommits()}
                       selectedIndex={listSelectedIndex()}
                       focused={focusedPanel() === "files"}
                       width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
                       reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
+                      searchQuery={commitSearchActive() ? commitSearchQuery() : undefined}
                     />
                   </Show>
                 </Show>
@@ -1847,6 +1982,12 @@ export function App() {
         <Show when={showControlsColumn()}>
           <OnScreenControls orientation="landscape" onKey={injectKey} />
         </Show>
+
+        {/* Loading overlay - covers the main area during the initial load and
+            any mode/refresh load so the user never sees empty panels. */}
+        <Show when={loading()}>
+          <LoadingOverlay />
+        </Show>
       </box>
 
       {/* On-screen controls - bottom row in portrait */}
@@ -1860,14 +2001,14 @@ export function App() {
         visibleItemCount={allVisibleItems().length}
         selectedIndex={selectedIndex()}
         focusedPanel={focusedPanel()}
-        listCount={mode() === "commit" ? commits().length : selectableBranches().length}
+        listCount={mode() === "commit" ? visibleCommits().length : selectableBranches().length}
         listSelectedIndex={listSelectedIndex()}
         contextInfo={contextInfo()}
-        searchMode={searchMode()}
-        searchQuery={searchQuery()}
-        searchActive={searchActive()}
-        searchMatchCount={searchMatches().length}
-        currentMatchIndex={currentMatchIndex()}
+        searchMode={searchMode() || commitSearchMode()}
+        searchQuery={mode() === "commit" && viewState() === "list" ? commitSearchQuery() : searchQuery()}
+        searchActive={mode() === "commit" && viewState() === "list" ? commitSearchActive() : searchActive()}
+        searchMatchCount={mode() === "commit" && viewState() === "list" ? visibleCommits().length : searchMatches().length}
+        currentMatchIndex={mode() === "commit" && viewState() === "list" ? listSelectedIndex() : currentMatchIndex()}
         diffViewMode={diffViewMode()}
         showLineBg={showLineBg()}
         fileListViewMode={fileListViewMode()}
@@ -1895,6 +2036,7 @@ export function App() {
           message={commitMessage()}
           error={commitError()}
           committing={committing()}
+          branch={currentBranch() ?? "detached HEAD"}
         />
       </Show>
     </box>
