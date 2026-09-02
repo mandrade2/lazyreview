@@ -85,4 +85,23 @@ describe("highlightFile", () => {
     const colors = [...new Set(result.flat().map((token) => token.color))]
     expect(colors.length).toBeGreaterThan(1)
   })
+
+  test("coalesces rapid requests and resolves only the latest", async () => {
+    clearHighlightCache()
+    const pA = highlightFile("export const a = 1\n", "a.ts")
+    const pB = highlightFile("export const b = 2\n", "b.ts")
+    // Attach handlers before the next request can drop B, so the expected
+    // stale rejection is always observed.
+    const settledAB = Promise.allSettled([pA, pB])
+    const pC = highlightFile("export const c = 3\n", "c.ts")
+
+    const latest = await pC
+    expect(latest.flat().map((token) => token.content).join("")).toContain("c")
+
+    // Earlier requests are superseded/dropped rather than highlighted.
+    const settled = await settledAB
+    for (const result of settled) {
+      expect(result.status).toBe("rejected")
+    }
+  })
 })

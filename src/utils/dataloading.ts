@@ -150,9 +150,27 @@ const pending = new Map<
   }
 >()
 
+// At most one job runs in the worker at a time. A single "queued" slot keeps
+// the most recent request that arrived while the worker was busy; older
+// requests in between are dropped as stale (their callers already ignore stale
+// results via `currentKey`). This keeps the worker persistent and the queue
+// bounded to one entry, avoiding the spawn/terminate churn that crashed Bun
+// 1.3.x and never highlighting files the user has already navigated past.
+let inFlightId: number | null = null
+let queued: { id: number; key: string; content: string; filePath: string } | null = null
+
+function rejectJob(id: number, reason: Error) {
+  const job = pending.get(id)
+  if (!job) return
+  pending.delete(id)
+  job.reject(reason)
+}
+
 function terminateWorker(reason?: Error) {
   worker?.terminate()
   worker = null
+  inFlightId = null
+  queued = null
   for (const { reject } of pending.values()) {
     reject(reason ?? new Error("Highlighter worker stopped"))
   }
@@ -175,6 +193,7 @@ function getWorker(): Worker {
       if (!job) return
 
       pending.delete(id)
+      if (inFlightId === id) inFlightId = null
 
       // Stale result guard: only accept the response if this key is still
       // relevant. We cache it anyway because the user may navigate back.
@@ -185,6 +204,8 @@ function getWorker(): Worker {
       } else {
         job.reject(new Error("Highlight result is stale"))
       }
+
+      pump()
     }
 
     worker.onmessageerror = (event) => {
@@ -200,6 +221,25 @@ function getWorker(): Worker {
   return worker
 }
 
+function startJob(job: { id: number; key: string; content: string; filePath: string }) {
+  inFlightId = job.id
+  try {
+    getWorker().postMessage({ id: job.id, key: job.key, content: job.content, filePath: job.filePath } satisfies HighlightRequest)
+  } catch (error) {
+    if (inFlightId === job.id) inFlightId = null
+    rejectJob(job.id, error instanceof Error ? error : new Error(String(error)))
+    pump()
+  }
+}
+
+// Promote the queued job (if any) once the in-flight job has settled.
+function pump() {
+  if (inFlightId !== null || !queued) return
+  const next = queued
+  queued = null
+  startJob(next)
+}
+
 function runHighlightInWorker(
   key: string,
   content: string,
@@ -209,11 +249,11 @@ function runHighlightInWorker(
     const id = nextId++
     pending.set(id, { key, resolve, reject })
 
-    try {
-      getWorker().postMessage({ id, key, content, filePath } satisfies HighlightRequest)
-    } catch (error) {
-      pending.delete(id)
-      reject(error instanceof Error ? error : new Error(String(error)))
+    if (inFlightId !== null) {
+      if (queued) rejectJob(queued.id, new Error("Highlight result is stale"))
+      queued = { id, key, content, filePath }
+    } else {
+      startJob({ id, key, content, filePath })
     }
   })
 }
@@ -221,10 +261,14 @@ function runHighlightInWorker(
 /**
  * Highlight a file's content. Returns cached results immediately when available.
  *
- * All highlighting runs in a worker so the UI never blocks. If the user
- * navigates while a highlight is in flight, the worker is terminated and
- * restarted for the new selection. If the worker cannot run at all, highlighting
- * falls back to the main thread.
+ * All highlighting runs in a persistent worker so the UI never blocks. Requests
+ * are coalesced to a single in-flight job plus the most recent queued one, and
+ * stale results are dropped via the `currentKey` check rather than terminating
+ * the worker. Terminating and respawning the worker on every fast navigation
+ * was the trigger for Bun 1.3.x native crashes (see the `runGit` note in git.ts
+ * about workers and subprocesses) and forced Shiki to reload its grammars each
+ * time. If the worker cannot run at all, highlighting falls back to the main
+ * thread.
  */
 export async function highlightFile(
   content: string,
@@ -241,14 +285,6 @@ export async function highlightFile(
   }
 
   currentKey = key
-
-  // Cancel any in-flight worker work for a different file so the current
-  // selection gets highlighted as soon as possible. Terminating the worker is
-  // the only reliable way to stop a run-to-completion Shiki tokenization
-  // mid-flight.
-  if (pending.size > 0) {
-    terminateWorker()
-  }
 
   try {
     const result = await runHighlightInWorker(key, content, filePath)

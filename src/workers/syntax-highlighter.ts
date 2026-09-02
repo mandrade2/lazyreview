@@ -21,8 +21,17 @@ interface WorkerContext {
 
 const ctx = globalThis as unknown as WorkerContext
 
-ctx.onmessage = async (event: MessageEvent<HighlightRequest>) => {
+// Process requests one at a time. Shiki tokenization is synchronous once its
+// language is loaded, but the async parts (highlighter + grammar loading) are
+// not safe to interleave, so each message is chained behind the previous one.
+let chain: Promise<void> = Promise.resolve()
+
+ctx.onmessage = (event: MessageEvent<HighlightRequest>) => {
   const { id, key, content, filePath } = event.data
-  const result = await highlightCode(content, filePath)
-  ctx.postMessage({ id, key, result } satisfies HighlightResponse)
+  chain = chain
+    .catch(() => {})
+    .then(async () => {
+      const result = await highlightCode(content, filePath)
+      ctx.postMessage({ id, key, result } satisfies HighlightResponse)
+    })
 }
