@@ -169,6 +169,11 @@ export function App() {
   // paths (most recently added first). List 1 is the default list that the
   // spacebar toggles; number keys 1-9 assign files to any list.
   const [changeLists, setChangeLists] = createSignal<Map<number, string[]>>(new Map())
+  // Fingerprint of each reviewed file at the moment it was moved into a
+  // change list. Used to detect files that gained new changes after being
+  // reviewed so they can be returned to "To Review" on refresh/commit instead
+  // of clearing the entire review state.
+  const [reviewedFingerprints, setReviewedFingerprints] = createSignal<Map<string, string>>(new Map())
   const [filesGeneration, setFilesGeneration] = createSignal(0)
 
   // Diff display mode: show diff-only (unified diff) or full file with inline highlights
@@ -390,6 +395,7 @@ export function App() {
   createEffect(() => {
     filesGeneration() // track dependency
     setChangeLists(new Map())
+    setReviewedFingerprints(new Map())
     setSelectedIndex(0)
     scrollDiffTo(0)
     lastSelectedFilePath = null
@@ -505,6 +511,49 @@ export function App() {
   const nextLoadEpoch = () => ++loadEpoch
   const isCurrentLoad = (epoch: number) => epoch === loadEpoch
 
+  // Reconcile the reviewed change lists against freshly loaded changes. Files
+  // that changed (or disappeared) since they were reviewed are removed from
+  // their lists so they surface in "To Review" again; everything else stays
+  // put. This preserves review state across refreshes and commits instead of
+  // clearing it wholesale.
+  const reconcileReviewedFiles = (changes: FileChange[]) => {
+    const byPath = new Map(changes.map(f => [f.path, f]))
+    const fingerprints = reviewedFingerprints()
+    const dropped = new Set<string>()
+
+    setChangeLists(prev => {
+      let changed = false
+      const next = new Map<number, string[]>()
+      for (const [num, list] of prev) {
+        const kept: string[] = []
+        for (const p of list) {
+          const file = byPath.get(p)
+          const reviewed = fingerprints.get(p)
+          if (file && reviewed !== undefined && reviewed === file.fingerprint) {
+            kept.push(p)
+          } else {
+            dropped.add(p)
+            changed = true
+          }
+        }
+        if (kept.length > 0) {
+          next.set(num, kept)
+        } else {
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+
+    if (dropped.size > 0) {
+      setReviewedFingerprints(prev => {
+        const next = new Map(prev)
+        for (const p of dropped) next.delete(p)
+        return next
+      })
+    }
+  }
+
   const loadDirtyChanges = async (preserveReviewState = false) => {
     const epoch = nextLoadEpoch()
     setLoading(true)
@@ -514,6 +563,7 @@ export function App() {
       const changes = await getGitChanges()
       if (!isCurrentLoad(epoch)) return
       setFiles(changes)
+      if (preserveReviewState) reconcileReviewedFiles(changes)
       setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
       // perf measurement removed
     } catch (e) {
@@ -961,6 +1011,7 @@ export function App() {
   // Move file paths to a change list (target null = back to "To Review").
   // Paths are removed from every list first so a file lives in one list only.
   const applyMove = (paths: string[], target: number | null) => {
+    const fileByPath = new Map(files().map(f => [f.path, f]))
     setChangeLists(prev => {
       const next = new Map<number, string[]>()
       for (const [num, list] of prev) {
@@ -970,6 +1021,19 @@ export function App() {
       if (target !== null) {
         const existing = next.get(target) ?? []
         next.set(target, [...paths.filter(p => !existing.includes(p)), ...existing])
+      }
+      return next
+    })
+    setReviewedFingerprints(prev => {
+      const next = new Map(prev)
+      if (target === null) {
+        for (const p of paths) next.delete(p)
+      } else {
+        for (const p of paths) {
+          const file = fileByPath.get(p)
+          if (file) next.set(p, file.fingerprint)
+          else next.delete(p)
+        }
       }
       return next
     })
@@ -1074,9 +1138,15 @@ export function App() {
         listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status, fingerprint: f.fingerprint })),
         message,
       )
+      const committedPaths = listFiles.map(f => f.path)
       setChangeLists(prev => {
         const next = new Map(prev)
         next.delete(num)
+        return next
+      })
+      setReviewedFingerprints(prev => {
+        const next = new Map(prev)
+        for (const p of committedPaths) next.delete(p)
         return next
       })
       // Reload changes but keep the remaining lists intact. Await this
@@ -1676,7 +1746,7 @@ export function App() {
     // Refresh with 'r' - refreshes current mode's data
     if (key.name === "r") {
       if (mode() === "dirty") {
-        loadDirtyChanges()
+        loadDirtyChanges(true)
       } else if (mode() === "commit") {
         if (viewState() === "list") {
           loadCommits()
