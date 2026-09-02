@@ -26,6 +26,9 @@
   ],
   "author": "Matías Andrade",
   "license": "MIT",
+  "engines": {
+    "bun": ">=1.4.0"
+  },
   "scripts": {
     "build": "bun run script/build.ts",
     "build:local": "bun run script/build.ts --single",
@@ -37,7 +40,7 @@
     "replay": "bun run tests/preview.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.4.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

@@ -46,7 +46,7 @@ Download the latest release for your platform from [Releases](https://github.com
 
 ### From Source
 
-Requires [Bun](https://bun.sh):
+Requires [Bun](https://bun.sh) >= 1.4.0:
 
 ```bash
 git clone https://github.com/mandrade2/lazyreview.git
