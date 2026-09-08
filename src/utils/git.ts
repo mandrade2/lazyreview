@@ -574,6 +574,43 @@ export async function commitFiles(
   }
 }
 
+// Discard every change to a file, restoring it to HEAD. Untracked files are
+// deleted, newly-added (staged) files are unstaged then deleted, renames are
+// reverted, and modified/deleted/conflicted files are restored from HEAD.
+// This discards both staged and unstaged changes, matching the "discard"
+// semantics of the review UI.
+export async function discardFile(file: FileChange): Promise<void> {
+  const gitRoot = await getGitRoot()
+  try {
+    if (file.status === "untracked") {
+      await runGit(() => Bun.$`git -C ${gitRoot} clean -f -- ${file.path}`.quiet())
+      return
+    }
+
+    if (file.status === "added") {
+      // Staged new file: it exists in the index but not at HEAD, so it cannot
+      // be checked out. Unstage it, then delete the working-tree copy.
+      await runGit(() => Bun.$`git -C ${gitRoot} reset -q HEAD -- ${file.path}`.quiet())
+      await runGit(() => Bun.$`git -C ${gitRoot} clean -f -- ${file.path}`.quiet())
+      return
+    }
+
+    if (file.status === "renamed" && file.oldPath) {
+      // Revert the rename: unstage both paths, restore the original file, and
+      // delete the working-tree copy of the destination.
+      await runGit(() => Bun.$`git -C ${gitRoot} reset -q HEAD -- ${file.oldPath} ${file.path}`.quiet())
+      await runGit(() => Bun.$`git -C ${gitRoot} checkout HEAD -- ${file.oldPath}`.quiet())
+      await runGit(() => Bun.$`git -C ${gitRoot} clean -f -- ${file.path}`.quiet())
+      return
+    }
+
+    // modified, deleted, or conflicted: restore the file to HEAD.
+    await runGit(() => Bun.$`git -C ${gitRoot} checkout HEAD -- ${file.path}`.quiet())
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : "Failed to discard changes")
+  }
+}
+
 export function parseDiff(diff: string): DiffLine[] {
   const lines: DiffLine[] = []
   let oldLineNum = 0

@@ -9,6 +9,7 @@ import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
 import { OpencodeDialog } from "./components/opencode-dialog"
 import { CommitDialog } from "./components/commit-dialog"
+import { DiscardDialog } from "./components/discard-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
 import { LoadingOverlay } from "./components/loading-overlay"
@@ -23,6 +24,7 @@ import {
   getBranchChanges,
   loadFileDetails,
   commitFiles,
+  discardFile,
   type FileChange,
   type AppMode,
   type CommitInfo,
@@ -219,6 +221,12 @@ export function App() {
   const [commitMessage, setCommitMessage] = createSignal("")
   const [commitError, setCommitError] = createSignal<string | null>(null)
   const [committing, setCommitting] = createSignal(false)
+
+  // Discard dialog state
+  const [discardDialogOpen, setDiscardDialogOpen] = createSignal(false)
+  const [discardTarget, setDiscardTarget] = createSignal<FileChange | null>(null)
+  const [discardError, setDiscardError] = createSignal<string | null>(null)
+  const [discarding, setDiscarding] = createSignal(false)
 
   // Clear search state (defined early for use in effects)
   const clearSearch = () => {
@@ -1163,6 +1171,28 @@ export function App() {
     }
   }
 
+  // Discard every change to the selected file after the user confirms, then
+  // reload the dirty changes while keeping the remaining review state.
+  const executeDiscard = async () => {
+    const target = discardTarget()
+    if (!target) {
+      setDiscardDialogOpen(false)
+      return
+    }
+    setDiscarding(true)
+    setDiscardError(null)
+    try {
+      await discardFile(target)
+      await loadDirtyChanges(true)
+      setDiscardDialogOpen(false)
+      setDiscardTarget(null)
+    } catch (e) {
+      setDiscardError(e instanceof Error ? e.message : "Failed to discard changes")
+    } finally {
+      setDiscarding(false)
+    }
+  }
+
   // Move the selection to the first file of the next/previous file list
   // section ("To Review" and each non-empty change list), wrapping around.
   // In tree mode the first row of a section may be a folder, so the jump
@@ -1196,13 +1226,29 @@ export function App() {
       return
     }
 
-    if (key.name === "q" && !searchMode() && !commitSearchMode() && !opencodeDialogOpen() && !commitDialogOpen()) {
+    if (key.name === "q" && !searchMode() && !commitSearchMode() && !opencodeDialogOpen() && !commitDialogOpen() && !discardDialogOpen()) {
       // When the help dialog is shown, q closes it instead of quitting.
       if (showHelp()) {
         setShowHelp(false)
         return
       }
       renderer.destroy()
+      return
+    }
+
+    // Discard dialog input handling
+    if (discardDialogOpen()) {
+      if (discarding()) return
+      if (key.name === "escape" || key.name === "n") {
+        setDiscardDialogOpen(false)
+        setDiscardTarget(null)
+        setDiscardError(null)
+        return
+      }
+      if (key.name === "return" || key.name === "y") {
+        await executeDiscard()
+        return
+      }
       return
     }
 
@@ -1381,6 +1427,14 @@ export function App() {
     })()
     if (assignDigit !== null && viewState() === "files" && selectedItem()) {
       handleAssignToList(getSelectedPaths(), assignDigit)
+      return
+    }
+
+    // d - discard changes on the selected file (dirty mode only)
+    if (key.name === "d" && mode() === "dirty" && viewState() === "files" && selectedFile()) {
+      setDiscardTarget(selectedFile()!)
+      setDiscardError(null)
+      setDiscardDialogOpen(true)
       return
     }
 
@@ -2107,6 +2161,15 @@ export function App() {
           error={commitError()}
           committing={committing()}
           branch={currentBranch() ?? "detached HEAD"}
+        />
+      </Show>
+
+      <Show when={discardDialogOpen()}>
+        <DiscardDialog
+          path={discardTarget()?.path ?? ""}
+          branch={currentBranch() ?? "detached HEAD"}
+          error={discardError()}
+          discarding={discarding()}
         />
       </Show>
     </box>

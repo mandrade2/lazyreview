@@ -85,7 +85,7 @@ export function StatusBar(props: StatusBarProps) {
     const bgToggle = `b:bg${(props.showLineBg ?? true) ? "-" : "+"}`
     const viewToggle = `f:${(props.diffViewMode ?? "diff") === "diff" ? "full" : "diff"}`
     const listViewToggle = `t:${(props.fileListViewMode ?? "flat") === "flat" ? "tree" : "flat"}`
-    const listKeys = props.mode === "dirty" ? "1-9:list c:commit " : ""
+    const listKeys = props.mode === "dirty" ? "1-9:list d:discard c:commit " : ""
 
     if (props.focusedPanel === "files") {
       return `j/k:nav space:review ${listKeys}n/N:chunk ${viewToggle} ${listViewToggle} ${bgToggle} /:search enter:view e:edit o:opencode r:refresh ${backKey}m:mode ?:help q:quit`
