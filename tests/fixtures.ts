@@ -222,6 +222,50 @@ export async function buildIdenticalBranchesFixture(): Promise<BuiltFixture> {
   return fixture
 }
 
+export async function buildTagReviewFixture(): Promise<BuiltFixture> {
+  const fixture = await buildFixture({
+    name: "tag-review",
+    commits: [
+      {
+        message: "initial commit",
+        files: {
+          "README.md": "# Tag Review Test\n\nA repo for testing tag review mode.\n",
+          "src/index.ts": `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+`,
+        },
+      },
+    ],
+  })
+
+  const dir = fixture.path
+
+  // Tag the initial commit so tag mode has a comparison base. Distinct tag
+  // dates keep the newest-first ordering deterministic even though the tags
+  // are created in rapid succession.
+  await Bun.$`git -C ${dir} tag -a v1.0.0 -m "release 1.0.0"`.env({ GIT_COMMITTER_DATE: "2020-01-01T00:00:00Z" }).quiet()
+
+  // Add a farewell function in a follow-up commit and tag it as v1.1.0 so the
+  // two tags differ and selecting v1.1.0 compares it against v1.0.0.
+  await Bun.write(
+    join(dir, "src/index.ts"),
+    `export function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+export function farewell(name: string): string {
+  return \`Goodbye, \${name}!\`
+}
+`,
+  )
+  await Bun.$`git -C ${dir} add .`.quiet()
+  await Bun.$`git -C ${dir} commit -m "add farewell"`.quiet()
+  await Bun.$`git -C ${dir} tag -a v1.1.0 -m "release 1.1.0"`.env({ GIT_COMMITTER_DATE: "2021-01-01T00:00:00Z" }).quiet()
+
+  return fixture
+}
+
 export async function buildMergeConflictFixture(): Promise<BuiltFixture> {
   const fixture = await buildFixture({
     name: "merge-conflict",
