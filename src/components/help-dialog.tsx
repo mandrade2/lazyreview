@@ -16,7 +16,7 @@ const sections = [
   {
     title: "Modes",
     keybinds: [
-      { key: "m", desc: "Cycle modes: Dirty → Commit → Branch" },
+      { key: "m", desc: "Cycle modes: Dirty → Commit → Branch → Tag" },
       { key: "Esc", desc: "Go back (diff → files → list)" },
     ],
   },

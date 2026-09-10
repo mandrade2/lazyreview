@@ -42,7 +42,9 @@ export function StatusBar(props: StatusBarProps) {
   const panelText = () => {
     // In list view, no panel switching
     if (props.viewState === "list") {
-      return props.mode === "commit" ? "Commits" : "Branches"
+      if (props.mode === "commit") return "Commits"
+      if (props.mode === "tag") return "Tags"
+      return "Branches"
     }
     return props.focusedPanel === "files" 
       ? "[Files] Diff"
@@ -64,8 +66,8 @@ export function StatusBar(props: StatusBarProps) {
     if (props.viewState === "files" && props.contextInfo) {
       if (props.mode === "commit") {
         return `Commit: ${props.contextInfo}`
-      } else if (props.mode === "branch") {
-        return props.contextInfo // Already formatted as "current vs selected"
+      } else if (props.mode === "branch" || props.mode === "tag") {
+        return props.contextInfo // Already formatted as the comparison (e.g. "main (active) vs feature")
       }
     }
     return ""

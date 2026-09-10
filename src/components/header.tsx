@@ -34,6 +34,10 @@ export function Header(props: HeaderProps) {
         <text style={{ fg: props.mode === "branch" ? th("#58a6ff") : th("#6e7681") }}>
           {props.mode === "branch" ? "[Branch]" : "Branch"}
         </text>
+        <text style={{ fg: th("#6e7681") }}> </text>
+        <text style={{ fg: props.mode === "tag" ? th("#58a6ff") : th("#6e7681") }}>
+          {props.mode === "tag" ? "[Tag]" : "Tag"}
+        </text>
       </box>
       <text style={{ fg: th("#8b949e") }}>m:mode ?:help</text>
     </box>

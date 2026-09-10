@@ -1,4 +1,4 @@
-export type AppMode = "dirty" | "commit" | "branch"
+export type AppMode = "dirty" | "commit" | "branch" | "tag"
 
 export interface CommitInfo {
   hash: string
@@ -11,6 +11,13 @@ export interface CommitInfo {
 export interface BranchInfo {
   name: string
   isCurrent: boolean
+  shortHash: string
+  date: string
+  message: string
+}
+
+export interface TagInfo {
+  name: string
   shortHash: string
   date: string
   message: string
@@ -102,6 +109,10 @@ async function mapWithConcurrency<T, R>(
 }
 
 const maxConcurrentFileLoads = 8
+
+// Canonical hash of git's empty tree. Used as the comparison base for the
+// oldest tag, which has no preceding tag to compare against.
+const emptyTreeHash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 // Get the git repository root directory
 export async function getGitRoot(): Promise<string> {
@@ -730,6 +741,31 @@ export async function getBranchList(): Promise<BranchInfo[]> {
   }
 }
 
+// Get list of tags (sorted by most recently created)
+export async function getTagList(): Promise<TagInfo[]> {
+  try {
+    const format = "%(refname:short)|%(objectname:short)|%(creatordate:relative)|%(subject)"
+    const result = await runGit(() => Bun.$`git -C ${targetDir} tag --sort=-creatordate --format=${format}`.quiet())
+    const output = result.stdout.toString().trim()
+
+    if (!output) {
+      return []
+    }
+
+    return output.split("\n").map(line => {
+      const [name, shortHash, date, ...messageParts] = line.split("|")
+      return {
+        name: name ?? "",
+        shortHash: shortHash ?? "",
+        date: date ?? "",
+        message: messageParts.join("|"),
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
 // Get files changed in a specific commit (shows what that commit introduced)
 // Loads full diffs/content eagerly so behavior matches dirty mode.
 export async function getCommitChanges(commitHash: string): Promise<FileChange[]> {
@@ -864,10 +900,83 @@ export async function getBranchChanges(targetBranch: string): Promise<FileChange
   }
 }
 
+// Get files changed between a tag and the tag that precedes it (or the empty
+// tree for the oldest tag). This surfaces the changeset introduced by the
+// selected tag's release.
+export async function getTagChanges(tagName: string, prevTagName?: string): Promise<FileChange[]> {
+  try {
+    // Get file list only (fast) - stats loaded eagerly per file below.
+    // The oldest tag (no preceding tag) is diffed against the empty tree, which
+    // is a tree object and therefore needs a two-tree diff rather than the
+    // three-dot commit range used for tag-vs-tag comparisons.
+    const statusResult = prevTagName
+      ? await runGit(() => Bun.$`git -C ${targetDir} diff --name-status ${prevTagName}...${tagName}`.quiet())
+      : await runGit(() => Bun.$`git -C ${targetDir} diff --name-status ${emptyTreeHash} ${tagName}`.quiet())
+    const statusOutput = statusResult.stdout.toString().trim()
+
+    if (!statusOutput) {
+      return []
+    }
+
+    // Parse name-status: status\tfilepath
+    const changes: FileChange[] = []
+    for (const line of statusOutput.split("\n")) {
+      if (!line.trim()) continue
+
+      const parts = line.split("\t")
+      const statusCode = parts[0]
+      let filePath = parts.slice(1).join("\t")
+      let oldPath: string | undefined
+
+      if (statusCode?.startsWith("R")) {
+        oldPath = parts[1]
+        filePath = parts[2] ?? filePath
+      }
+
+      let status: FileChange["status"]
+      switch (statusCode?.[0]) {
+        case "A": status = "added"; break
+        case "D": status = "deleted"; break
+        case "R": status = "renamed"; break
+        default: status = "modified"
+      }
+
+      changes.push({
+        path: filePath,
+        status,
+        oldPath,
+        additions: 0,
+        deletions: 0,
+        diff: "",
+        content: "",
+        firstChangeLine: 0,
+        firstChangeDiffLine: 0,
+        changedLines: new Set<number>(),
+        addedLines: new Set<number>(),
+        removedLines: new Set<number>(),
+        isBinary: false,
+        hasLongLines: false,
+        fingerprint: "",
+      })
+    }
+
+    // Eagerly load full content/diff for every file to match dirty mode behavior
+    const loaded = await mapWithConcurrency(
+      changes,
+      maxConcurrentFileLoads,
+      (file) => loadFileDetails(file, { type: "tag", name: tagName, base: prevTagName }),
+    )
+
+    return loaded
+  } catch {
+    return []
+  }
+}
+
 // Load full content and diff for a specific file (called when file is selected)
 export async function loadFileDetails(
   file: FileChange,
-  compareTarget: { type: "commit"; hash: string } | { type: "branch"; name: string } | { type: "dirty" }
+  compareTarget: { type: "commit"; hash: string } | { type: "branch"; name: string } | { type: "tag"; name: string; base?: string } | { type: "dirty" }
 ): Promise<FileChange> {
   try {
     const gitRoot = await getGitRoot()
@@ -922,16 +1031,36 @@ export async function loadFileDetails(
         }
       }
     } else if (compareTarget.type === "branch") {
-      // Branch mode - changes between branches
-      const branch = compareTarget.name
+      // Branch mode - changes between the selected branch and the active branch
+      const ref = compareTarget.name
       const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
-      const diffResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${branch}...HEAD -- ${diffArgs}`.quiet())
+      const diffResult = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${ref}...HEAD -- ${diffArgs}`.quiet())
       diff = diffResult.stdout.toString()
       
       if (file.status !== "deleted") {
         content = await readFileContent(file.path)
       } else {
-        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${branch}:${file.path}`.quiet())
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${ref}:${file.path}`.quiet())
+        content = showResult.stdout.toString()
+      }
+    } else if (compareTarget.type === "tag") {
+      // Tag mode - changes between the selected tag and the tag preceding it.
+      // Content is read from the tag ref itself (not the working tree), since
+      // HEAD may have moved on since the tag was created. The oldest tag (no
+      // base) is diffed against the empty tree.
+      const ref = compareTarget.name
+      const base = compareTarget.base
+      const diffArgs = file.oldPath ? [file.oldPath, file.path] : [file.path]
+      const diffResult = base
+        ? await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${base}...${ref} -- ${diffArgs}`.quiet())
+        : await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff ${emptyTreeHash} ${ref} -- ${diffArgs}`.quiet())
+      diff = diffResult.stdout.toString()
+
+      if (file.status !== "deleted") {
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${ref}:${file.path}`.quiet())
+        content = showResult.stdout.toString()
+      } else if (base) {
+        const showResult = await runGit(() => Bun.$`git -C ${gitRoot} show ${base}:${file.path}`.quiet())
         content = showResult.stdout.toString()
       }
     }

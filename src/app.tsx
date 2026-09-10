@@ -12,6 +12,7 @@ import { CommitDialog } from "./components/commit-dialog"
 import { DiscardDialog } from "./components/discard-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
+import { TagList } from "./components/tag-list"
 import { LoadingOverlay } from "./components/loading-overlay"
 import {
   parseDiff,
@@ -22,6 +23,8 @@ import {
   getCurrentBranch,
   getCommitChanges,
   getBranchChanges,
+  getTagList,
+  getTagChanges,
   loadFileDetails,
   commitFiles,
   discardFile,
@@ -29,6 +32,7 @@ import {
   type AppMode,
   type CommitInfo,
   type BranchInfo,
+  type TagInfo,
   type DiffLine as ParsedDiffLine,
   getLineNumberWidth,
 } from "./utils/git"
@@ -273,6 +277,13 @@ export function App() {
   const [selectedBranch, setSelectedBranch] = createSignal<BranchInfo | null>(null)
   const [currentBranch, setCurrentBranch] = createSignal<string | null>(null)
   
+  // Tag mode state
+  const [tags, setTags] = createSignal<TagInfo[]>([])
+  const [selectedTag, setSelectedTag] = createSignal<TagInfo | null>(null)
+  // The tag that precedes the selected tag (comparison base), or null for the
+  // oldest tag (compared against the empty tree).
+  const [selectedTagPrev, setSelectedTagPrev] = createSignal<TagInfo | null>(null)
+  
   const toReviewFiles = createMemo(() => {
     const assigned = new Set<string>()
     for (const paths of changeLists().values()) {
@@ -392,6 +403,14 @@ export function App() {
     return selectable[listSelectedIndex()] ?? null
   }
   
+  // Every tag is selectable
+  const selectableTags = createMemo(() => tags())
+  
+  // Get the currently selected tag from the list
+  const getSelectedTagFromList = (): TagInfo | null => {
+    return selectableTags()[listSelectedIndex()] ?? null
+  }
+  
   // Track the last selected file path to detect file changes
   let lastSelectedFilePath: string | null = null
   const [loadingFile, setLoadingFile] = createSignal(false)
@@ -462,7 +481,7 @@ export function App() {
     }
 
     // Check if file needs lazy loading (no content yet)
-    if (!file.content && (currentMode === "commit" || currentMode === "branch")) {
+    if (!file.content && (currentMode === "commit" || currentMode === "branch" || currentMode === "tag")) {
       setLoadingFile(true)
 
       const compareTarget =
@@ -470,7 +489,9 @@ export function App() {
           ? { type: "commit" as const, hash: selectedCommit()!.hash }
           : currentMode === "branch" && selectedBranch()
             ? { type: "branch" as const, name: selectedBranch()!.name }
-            : { type: "dirty" as const }
+            : currentMode === "tag" && selectedTag()
+              ? { type: "tag" as const, name: selectedTag()!.name, base: selectedTagPrev()?.name }
+              : { type: "dirty" as const }
 
       loadFileDetails(file, compareTarget).then((loadedFile) => {
         // Update the file in the files array
@@ -642,6 +663,22 @@ export function App() {
     }
   }
   
+  const loadTags = async () => {
+    const epoch = nextLoadEpoch()
+    setLoading(true)
+    setError(null)
+    try {
+      const tagList = await getTagList()
+      if (!isCurrentLoad(epoch)) return
+      setTags(tagList)
+    } catch (e) {
+      if (!isCurrentLoad(epoch)) return
+      setError(e instanceof Error ? e.message : "Failed to load tags")
+    } finally {
+      if (isCurrentLoad(epoch)) setLoading(false)
+    }
+  }
+  
   const loadCommitChanges = async (commit: CommitInfo, preserveReviewState = false) => {
     const epoch = nextLoadEpoch()
     setLoading(true)
@@ -678,10 +715,32 @@ export function App() {
     }
   }
 
+  const loadTagChanges = async (tag: TagInfo, prevTag: TagInfo | null, preserveReviewState = false) => {
+    const epoch = nextLoadEpoch()
+    setLoading(true)
+    setError(null)
+    if (!preserveReviewState) setFilesGeneration(g => g + 1)
+    try {
+      const changes = await getTagChanges(tag.name, prevTag?.name)
+      if (!isCurrentLoad(epoch)) return
+      setFiles(changes)
+      setExpandedFolders(collectFolderPaths(buildFileTree(changes)))
+    } catch (e) {
+      if (!isCurrentLoad(epoch)) return
+      setError(e instanceof Error ? e.message : "Failed to load tag changes")
+    } finally {
+      if (isCurrentLoad(epoch)) setLoading(false)
+    }
+  }
+
   // Keep the list selection within bounds when the commit filter changes.
   createEffect(() => {
     if (viewState() !== "list") return
-    const count = mode() === "commit" ? visibleCommits().length : selectableBranches().length
+    const count = mode() === "commit"
+      ? visibleCommits().length
+      : mode() === "branch"
+        ? selectableBranches().length
+        : selectableTags().length
     if (listSelectedIndex() >= count) {
       setListSelectedIndex(Math.max(0, count - 1))
     }
@@ -718,6 +777,8 @@ export function App() {
       await loadCommitChanges(selectedCommit()!, true)
     } else if (mode() === "branch" && selectedBranch()) {
       await loadBranchChanges(selectedBranch()!, true)
+    } else if (mode() === "tag" && selectedTag()) {
+      await loadTagChanges(selectedTag()!, selectedTagPrev(), true)
     }
 
     // Restore selection to the same file path if it still exists.
@@ -996,11 +1057,13 @@ export function App() {
     const delta = event.scroll.direction === "up" ? -4 : 4
 
     if (viewState() === "list") {
-      // Commit or branch list
+      // Commit, branch, or tag list
       if (mode() === "commit") {
         setListSelectedIndex(i => Math.max(0, Math.min(i + delta, visibleCommits().length - 1)))
       } else if (mode() === "branch") {
         setListSelectedIndex(i => Math.max(0, Math.min(i + delta, selectableBranches().length - 1)))
+      } else if (mode() === "tag") {
+        setListSelectedIndex(i => Math.max(0, Math.min(i + delta, selectableTags().length - 1)))
       }
     } else {
       // File list
@@ -1459,6 +1522,7 @@ export function App() {
     if (key.name === "m") {
       const nextMode: AppMode = mode() === "dirty" ? "commit" 
                                : mode() === "commit" ? "branch" 
+                               : mode() === "branch" ? "tag" 
                                : "dirty"
       setMode(nextMode)
       setViewState(nextMode === "dirty" ? "files" : "list")
@@ -1468,6 +1532,8 @@ export function App() {
       scrollDiffTo(0)
       setSelectedCommit(null)
       setSelectedBranch(null)
+      setSelectedTag(null)
+      setSelectedTagPrev(null)
       setFiles([])
       clearCommitSearch()
       
@@ -1478,6 +1544,8 @@ export function App() {
         loadCommits()
       } else if (nextMode === "branch") {
         loadBranches()
+      } else if (nextMode === "tag") {
+        loadTags()
       }
       return
     }
@@ -1497,13 +1565,15 @@ export function App() {
         return
       }
     if (viewState() === "files" && mode() !== "dirty") {
-      // Files -> List (for commit/branch modes)
+      // Files -> List (for commit/branch/tag modes)
       // Invalidate any in-flight commit/branch load so it can't repopulate
       // the file list after we've gone back to the list view.
       nextLoadEpoch()
       setViewState("list")
       setSelectedCommit(null)
       setSelectedBranch(null)
+      setSelectedTag(null)
+      setSelectedTagPrev(null)
       setFiles([])
       setSelectedIndex(0)
       scrollDiffTo(0)
@@ -1551,6 +1621,20 @@ export function App() {
             scrollDiffTo(0)
             loadBranchChanges(branch)
           }
+        } else if (mode() === "tag") {
+          const tag = getSelectedTagFromList()
+          if (tag) {
+            // The comparison base is the tag that precedes the selected one in
+            // the (newest-first) list, or null for the oldest tag.
+            const prev = selectableTags()[listSelectedIndex() + 1] ?? null
+            setSelectedTag(tag)
+            setSelectedTagPrev(prev)
+            setViewState("files")
+            setFocusedPanel("files")
+            setSelectedIndex(0)
+            scrollDiffTo(0)
+            loadTagChanges(tag, prev)
+          }
         }
       } else if (focusedPanel() === "files") {
         if (selectedItem()?.type === "folder") {
@@ -1593,6 +1677,8 @@ export function App() {
           setListSelectedIndex(i => Math.min(i + 1, visibleCommits().length - 1))
         } else if (mode() === "branch") {
           setListSelectedIndex(i => Math.min(i + 1, selectableBranches().length - 1))
+        } else if (mode() === "tag") {
+          setListSelectedIndex(i => Math.min(i + 1, selectableTags().length - 1))
         }
       } else if (focusedPanel() === "files") {
         // File list navigation
@@ -1637,6 +1723,8 @@ export function App() {
           setListSelectedIndex(visibleCommits().length - 1)
         } else if (mode() === "branch") {
           setListSelectedIndex(selectableBranches().length - 1)
+        } else if (mode() === "tag") {
+          setListSelectedIndex(selectableTags().length - 1)
         }
       } else if (focusedPanel() === "files") {
         setSelectedIndex(allVisibleItems().length - 1)
@@ -1813,6 +1901,12 @@ export function App() {
         } else if (selectedBranch()) {
           loadBranchChanges(selectedBranch()!)
         }
+      } else if (mode() === "tag") {
+        if (viewState() === "list") {
+          loadTags()
+        } else if (selectedTag()) {
+          loadTagChanges(selectedTag()!, selectedTagPrev())
+        }
       }
       return
     }
@@ -1838,6 +1932,21 @@ export function App() {
     }
   })
   
+  // Comparison labels shown in the panel header, diff header, and status bar
+  // for branch and tag modes.
+  const branchComparisonLabel = () => {
+    const current = currentBranch() ?? "HEAD"
+    const selected = selectedBranch()?.name ?? ""
+    return `${current} (active) vs ${selected}`
+  }
+
+  const tagComparisonLabel = () => {
+    const tag = selectedTag()
+    if (!tag) return ""
+    const prev = selectedTagPrev()
+    return prev ? `${prev.name} vs ${tag.name}` : `${tag.name} (first tag)`
+  }
+
   // Left panel header text based on mode and view state
   const leftPanelHeader = () => {
     if (mode() === "dirty") {
@@ -1850,13 +1959,17 @@ export function App() {
       } else {
         return `FILES (${files().length}) · ${selectedCommit()?.shortHash ?? ""}`
       }
-    } else {
+    } else if (mode() === "branch") {
       if (viewState() === "list") {
         return `BRANCHES (${branches().length})`
       } else {
-        const current = currentBranch() ?? "HEAD"
-        const selected = selectedBranch()?.name ?? ""
-        return `FILES (${files().length}) · ${current} vs ${selected}`
+        return `FILES (${files().length}) · ${branchComparisonLabel()}`
+      }
+    } else {
+      if (viewState() === "list") {
+        return `TAGS (${tags().length})`
+      } else {
+        return `FILES (${files().length}) · ${tagComparisonLabel()}`
       }
     }
   }
@@ -1874,7 +1987,10 @@ export function App() {
       return truncate(` · ${selectedCommit()!.shortHash} ${selectedCommit()!.message}`, maxSuffixWidth)
     }
     if (mode() === "branch" && selectedBranch()) {
-      return truncate(` · ${currentBranch() ?? "HEAD"} vs ${selectedBranch()!.name}`, maxSuffixWidth)
+      return truncate(` · ${branchComparisonLabel()}`, maxSuffixWidth)
+    }
+    if (mode() === "tag" && selectedTag()) {
+      return truncate(` · ${tagComparisonLabel()}`, maxSuffixWidth)
     }
     return ""
   }
@@ -1888,7 +2004,7 @@ export function App() {
         return "Select a commit to view its changes"
       }
       return files().length === 0 ? "No files changed in this commit" : "Select a file to view diff"
-    } else {
+    } else if (mode() === "branch") {
       if (viewState() === "list") {
         if (currentBranch() === null) {
           return "Cannot compare branches: HEAD is detached"
@@ -1896,9 +2012,17 @@ export function App() {
         if (selectableBranches().length === 0) {
           return "No other branches to compare against"
         }
-        return `Select a branch to compare against ${currentBranch()}`
+        return `Select a branch to compare against active branch ${currentBranch()}`
       }
       return files().length === 0 ? "No differences between branches" : "Select a file to view diff"
+    } else {
+      if (viewState() === "list") {
+        if (selectableTags().length === 0) {
+          return "No tags found"
+        }
+        return "Select a tag to compare against the previous tag"
+      }
+      return files().length === 0 ? "No differences between tag and previous tag" : "Select a file to view diff"
     }
   }
   
@@ -1907,8 +2031,9 @@ export function App() {
     if (mode() === "commit" && selectedCommit()) {
       return selectedCommit()!.shortHash
     } else if (mode() === "branch" && selectedBranch()) {
-      const current = currentBranch() ?? "HEAD"
-      return `${current} vs ${selectedBranch()!.name}`
+      return branchComparisonLabel()
+    } else if (mode() === "tag" && selectedTag()) {
+      return tagComparisonLabel()
     }
     return undefined
   }
@@ -2024,6 +2149,26 @@ export function App() {
                     />
                   </Show>
                 </Show>
+                
+                {/* Tag mode list view: show tags */}
+                <Show when={mode() === "tag" && viewState() === "list"}>
+                  <Show
+                    when={tags().length > 0}
+                    fallback={
+                      <box style={{ padding: 1 }}>
+                        <text style={{ fg: th("#8b949e") }}>No tags found</text>
+                      </box>
+                    }
+                  >
+                    <TagList
+                      tags={tags()}
+                      selectedIndex={listSelectedIndex()}
+                      focused={focusedPanel() === "files"}
+                      width={isNarrowMode() || viewState() === "list" ? mainAreaWidth() : sidebarWidth()}
+                      reservedBottom={showControlsRow() ? controlsRowHeight() : 0}
+                    />
+                  </Show>
+                </Show>
               </Show>
             </Show>
           </box>
@@ -2125,7 +2270,7 @@ export function App() {
         visibleItemCount={allVisibleItems().length}
         selectedIndex={selectedIndex()}
         focusedPanel={focusedPanel()}
-        listCount={mode() === "commit" ? visibleCommits().length : selectableBranches().length}
+        listCount={mode() === "commit" ? visibleCommits().length : mode() === "branch" ? selectableBranches().length : selectableTags().length}
         listSelectedIndex={listSelectedIndex()}
         contextInfo={contextInfo()}
         searchMode={searchMode() || commitSearchMode()}
