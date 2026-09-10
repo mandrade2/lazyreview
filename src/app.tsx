@@ -1493,8 +1493,8 @@ export function App() {
       return
     }
 
-    // d - discard changes on the selected file (dirty mode only)
-    if (key.name === "d" && mode() === "dirty" && viewState() === "files" && selectedFile()) {
+    // d - discard changes on the selected file (dirty mode only, not Ctrl+d)
+    if (key.name === "d" && !key.ctrl && !key.meta && mode() === "dirty" && viewState() === "files" && selectedFile()) {
       setDiscardTarget(selectedFile()!)
       setDiscardError(null)
       setDiscardDialogOpen(true)
