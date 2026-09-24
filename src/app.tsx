@@ -9,6 +9,7 @@ import { StatusBar } from "./components/status-bar"
 import { HelpDialog } from "./components/help-dialog"
 import { OpencodeDialog } from "./components/opencode-dialog"
 import { CommitDialog } from "./components/commit-dialog"
+import { CommitResultDialog } from "./components/commit-result-dialog"
 import { DiscardDialog } from "./components/discard-dialog"
 import { CommitList } from "./components/commit-list"
 import { BranchList } from "./components/branch-list"
@@ -28,6 +29,8 @@ import {
   loadFileDetails,
   commitFiles,
   discardFile,
+  getCommitDiff,
+  countDiffLines,
   type FileChange,
   type AppMode,
   type CommitInfo,
@@ -48,6 +51,16 @@ import {
 } from "./utils/file-tree"
 import { openFileInEditor } from "./utils/editor"
 import { openFileInOpencode } from "./utils/opencode"
+import {
+  generateCommitMessage,
+  getCommitModel,
+  formatCommitMessage,
+  parseCommitMessage,
+  splitCommitMessage,
+  type CommitResult,
+  type CommitSource,
+  type CommitStage,
+} from "./utils/commit-message"
 import { preloadHighlight, computeWrappedMaxScroll } from "./utils/dataloading"
 import { copyToClipboard } from "./utils/clipboard"
 import { loadSettings, saveSettings, type Settings } from "./utils/settings"
@@ -231,6 +244,24 @@ export function App() {
   const [discardTarget, setDiscardTarget] = createSignal<FileChange | null>(null)
   const [discardError, setDiscardError] = createSignal<string | null>(null)
   const [discarding, setDiscarding] = createSignal(false)
+
+  // Commit result dialog state: shown once a commit lands, whether the message
+  // was typed with `c` or written by a model with `a`, and reports the
+  // resulting SHA plus a summary of what it touched.
+  const [commitReportOpen, setCommitReportOpen] = createSignal(false)
+  const [commitReportStage, setCommitReportStage] = createSignal<CommitStage>("generating")
+  const [commitReportSource, setCommitReportSource] = createSignal<CommitSource>("ai")
+  const [commitReportListNumber, setCommitReportListNumber] = createSignal<number | null>(null)
+  const [commitReportFileCount, setCommitReportFileCount] = createSignal(0)
+  const [commitReportResult, setCommitReportResult] = createSignal<CommitResult | null>(null)
+  const [commitReportError, setCommitReportError] = createSignal<string | null>(null)
+  const [commitReportStartedAt, setCommitReportStartedAt] = createSignal(0)
+  const [commitReportModel, setCommitReportModel] = createSignal("")
+  // Monotonic token, bumped whenever a run starts or is dismissed, so late work
+  // from a closed dialog can neither commit nor write state. Also holds the
+  // handle that kills the in-flight model request on cancel.
+  let commitReportRunId = 0
+  let abortCommitReport: (() => void) | null = null
 
   // Clear search state (defined early for use in effects)
   const clearSearch = () => {
@@ -1188,6 +1219,23 @@ export function App() {
     }
   }
 
+  // Show the result dialog for a commit that has just landed. Shared by the
+  // typed (`c`) and model-written (`a`) flows so both report the same thing.
+  const openCommitReport = (
+    source: CommitSource,
+    num: number,
+    fileCount: number,
+    result: CommitResult,
+  ) => {
+    setCommitReportSource(source)
+    setCommitReportListNumber(num)
+    setCommitReportFileCount(fileCount)
+    setCommitReportStage("done")
+    setCommitReportResult(result)
+    setCommitReportError(null)
+    setCommitReportOpen(true)
+  }
+
   // Create a commit from the files of a change list, then clear that list.
   const executeCommit = async () => {
     const num = commitListNumber()
@@ -1205,10 +1253,15 @@ export function App() {
     setCommitting(true)
     setCommitError(null)
     try {
+      // Snapshot the diff before committing so the report can summarize what
+      // landed; by the time the commit is done the working tree is clean.
+      const diff = await getCommitDiff(listFiles)
+      const { additions, deletions } = countDiffLines(diff)
       await commitFiles(
         listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status, fingerprint: f.fingerprint })),
         message,
       )
+      const [head] = await getCommitList(1, 0)
       const committedPaths = listFiles.map(f => f.path)
       setChangeLists(prev => {
         const next = new Map(prev)
@@ -1227,6 +1280,17 @@ export function App() {
       setCommitDialogOpen(false)
       setCommitMessage("")
       setCommitListNumber(null)
+      // Reported verbatim: unlike a model's answer, a typed message is already
+      // what the user wanted and must not be normalized on the way to the screen.
+      const authored = splitCommitMessage(message)
+      openCommitReport("manual", num, listFiles.length, {
+        hash: head?.hash ?? "",
+        shortHash: head?.shortHash ?? "",
+        title: authored.title,
+        body: authored.body,
+        summary: { files: listFiles.length, additions, deletions },
+        elapsedMs: 0,
+      })
     } catch (e) {
       setCommitError(e instanceof Error ? e.message : "Commit failed")
     } finally {
@@ -1253,6 +1317,90 @@ export function App() {
       setDiscardError(e instanceof Error ? e.message : "Failed to discard changes")
     } finally {
       setDiscarding(false)
+    }
+  }
+
+  // Dismiss the commit result dialog, killing any in-flight model request and
+  // invalidating its run so it can no longer commit anything.
+  const closeCommitReport = () => {
+    commitReportRunId++
+    abortCommitReport?.()
+    abortCommitReport = null
+    setCommitReportOpen(false)
+    setCommitReportResult(null)
+    setCommitReportError(null)
+  }
+
+  // Generate a commit message for a change list with a model, create the
+  // commit, then report the resulting SHA and a summary of what it touched.
+  const executeAiCommit = async (num: number) => {
+    const listFiles = listFilesMap().get(num) ?? []
+    if (listFiles.length === 0) return
+
+    const runId = ++commitReportRunId
+    const isLive = () => commitReportRunId === runId
+    const startedAt = Date.now()
+
+    setCommitReportListNumber(num)
+    setCommitReportFileCount(listFiles.length)
+    setCommitReportModel(getCommitModel())
+    setCommitReportStage("generating")
+    setCommitReportResult(null)
+    setCommitReportError(null)
+    setCommitReportStartedAt(startedAt)
+    setCommitReportOpen(true)
+
+    try {
+      // Snapshot the diff before committing: the summary is reported from it,
+      // and by the time the commit lands the working tree is clean again.
+      const diff = await getCommitDiff(listFiles)
+      if (!isLive()) return
+      const { additions, deletions } = countDiffLines(diff)
+
+      const message = await generateCommitMessage(diff, {
+        onAbort: (abort) => {
+          abortCommitReport = abort
+        },
+      })
+      if (!isLive()) return
+
+      setCommitReportStage("committing")
+      await commitFiles(
+        listFiles.map(f => ({ path: f.path, oldPath: f.oldPath, status: f.status, fingerprint: f.fingerprint })),
+        formatCommitMessage(message),
+      )
+      if (!isLive()) return
+
+      const [head] = await getCommitList(1, 0)
+      const committedPaths = listFiles.map(f => f.path)
+      setChangeLists(prev => {
+        const next = new Map(prev)
+        next.delete(num)
+        return next
+      })
+      setReviewedFingerprints(prev => {
+        const next = new Map(prev)
+        for (const p of committedPaths) next.delete(p)
+        return next
+      })
+      // Await the reload before revealing the result so a fast follow-up action
+      // cannot overlap the reload's index-refreshing status call.
+      await loadDirtyChanges(true)
+      if (!isLive()) return
+
+      openCommitReport("ai", num, listFiles.length, {
+        hash: head?.hash ?? "",
+        shortHash: head?.shortHash ?? "",
+        title: message.title,
+        body: message.body,
+        summary: { files: listFiles.length, additions, deletions },
+        elapsedMs: Date.now() - startedAt,
+      })
+    } catch (e) {
+      if (!isLive()) return
+      setCommitReportError(e instanceof Error ? e.message : "AI commit failed")
+    } finally {
+      if (isLive()) abortCommitReport = null
     }
   }
 
@@ -1289,7 +1437,7 @@ export function App() {
       return
     }
 
-    if (key.name === "q" && !searchMode() && !commitSearchMode() && !opencodeDialogOpen() && !commitDialogOpen() && !discardDialogOpen()) {
+    if (key.name === "q" && !searchMode() && !commitSearchMode() && !opencodeDialogOpen() && !commitDialogOpen() && !commitReportOpen() && !discardDialogOpen()) {
       // When the help dialog is shown, q closes it instead of quitting.
       if (showHelp()) {
         setShowHelp(false)
@@ -1312,6 +1460,21 @@ export function App() {
         await executeDiscard()
         return
       }
+      return
+    }
+
+    // Commit result dialog input handling. While a model is still writing, Esc
+    // cancels the request before anything is committed. Once the commit is
+    // being created the keys are ignored: it is already in flight and closing
+    // the dialog then would only hide the result.
+    if (commitReportOpen()) {
+      const finished = commitReportStage() === "done" || commitReportError() !== null
+      if (commitReportStage() === "committing") return
+      const dismiss =
+        key.name === "escape" ||
+        (key.name === "q" && !key.ctrl && !key.meta) ||
+        (finished && key.name === "return")
+      if (dismiss) closeCommitReport()
       return
     }
 
@@ -1512,6 +1675,20 @@ export function App() {
         setCommitMessage("")
         setCommitError(null)
         setCommitDialogOpen(true)
+        // Refresh the branch in case it changed since startup.
+        getCurrentBranch().then(setCurrentBranch)
+      }
+      return
+    }
+
+    // a - commit a change list with an AI-written message (dirty mode only)
+    if (key.name === "a" && !key.ctrl && !key.meta && viewState() === "files" && mode() === "dirty") {
+      const index = selectedIndex()
+      const section = listSectionStarts().find(s => index >= s.start && index < s.start + s.length)
+      // Fall back to the only active list when the selection is in "To Review"
+      const num = section?.num ?? (activeListNumbers().length === 1 ? activeListNumbers()[0]! : null)
+      if (num !== null) {
+        executeAiCommit(num)
         // Refresh the branch in case it changed since startup.
         getCurrentBranch().then(setCurrentBranch)
       }
@@ -2306,6 +2483,20 @@ export function App() {
           error={commitError()}
           committing={committing()}
           branch={currentBranch() ?? "detached HEAD"}
+        />
+      </Show>
+
+      <Show when={commitReportOpen()}>
+        <CommitResultDialog
+          stage={commitReportStage()}
+          source={commitReportSource()}
+          model={commitReportModel()}
+          branch={currentBranch() ?? "detached HEAD"}
+          listNumber={commitReportListNumber() ?? 1}
+          fileCount={commitReportFileCount()}
+          result={commitReportResult()}
+          error={commitReportError()}
+          startedAt={commitReportStartedAt()}
         />
       </Show>
 

@@ -58,6 +58,7 @@ const sections = [
       { key: "Space", desc: "Send file or folder to list 1 / back" },
       { key: "1-9", desc: "Send file or folder to change list n" },
       { key: "c", desc: "Commit a change list (dirty mode)" },
+      { key: "a", desc: "Commit a change list with an AI-written message (dirty mode)" },
       { key: "d", desc: "Discard changes to selected file (dirty mode)" },
       { key: "e", desc: "Open file in $EDITOR" },
       { key: "o", desc: "Open file in opencode" },

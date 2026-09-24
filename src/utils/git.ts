@@ -219,7 +219,7 @@ export function hasExtremelyLongLines(text: string): boolean {
   return false
 }
 
-function generateUnifiedDiff(filePath: string, content: string): string {
+export function generateUnifiedDiff(filePath: string, content: string): string {
   const lines = content.split("\n")
   const diffLines: string[] = [
     `@@ -0,0 +1,${lines.length} @@`,
@@ -534,6 +534,56 @@ export async function getGitChanges(): Promise<FileChange[]> {
   }
   
   return changes
+}
+
+// Count added/removed lines across a unified diff. Used for change summaries.
+export function countDiffLines(diff: string): { additions: number; deletions: number } {
+  let additions = 0
+  let deletions = 0
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      additions++
+    } else if (line.startsWith("-") && !line.startsWith("---")) {
+      deletions++
+    }
+  }
+  return { additions, deletions }
+}
+
+// Build the combined unified diff that committing these files would produce.
+// `git diff HEAD` covers staged and unstaged edits together, which is exactly
+// what `commitFiles` lands (it adds then commits). Untracked files have no diff
+// at all, so theirs is synthesized from the content already loaded for review.
+// Binary and unrenderable files are named but not inlined.
+export async function getCommitDiff(files: FileChange[]): Promise<string> {
+  const gitRoot = await getGitRoot()
+  const tracked = files.filter(f => f.status !== "untracked")
+  const untracked = files.filter(f => f.status === "untracked")
+  const parts: string[] = []
+
+  const pathspec = tracked.flatMap(f => (f.oldPath ? [f.oldPath, f.path] : [f.path]))
+  if (pathspec.length > 0) {
+    try {
+      const result = await runGit(() => Bun.$`git -C ${gitRoot} diff --no-ext-diff HEAD -- ${pathspec}`.quiet())
+      const text = result.stdout.toString().trimEnd()
+      if (text) parts.push(text)
+    } catch {
+      // Fall through: the synthesized diffs below still describe the untracked files.
+    }
+  }
+
+  for (const file of untracked) {
+    const header = `diff --git a/${file.path} b/${file.path}\nnew file mode 100644`
+    if (file.isBinary || file.hasLongLines || !file.content) {
+      parts.push(`${header}\nBinary file "${file.path}" not shown`)
+      continue
+    }
+    parts.push(
+      `${header}\n--- /dev/null\n+++ b/${file.path}\n${generateUnifiedDiff(file.path, file.content)}`,
+    )
+  }
+
+  return parts.join("\n")
 }
 
 // Stage the given files and create a commit containing only their changes.
